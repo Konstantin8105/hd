@@ -65,3 +65,35 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 
 	return kr
 }
+
+func (m Model) getCoordTransStiffBeam2d(pos int) *mat.Dense {
+	data := make([]float64, 36)
+	tr := mat.NewDense(6, 6, data)
+
+	length := m.distance(m.Beams[pos].N[0], m.Beams[pos].N[1])
+
+	start := m.Beams[pos].N[0]
+	end := m.Beams[pos].N[1]
+
+	lambdaXX := (m.Points[end][0] - m.Points[start][0]) / length
+	lambdaXY := (m.Points[end][1] - m.Points[start][1]) / length
+	lambdaYX := -lambdaXY
+	lambdaYY := lambdaXX
+
+	tr.Set(0, 0, lambdaXX)
+	tr.Set(3, 3, lambdaXX)
+
+	tr.Set(0, 1, lambdaXY)
+	tr.Set(3, 4, lambdaXY)
+
+	tr.Set(1, 0, lambdaYX)
+	tr.Set(4, 3, lambdaYX)
+
+	tr.Set(1, 1, lambdaYY)
+	tr.Set(4, 4, lambdaYY)
+
+	tr.Set(2, 2, 1.0)
+	tr.Set(5, 5, 1.0)
+
+	return tr
+}
