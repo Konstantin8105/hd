@@ -13,8 +13,7 @@ func TestJsonModel(t *testing.T) {
 		},
 		Beams: []BeamProp{
 			{
-				N1:      0,
-				N2:      1,
+				N:       [2]int{0, 1},
 				A:       12e-4,
 				J:       120e-6,
 				E:       2.0e11,
@@ -34,6 +33,10 @@ func TestJsonModel(t *testing.T) {
 						N:      1,
 						Forces: [3]float64{0, 2.3, 0},
 					},
+					{
+						N:      1,
+						Forces: [3]float64{10, 0, 0},
+					},
 				},
 			},
 		},
@@ -49,5 +52,5 @@ func TestJsonModel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("%+v", mu)
+	t.Logf("%#v", mu)
 }
