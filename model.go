@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
+	"gonum.org/v1/gonum/mat"
 )
 
 // Model is structural calculation model
@@ -135,14 +137,32 @@ func (m *Model) run(lc *LoadCase) (err error) {
 	return nil
 }
 
-func (m *Model) assemblyK() (k [][]float64) {
-	return
+func (m *Model) assemblyK() *mat.Dense {
+	dof := 3 * len(m.Points)
+	data := make([]float64, dof*dof)
+	k := mat.NewDense(dof, dof, data)
+	for i := range m.Beams {
+		kr := m.getStiffBeam2d(i)
+		for p1 := 0; p1 < 2; p1++ {
+			for p2 := 0; p2 < 2; p2++ {
+				for r1 := 0; r1 < 3; r1++ {
+					for r2 := 0; r2 < 3; r2++ {
+						x := m.Beams[i].N[p1]*3 + r1
+						y := m.Beams[i].N[p2]*3 + r2
+						k.Set(x, y, k.At(x, y)+kr.At(p1*3+r1, p2*3+r2))
+					}
+				}
+			}
+		}
+	}
+
+	return k
 }
 
 func (m *Model) assemblyNodalLoad(lc *LoadCase) (p []float64) {
 	return
 }
 
-func solve(k [][]float64, p []float64) (z []float64, err error) {
+func solve(k *mat.Dense, p []float64) (z []float64, err error) {
 	return
 }

@@ -53,4 +53,9 @@ func TestJsonModel(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Logf("%#v", mu)
+
+	err = mu.Run(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
