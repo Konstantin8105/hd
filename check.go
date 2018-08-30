@@ -71,7 +71,7 @@ func (e ErrorPoint) Error() string {
 		e.Err)
 }
 
-func isOk(errs []ErrorFunc) (err error) {
+func isOk(errs ...ErrorFunc) (err error) {
 	for _, e := range errs {
 		if e.isError {
 			return e.Err
@@ -84,10 +84,10 @@ func (m *Model) checkPoints() error {
 	et := ErrorTree{Name: "checkPoints"}
 	for i := range m.Points {
 		for j := 0; j < len(m.Points[i]); j++ {
-			err := isOk([]ErrorFunc{
+			err := isOk(
 				isNaN(m.Points[i][j]),
 				isInf(m.Points[i][j]),
-			})
+			)
 			if err != nil {
 				et.Add(ErrorPoint{
 					PointIndex: i,
@@ -136,11 +136,11 @@ func (m *Model) checkBeams() error {
 			}
 		}
 
-		if distance(b.N[0], b.N[1]) <= 0 {
+		if m.distance(b.N[0], b.N[1]) <= 0 {
 			et.Add(ErrorBeam{
 				BeamIndex: i,
 				Detail:    "distance between points",
-				Err:       "is less or equal zero",
+				Err:       fmt.Errorf("is less or equal zero"),
 			})
 		}
 
@@ -157,12 +157,12 @@ func (m *Model) checkBeams() error {
 		}
 
 		for _, value := range values {
-			err := isOk([]ErrorFunc{
+			err := isOk(
 				isNaN(value.v),
 				isInf(value.v),
 				isPositive(value.v),
 				isNotZero(value.v),
-			})
+			)
 			if err != nil {
 				et.Add(ErrorBeam{
 					BeamIndex: i,
