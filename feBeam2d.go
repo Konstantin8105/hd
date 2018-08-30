@@ -78,7 +78,7 @@ func (m Model) getCoordTransStiffBeam2d(pos int) *mat.Dense {
 	lambdaXX := (m.Points[end][0] - m.Points[start][0]) / length
 	lambdaXY := (m.Points[end][1] - m.Points[start][1]) / length
 	lambdaYX := -lambdaXY
-	lambdaYY := lambdaXX
+	lambdaYY := +lambdaXX
 
 	tr.Set(0, 0, lambdaXX)
 	tr.Set(3, 3, lambdaXX)
