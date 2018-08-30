@@ -15,6 +15,10 @@ func (e ErrorTree) Error() (s string) {
 	return e.getTree().Print()
 }
 
+func (e ErrorTree) IsError() bool {
+	return len(e.errs) > 0
+}
+
 func (e ErrorTree) getTree() gotree.Tree {
 	name := "+"
 	if e.Name != "" {

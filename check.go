@@ -5,21 +5,22 @@ import (
 	"math"
 )
 
-func (m *Model) checkInputData() (err error) {
+func (m *Model) checkInputData() error {
+	et := ErrorTree{Name: "checkInputData"}
 	// points
-	err = m.checkPoints()
-	if err != nil {
-		return err
+	if err := m.checkPoints(); err != nil {
+		et.Add(err)
 	}
 	// beams
-	err = m.checkBeams()
-	if err != nil {
-		return err
+	if err := m.checkBeams(); err != nil {
+		et.Add(err)
 	}
 	// supports
-	err = m.checkSupports()
-	if err != nil {
-		return err
+	if err := m.checkSupports(); err != nil {
+		et.Add(err)
+	}
+	if et.IsError() {
+		return et
 	}
 	return nil
 }
@@ -79,7 +80,8 @@ func isOk(errs []ErrorFunc) (err error) {
 	return nil
 }
 
-func (m *Model) checkPoints() (err error) {
+func (m *Model) checkPoints() error {
+	et := ErrorTree{Name: "checkPoints"}
 	for i := range m.Points {
 		for j := 0; j < len(m.Points[i]); j++ {
 			err := isOk([]ErrorFunc{
@@ -87,13 +89,16 @@ func (m *Model) checkPoints() (err error) {
 				isInf(m.Points[i][j]),
 			})
 			if err != nil {
-				return ErrorPoint{
+				et.Add(ErrorPoint{
 					PointIndex: i,
 					CoordIndex: j,
 					Err:        err,
-				}
+				})
 			}
 		}
+	}
+	if et.IsError() {
+		return et
 	}
 	return nil
 }
@@ -111,23 +116,32 @@ func (e ErrorBeam) Error() string {
 		e.Err)
 }
 
-func (m *Model) checkBeams() (err error) {
+func (m *Model) checkBeams() error {
+	et := ErrorTree{Name: "checkBeams"}
 	for i, b := range m.Beams {
 		for j := 0; j < len(b.N); j++ {
 			if b.N[j] < 0 {
-				return ErrorBeam{
+				et.Add(ErrorBeam{
 					BeamIndex: i,
 					Detail:    fmt.Sprintf("Point %d", j),
 					Err:       fmt.Errorf("negative index of point"),
-				}
+				})
 			}
 			if b.N[j] >= len(m.Points) {
-				return ErrorBeam{
+				et.Add(ErrorBeam{
 					BeamIndex: i,
 					Detail:    fmt.Sprintf("Point %d", j),
 					Err:       fmt.Errorf("outside index of point"),
-				}
+				})
 			}
+		}
+
+		if distance(b.N[0], b.N[1]) <= 0 {
+			et.Add(ErrorBeam{
+				BeamIndex: i,
+				Detail:    "distance between points",
+				Err:       "is less or equal zero",
+			})
 		}
 
 		values := []struct {
@@ -143,20 +157,23 @@ func (m *Model) checkBeams() (err error) {
 		}
 
 		for _, value := range values {
-			err = isOk([]ErrorFunc{
+			err := isOk([]ErrorFunc{
 				isNaN(value.v),
 				isInf(value.v),
 				isPositive(value.v),
 				isNotZero(value.v),
 			})
 			if err != nil {
-				return ErrorBeam{
+				et.Add(ErrorBeam{
 					BeamIndex: i,
 					Detail:    value.name,
 					Err:       err,
-				}
+				})
 			}
 		}
+	}
+	if et.IsError() {
+		return et
 	}
 	return nil
 }
