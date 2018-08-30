@@ -11,12 +11,31 @@ func TestJsonModel(t *testing.T) {
 			[2]float64{0.0, 0.0},
 			[2]float64{1.0, 0.0},
 		},
-		Beams: [][2]int{
-			[2]int{0, 1},
+		Beams: []BeamProp{
+			{
+				N1:      0,
+				N2:      1,
+				A:       12e-4,
+				J:       120e-6,
+				E:       2.0e11,
+				G:       81e9,
+				Density: 78500,
+				Cte:     12e-6,
+			},
 		},
 		Supports: [][3]bool{
 			[3]bool{true, true, true},
 			[3]bool{false, false, false},
+		},
+		LoadCases: []LoadCase{
+			LoadCase{
+				LoadNodes: []LoadNode{
+					{
+						N:      1,
+						Forces: [3]float64{0, 2.3, 0},
+					},
+				},
+			},
 		},
 	}
 	b, err := json.Marshal(m)
