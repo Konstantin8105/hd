@@ -1,6 +1,7 @@
 package hd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 )
@@ -105,7 +106,9 @@ func (m *Model) Run(out *os.File) (err error) {
 			len(m.LoadCases))
 		err = m.run(&lc)
 		if err != nil {
-			return fmt.Fprintf(m.out, "Error in load case %d: %v", i, err)
+			e := fmt.Sprintf("Error in load case %d: %v", i, err)
+			fmt.Fprintf(m.out, e)
+			return errors.New(e)
 		}
 	}
 	return nil
@@ -115,13 +118,31 @@ func (m *Model) run(lc *LoadCase) (err error) {
 	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
 
 	// assembly matrix of stiffiner
-	K := m.assemblyK()
+	k := m.assemblyK()
 
 	// assembly nodal load
-	P := m.assemblyNodalLoad(lc)
+	p := m.assemblyNodalLoad(lc)
 
 	// calculate nodal displacament
-	Z := solve(K, P)
+	z, err := solve(k, p)
+	if err != nil {
+		return err
+	}
+
+	// TODO
+	_ = z
 
 	return nil
+}
+
+func (m *Model) assemblyK() (k [][]float64) {
+	return
+}
+
+func (m *Model) assemblyNodalLoad(lc *LoadCase) (p []float64) {
+	return
+}
+
+func solve(k [][]float64, p []float64) (z []float64, err error) {
+	return
 }
