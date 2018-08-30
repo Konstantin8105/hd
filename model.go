@@ -22,6 +22,8 @@ type Model struct {
 	// Supports is slice of fixed supports.
 	// Len of support must be same amount of Points
 	//
+	// first index is point index
+	//
 	// [0] - X
 	// [1] - Y
 	// [2] - M
@@ -71,6 +73,42 @@ type BeamProp struct {
 type LoadCase struct {
 	// LoadNodes is nodal loads
 	LoadNodes []LoadNode
+
+	// Point displacement in global system coordinate.
+	// Return data.
+	//
+	// first index is point index
+	//
+	// [0] - X
+	// [1] - Y
+	// [2] - M
+	// Unit: meter
+	PointDisplacementGlobal [][3]float64
+
+	// BeamForces is beam forces in local system coordinate.
+	// Return data.
+	//
+	// first index is beam index
+	//
+	// [0] - Fx on start point
+	// [1] - Fy on start point
+	// [2] - M  on start point
+	// [3] - Fx on end point
+	// [4] - Fy on end point
+	// [5] - M  on end point
+	// Unit: N
+	BeamForces [][6]float64
+
+	// Reactions is reaction loads in support points.
+	// Return data.
+	//
+	// first index is point index
+	//
+	// [0] - Fx
+	// [1] - Fy
+	// [2] - M
+	// Unit: N
+	Reactions [][3]float64
 }
 
 // LoadNode is node load on specific point
@@ -132,9 +170,43 @@ func (m *Model) run(lc *LoadCase) (err error) {
 	m.addSupport(k)
 
 	err = d.Solve(k, p)
-	view(&d)
+	if err != nil {
+		return err
+	}
 
-	return err
+	// create result information
+	lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
+	for p := 0; p < len(m.Points); p++ {
+		for i := 0; i < 3; i++ {
+			lc.PointDisplacementGlobal[p][i] = d.At(3*p+i, 0)
+		}
+	}
+
+	data := make([]float64, 6)
+	dataS := make([]float64, 6)
+	Zo := mat.NewDense(6, 1, data)
+	lc.BeamForces = make([][6]float64, len(m.Beams))
+	for bi, b := range m.Beams {
+		for i := 0; i < 3; i++ {
+			for j := 0; j < 2; j++ {
+				Zo.Set(b.N[j]*3+i, 0, d.At(3*b.N[j]+i, 0))
+			}
+		}
+		tr := m.getCoordTransStiffBeam2d(bi)
+		var z mat.Dense
+		z.Mul(tr, Zo)
+		kr := m.getStiffBeam2d(bi)
+		s := mat.NewDense(6, 1, dataS)
+		s.Mul(kr, &z)
+		for i := 0; i < 6; i++ {
+			lc.BeamForces[bi][i] = s.At(i, 0)
+		}
+	}
+
+	fmt.Println("Global disp: ", lc.PointDisplacementGlobal)
+	fmt.Println("Local force: ", lc.BeamForces)
+
+	return nil
 }
 
 func (m *Model) assemblyK() *mat.Dense {
