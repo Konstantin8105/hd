@@ -32,28 +32,28 @@ type ErrorFunc struct {
 func isNaN(f float64) ErrorFunc {
 	return ErrorFunc{
 		isError: math.IsNaN(f),
-		Err:     fmt.Errorf("Not acceptable NaN float"),
+		Err:     fmt.Errorf("NaN float"),
 	}
 }
 
 func isInf(f float64) ErrorFunc {
 	return ErrorFunc{
 		isError: math.IsInf(f, 0),
-		Err:     fmt.Errorf("Not acceptable infinity float"),
+		Err:     fmt.Errorf("infinity float"),
 	}
 }
 
 func isPositive(f float64) ErrorFunc {
 	return ErrorFunc{
 		isError: f < 0,
-		Err:     fmt.Errorf("Not acceptable negative float"),
+		Err:     fmt.Errorf("negative float"),
 	}
 }
 
 func isNotZero(f float64) ErrorFunc {
 	return ErrorFunc{
 		isError: f == 0,
-		Err:     fmt.Errorf("Not acceptable zero float"),
+		Err:     fmt.Errorf("zero float"),
 	}
 }
 
@@ -118,14 +118,14 @@ func (m *Model) checkBeams() (err error) {
 				return ErrorBeam{
 					BeamIndex: i,
 					Detail:    fmt.Sprintf("Point %d", j),
-					Err:       fmt.Errorf("Not acceptable negative index of point"),
+					Err:       fmt.Errorf("negative index of point"),
 				}
 			}
 			if b.N[j] >= len(m.Points) {
 				return ErrorBeam{
 					BeamIndex: i,
 					Detail:    fmt.Sprintf("Point %d", j),
-					Err:       fmt.Errorf("Not acceptable outside index of point"),
+					Err:       fmt.Errorf("outside index of point"),
 				}
 			}
 		}
