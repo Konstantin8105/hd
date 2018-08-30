@@ -126,13 +126,13 @@ func (m *Model) run(lc *LoadCase) (err error) {
 	p := m.assemblyNodalLoad(lc)
 
 	// calculate nodal displacament
-	z, err := solve(k, p)
-	if err != nil {
-		return err
-	}
+	var lu mat.LU
+	lu.Factorize(k)
 
-	// TODO
-	_ = z
+	_ = p
+
+	fmt.Println("L : ", lu.LTo(nil))
+	fmt.Println("U : ", lu.UTo(nil))
 
 	return nil
 }
@@ -163,10 +163,6 @@ func (m *Model) assemblyK() *mat.Dense {
 	return k
 }
 
-func (m *Model) assemblyNodalLoad(lc *LoadCase) (p []float64) {
-	return
-}
-
-func solve(k *mat.Dense, p []float64) (z []float64, err error) {
+func (m *Model) assemblyNodalLoad(lc *LoadCase) (p *mat.Dense) {
 	return
 }
