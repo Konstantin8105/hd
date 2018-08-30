@@ -1,5 +1,10 @@
 package hd
 
+import (
+	"fmt"
+	"os"
+)
+
 // Model is structural calculation model
 type Model struct {
 	// Points is slice of point coordinate
@@ -9,7 +14,6 @@ type Model struct {
 	Points [][2]float64
 
 	// Beams is slice of point index and beam property
-	//
 	Beams []BeamProp
 
 	// Supports is slice of fixed supports.
@@ -22,12 +26,18 @@ type Model struct {
 
 	// LoadCases is slice of load cases
 	LoadCases []LoadCase
+
+	// output file
+	out *os.File
 }
 
 // BeamProp is beam property
 type BeamProp struct {
 	// Start and end point index
-	N1, N2 int
+	//
+	// [0] - start of beam
+	// [1] - end of beam
+	N [2]int
 
 	// A cross-section area
 	// Unit : sq. meter.
@@ -71,4 +81,47 @@ type LoadNode struct {
 	// [1] - Y
 	// [2] - M
 	Forces [3]float64
+}
+
+// Run is run calculation of model
+func (m *Model) Run(out *os.File) (err error) {
+
+	// by default output in standart stdio
+	if out == nil {
+		out = os.Stdout
+	}
+	m.out = out
+
+	// check
+	err = m.checkInputData()
+	if err != nil {
+		return
+	}
+
+	// calculation by load cases
+	for i, lc := range m.LoadCases {
+		fmt.Fprintf(m.out, "Calculate load case %d of %d\n",
+			i,
+			len(m.LoadCases))
+		err = m.run(&lc)
+		if err != nil {
+			return fmt.Fprintf(m.out, "Error in load case %d: %v", i, err)
+		}
+	}
+	return nil
+}
+
+func (m *Model) run(lc *LoadCase) (err error) {
+	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
+
+	// assembly matrix of stiffiner
+	K := m.assemblyK()
+
+	// assembly nodal load
+	P := m.assemblyNodalLoad(lc)
+
+	// calculate nodal displacament
+	Z := solve(K, P)
+
+	return nil
 }
