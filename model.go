@@ -203,6 +203,8 @@ func (m *Model) run(lc *LoadCase) (err error) {
 		}
 	}
 
+	// TODO: add reaction calculation
+
 	fmt.Println("Global disp: ", lc.PointDisplacementGlobal)
 	fmt.Println("Local force: ", lc.BeamForces)
 
