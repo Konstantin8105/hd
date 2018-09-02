@@ -18,9 +18,9 @@ func (m Model) distance(st, en int) float64 {
 
 func view(k *mat.Dense) {
 	r, c := k.Dims()
-	for i := 0; i < c; i++ {
-		for j := 0; j < r; j++ {
-			fmt.Printf("\t%15.2e", k.At(i, j))
+	for j := 0; j < r; j++ {
+		for i := 0; i < c; i++ {
+			fmt.Printf("\t%15.2e", k.At(j, i))
 		}
 		fmt.Printf("\n")
 	}

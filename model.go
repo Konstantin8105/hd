@@ -126,15 +126,15 @@ func (m *Model) run(lc *LoadCase) (err error) {
 	p := m.assemblyNodalLoad(lc)
 
 	// calculate nodal displacament
-	var lu mat.LU
-	lu.Factorize(k)
+	var d mat.Dense
 
-	_ = p
+	// add support
+	m.addSupport(k, p)
 
-	fmt.Println("L : ", lu.LTo(nil))
-	fmt.Println("U : ", lu.UTo(nil))
+	err = d.Solve(k, p)
+	view(&d)
 
-	return nil
+	return err
 }
 
 func (m *Model) assemblyK() *mat.Dense {
@@ -164,5 +164,28 @@ func (m *Model) assemblyK() *mat.Dense {
 }
 
 func (m *Model) assemblyNodalLoad(lc *LoadCase) (p *mat.Dense) {
+	dof := 3 * len(m.Points)
+	data := make([]float64, dof)
+	p = mat.NewDense(dof, 1, data)
+	for _, ln := range lc.LoadNodes {
+		for i := 0; i < 3; i++ {
+			p.Set(ln.N*3+i, 0, p.At(ln.N*3+i, 0)+ln.Forces[i])
+		}
+	}
 	return
+}
+
+func (m *Model) addSupport(k, p *mat.Dense) {
+	dof := 3 * len(m.Points)
+	for n, s := range m.Supports {
+		for i := 0; i < len(s); i++ {
+			if s[i] {
+				for j := 0; j < dof; j++ {
+					k.Set(j, n*3+i, 0)
+					k.Set(n*3+i, j, 0)
+				}
+				k.Set(n*3+i, n*3+i, 1)
+			}
+		}
+	}
 }
