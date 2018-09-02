@@ -19,6 +19,9 @@ func (m *Model) checkInputData() error {
 	if err := m.checkSupports(); err != nil {
 		et.Add(err)
 	}
+
+	// TODO check loads, load cases
+
 	if et.IsError() {
 		return et
 	}
