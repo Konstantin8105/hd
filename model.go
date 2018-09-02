@@ -129,7 +129,7 @@ func (m *Model) run(lc *LoadCase) (err error) {
 	var d mat.Dense
 
 	// add support
-	m.addSupport(k, p)
+	m.addSupport(k)
 
 	err = d.Solve(k, p)
 	view(&d)
@@ -175,7 +175,7 @@ func (m *Model) assemblyNodalLoad(lc *LoadCase) (p *mat.Dense) {
 	return
 }
 
-func (m *Model) addSupport(k, p *mat.Dense) {
+func (m *Model) addSupport(k *mat.Dense) {
 	dof := 3 * len(m.Points)
 	for n, s := range m.Supports {
 		for i := 0; i < len(s); i++ {
