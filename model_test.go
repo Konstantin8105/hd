@@ -210,3 +210,18 @@ func TestModelString(t *testing.T) {
 		t.Fatalf("error: %s", err)
 	}
 }
+
+func BenchmarkRun(b *testing.B) {
+	tcs := []int{1, 2, 4, 8, 16, 32, 64, 128, 256, 512}
+	for _, tc := range tcs {
+		b.Run(fmt.Sprintf("%5d", tc), func(b *testing.B) {
+			m := baseModel()
+			var bb bytes.Buffer
+			_ = m.SplitBeam(0, tc)
+			for i := 0; i < b.N; i++ {
+				_ = m.Run(&bb)
+				bb.Reset()
+			}
+		})
+	}
+}
