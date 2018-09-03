@@ -68,14 +68,6 @@ func TestJsonModel(t *testing.T) {
 	}
 }
 
-func TestRun(t *testing.T) {
-	m := baseModel()
-	var b bytes.Buffer
-	if err := m.Run(&b); err != nil {
-		t.Fatalf("Error : %v", err)
-	}
-}
-
 func TestModelFail(t *testing.T) {
 	m := Model{
 		Points: [][2]float64{
@@ -138,6 +130,13 @@ func TestModelFail(t *testing.T) {
 }
 
 func TestSplit(t *testing.T) {
+	m := baseModel()
+	var b bytes.Buffer
+	if err := m.Run(&b); err != nil {
+		t.Fatalf("Error : %v", err)
+	}
+	reaction := m.LoadCases[0].Reactions[0]
+
 	for i := 1; i < 10; i++ {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			m := baseModel()
@@ -146,6 +145,14 @@ func TestSplit(t *testing.T) {
 			if err := m.Run(&b); err != nil {
 				t.Logf("%s", m)
 				t.Fatalf("Error : %v", err)
+			}
+
+			r := m.LoadCases[0].Reactions[0]
+			for j := 0; j < 3; j++ {
+				diff := math.Abs((reaction[j] - r[j]) / r[j])
+				if diff > 1e-10 {
+					t.Fatalf("Diff[%d] is not ok : %15.5e", j, diff)
+				}
 			}
 		})
 	}
