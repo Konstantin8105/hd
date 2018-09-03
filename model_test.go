@@ -1,12 +1,13 @@
 package hd
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 )
 
-func TestJsonModel(t *testing.T) {
-	m := Model{
+func baseModel() Model {
+	return Model{
 		Points: [][2]float64{
 			[2]float64{0.0, 0.0},
 			[2]float64{1.0, 0.0},
@@ -38,33 +39,35 @@ func TestJsonModel(t *testing.T) {
 			},
 		},
 	}
+}
+
+func TestJsonModel(t *testing.T) {
+	m := baseModel()
 	b, err := json.Marshal(m)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("%s", b)
 
 	var mu Model
 	err = json.Unmarshal(b, &mu)
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Logf("%#v", mu)
 
-	err = mu.Run(nil)
+	bu, err := json.Marshal(m)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = mu.SplitBeam(0, 3)
-	if err != nil {
-		t.Fatalf("Splitting is not correct: %v", err)
+	if !bytes.Equal(b, bu) {
+		t.Fatalf("Is not same:\n%s\n%s", b, bu)
 	}
+}
 
-	err = mu.Run(nil)
-	if err != nil {
-		t.Fatal(err)
+func TestRun(t *testing.T) {
+	m := baseModel()
+	var b bytes.Buffer
+	if err := m.Run(&b); err != nil {
+		t.Fatalf("Error : %v", err)
 	}
-
-	t.Logf("%s\n%s", m, mu)
 }

@@ -3,6 +3,7 @@ package hd
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"gonum.org/v1/gonum/mat"
@@ -33,7 +34,7 @@ type Model struct {
 	LoadCases []LoadCase
 
 	// output file
-	out *os.File
+	out io.Writer
 }
 
 // BeamProp is beam property
@@ -113,7 +114,7 @@ type LoadNode struct {
 }
 
 // Run is run calculation of model
-func (m *Model) Run(out *os.File) (err error) {
+func (m *Model) Run(out io.Writer) (err error) {
 
 	// by default output in standart stdio
 	if out == nil {
