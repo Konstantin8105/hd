@@ -218,6 +218,7 @@ func BenchmarkRun(b *testing.B) {
 			m := baseModel()
 			var bb bytes.Buffer
 			_ = m.SplitBeam(0, tc)
+			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				_ = m.Run(&bb)
 				bb.Reset()
