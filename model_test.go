@@ -55,4 +55,14 @@ func TestJsonModel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	err = mu.SplitBeam(0, 3)
+	if err != nil {
+		t.Fatalf("Splitting is not correct: %v", err)
+	}
+
+	err = mu.Run(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

@@ -151,12 +151,13 @@ func (m *Model) run(lc *LoadCase) (err error) {
 	// assembly nodal load
 	p := m.assemblyNodalLoad(lc)
 
-	// calculate nodal displacament
-	var d mat.Dense
-
 	// add support
 	m.addSupport(k)
 
+	// calculate nodal displacament
+	dof := 3 * len(m.Points)
+	dataDisp := make([]float64, dof)
+	d := mat.NewDense(dof, 1, dataDisp)
 	err = d.Solve(k, p)
 	if err != nil {
 		return err
@@ -178,7 +179,7 @@ func (m *Model) run(lc *LoadCase) (err error) {
 	for bi, b := range m.Beams {
 		for i := 0; i < 3; i++ {
 			for j := 0; j < 2; j++ {
-				Zo.Set(b.N[j]*3+i, 0, d.At(3*b.N[j]+i, 0))
+				Zo.Set(j*3+i, 0, d.At(b.N[j]*3+i, 0))
 			}
 		}
 		tr := m.getCoordTransStiffBeam2d(bi)
@@ -200,10 +201,6 @@ func (m *Model) run(lc *LoadCase) (err error) {
 			}
 		}
 	}
-
-	fmt.Println("Global disp: ", lc.PointDisplacementGlobal)
-	fmt.Println("Local force: ", lc.BeamForces)
-	fmt.Println("Reactions  : ", lc.Reactions)
 
 	return nil
 }
