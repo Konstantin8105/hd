@@ -279,7 +279,8 @@ func (m Model) String() (out string) {
 	// beams
 	out += fmt.Sprintf("Beam property:\n")
 	out += fmt.Sprintf("%5s %15s %15s ", "Index", "Start point", "End point")
-	out += fmt.Sprintf("%15s %15s %15s\n", "Area,sq.m", "Moment inertia,m4", "Elasticity,Pa")
+	out += fmt.Sprintf("%15s %15s %15s\n",
+		"Area,sq.m", "Moment inertia,m4", "Elasticity,Pa")
 	for i := 0; i < len(m.Beams); i++ {
 		out += fmt.Sprintf("%5d %15d %15d ",
 			i, m.Beams[i].N[0], m.Beams[i].N[1])
@@ -288,9 +289,9 @@ func (m Model) String() (out string) {
 	}
 	// loads
 	for lc := 0; lc < len(m.LoadCases); lc++ {
-		out += fmt.Sprintf("Load case #%3d\n", lc)
+		out += fmt.Sprintf("\nLoad case #%3d\n", lc)
 		out += fmt.Sprintf("%5s %15s %15s %15s\n",
-			"Point", "Fx, N", "Fy, N", "Fz, N")
+			"Point", "Fx, N", "Fy, N", "M, N*m")
 		for _, ln := range m.LoadCases[lc].LoadNodes {
 			out += fmt.Sprintf("%5d %15.5f %15.5f %15.5f\n",
 				ln.N, ln.Forces[0], ln.Forces[1], ln.Forces[2])
@@ -298,17 +299,37 @@ func (m Model) String() (out string) {
 		l := m.LoadCases[lc]
 		if len(l.PointDisplacementGlobal) > 0 {
 			out += fmt.Sprintf("Point displacament in global system coordinate:\n")
-			out += fmt.Sprintf("%5s %15s %15s\n", "Index", "DX, m", "DY, m")
+			out += fmt.Sprintf("%5s %15s %15s\n", "Point", "DX, m", "DY, m")
 			for i := 0; i < len(l.PointDisplacementGlobal); i++ {
 				out += fmt.Sprintf("%5d %15.5e %15.5e\n",
 					i, l.PointDisplacementGlobal[i][0], l.PointDisplacementGlobal[i][1])
 			}
 		}
 		if len(l.BeamForces) > 0 {
-			out += fmt.Sprintf("%v\n", l.BeamForces)
+			out += fmt.Sprintf("Local force in beam:\n")
+			out += fmt.Sprintf("%5s %15s %15s %15s %15s %15s %15s \n",
+				"Index", "Fx, N", "Fy, N", "M, N*m", "Fx, N", "Fy, N", "M, N*m")
+			for i := 0; i < len(l.BeamForces); i++ {
+				out += fmt.Sprintf("%5d ", i)
+				for j := 0; j < 6; j++ {
+					out += fmt.Sprintf("%15.5e ", l.BeamForces[i][j])
+				}
+				out += fmt.Sprintf("\n")
+			}
 		}
 		if len(l.Reactions) > 0 {
-			out += fmt.Sprintf("%v\n", l.Reactions)
+			out += fmt.Sprintf("Reaction on support:\n")
+			out += fmt.Sprintf("%5s %15s %15s %15s \n",
+				"Index", "Fx, N", "Fy, N", "M, N*m")
+			for i := 0; i < len(l.Reactions); i++ {
+				if l.Reactions[i][0] == 0 &&
+					l.Reactions[i][1] == 0 &&
+					l.Reactions[i][2] == 0 {
+					continue
+				}
+				out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e \n",
+					i, l.Reactions[i][0], l.Reactions[i][1], l.Reactions[i][2])
+			}
 		}
 	}
 
