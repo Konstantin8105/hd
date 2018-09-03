@@ -13,13 +13,10 @@ func TestJsonModel(t *testing.T) {
 		},
 		Beams: []BeamProp{
 			{
-				N:       [2]int{0, 1},
-				A:       12e-4,
-				J:       120e-6,
-				E:       2.0e11,
-				G:       81e9,
-				Density: 78500,
-				Cte:     12e-6,
+				N: [2]int{0, 1},
+				A: 12e-4,
+				J: 120e-6,
+				E: 2.0e11,
 			},
 		},
 		Supports: [][3]bool{

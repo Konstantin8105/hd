@@ -55,18 +55,6 @@ type BeamProp struct {
 	// E is modulus of elasticity
 	// Unit : Pa
 	E float64
-
-	// G is shear modulus
-	// Unit : Pa
-	G float64
-
-	// Density
-	// Unit : N/m^3
-	Density float64
-
-	// Coefficient of thermal expansion
-	// Unit: 1/deg.C
-	Cte float64
 }
 
 // LoadCase is summary combination of loads

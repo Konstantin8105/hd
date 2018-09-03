@@ -154,9 +154,6 @@ func (m *Model) checkBeams() error {
 			{b.A, "cross-section area"},
 			{b.J, "moment of inertia"},
 			{b.E, "modulus of elasticity"},
-			{b.G, "shear modulus"},
-			{b.Density, "density"},
-			{b.Cte, "coefficient of thermal expansion"},
 		}
 
 		for _, value := range values {
