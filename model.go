@@ -286,6 +286,16 @@ func (m Model) String() (out string) {
 		out += fmt.Sprintf("%15.5e %15.5e %15.5e\n",
 			m.Beams[i].A, m.Beams[i].J, m.Beams[i].E)
 	}
+	// loads
+	for lc := 0; lc < len(m.LoadCases); lc++ {
+		out += fmt.Sprintf("Load case #%3d\n", lc)
+		out += fmt.Sprintf("%5s %15s %15s %15s\n",
+			"Point", "Fx, N", "Fy, N", "Fz, N")
+		for _, ln := range m.LoadCases[lc].LoadNodes {
+			out += fmt.Sprintf("%5d %15.5f %15.5f %15.5f\n",
+				ln.N, ln.Forces[0], ln.Forces[1], ln.Forces[2])
+		}
+	}
 
 	return
 }
