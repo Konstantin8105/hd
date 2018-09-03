@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
+	"os"
 	"testing"
 
 	"github.com/bradleyjkemp/cupaloy"
@@ -121,8 +123,17 @@ func TestModelFail(t *testing.T) {
 			},
 		},
 	}
-	var b bytes.Buffer
-	err := m.Run(&b)
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatalf("cannot create temp file : %v", err)
+	}
+	stdout := os.Stdout
+	os.Stdout = f
+	defer func() {
+		os.Stdout = stdout
+	}()
+
+	err = m.Run(nil)
 	if err == nil {
 		t.Fatalf("Error : %v", err)
 	}
