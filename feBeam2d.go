@@ -8,7 +8,12 @@ import (
 )
 
 // distance between 2 point of beam
-func (m Model) distance(st, en int) float64 {
+func (m Model) distance(st, en int) (res float64) {
+	defer func() {
+		if r := recover(); r != nil {
+			res = math.NaN()
+		}
+	}()
 	var sum float64
 	for i := 0; i < len(m.Points[st]); i++ {
 		sum += math.Pow(m.Points[st][i]-m.Points[en][i], 2.0)
