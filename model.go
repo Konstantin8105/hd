@@ -257,3 +257,35 @@ func (m *Model) addSupport(k *mat.Dense) {
 		}
 	}
 }
+
+func (m Model) String() (out string) {
+	out += "\n"
+	// points and supports
+	out += fmt.Sprintf("Point coordinates:\n")
+	out += fmt.Sprintf("%5s %15s %15s ", "Index", "X, m", "Y, m")
+	out += fmt.Sprintf("%5s %5s %5s (0 - free, 1 - fixed)\n", "SX", "SY", "SM")
+	for i := 0; i < len(m.Points); i++ {
+		out += fmt.Sprintf("%5d %15.5f %15.5f ",
+			i, m.Points[i][0], m.Points[i][1])
+		for j := 0; j < 3; j++ {
+			if m.Supports[i][j] {
+				out += fmt.Sprintf("%5d ", 1) // fixed
+			} else {
+				out += fmt.Sprintf("%5d ", 0) // free
+			}
+		}
+		out += fmt.Sprintf("\n")
+	}
+	// beams
+	out += fmt.Sprintf("Beam property:\n")
+	out += fmt.Sprintf("%5s %15s %15s ", "Index", "Start point", "End point")
+	out += fmt.Sprintf("%15s %15s %15s\n", "Area,sq.m", "Moment inertia,m4", "Elasticity,Pa")
+	for i := 0; i < len(m.Beams); i++ {
+		out += fmt.Sprintf("%5d %15d %15d ",
+			i, m.Beams[i].N[0], m.Beams[i].N[1])
+		out += fmt.Sprintf("%15.5e %15.5e %15.5e\n",
+			m.Beams[i].A, m.Beams[i].J, m.Beams[i].E)
+	}
+
+	return
+}
