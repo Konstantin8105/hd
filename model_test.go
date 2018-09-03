@@ -66,5 +66,5 @@ func TestJsonModel(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Logf("%s", mu)
+	t.Logf("%s\n%s", m, mu)
 }

@@ -128,11 +128,11 @@ func (m *Model) Run(out *os.File) (err error) {
 	}
 
 	// calculation by load cases
-	for i, lc := range m.LoadCases {
+	for i := range m.LoadCases {
 		fmt.Fprintf(m.out, "Calculate load case %d of %d\n",
 			i,
 			len(m.LoadCases))
-		err = m.run(&lc)
+		err = m.run(&m.LoadCases[i])
 		if err != nil {
 			e := fmt.Sprintf("Error in load case %d: %v", i, err)
 			fmt.Fprintf(m.out, e)
@@ -294,6 +294,21 @@ func (m Model) String() (out string) {
 		for _, ln := range m.LoadCases[lc].LoadNodes {
 			out += fmt.Sprintf("%5d %15.5f %15.5f %15.5f\n",
 				ln.N, ln.Forces[0], ln.Forces[1], ln.Forces[2])
+		}
+		l := m.LoadCases[lc]
+		if len(l.PointDisplacementGlobal) > 0 {
+			out += fmt.Sprintf("Point displacament in global system coordinate:\n")
+			out += fmt.Sprintf("%5s %15s %15s\n", "Index", "DX, m", "DY, m")
+			for i := 0; i < len(l.PointDisplacementGlobal); i++ {
+				out += fmt.Sprintf("%5d %15.5e %15.5e\n",
+					i, l.PointDisplacementGlobal[i][0], l.PointDisplacementGlobal[i][1])
+			}
+		}
+		if len(l.BeamForces) > 0 {
+			out += fmt.Sprintf("%v\n", l.BeamForces)
+		}
+		if len(l.Reactions) > 0 {
+			out += fmt.Sprintf("%v\n", l.Reactions)
 		}
 	}
 
