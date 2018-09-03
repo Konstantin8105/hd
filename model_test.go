@@ -136,20 +136,30 @@ func TestSplit(t *testing.T) {
 		t.Fatalf("Error : %v", err)
 	}
 	reaction := m.LoadCases[0].Reactions[0]
+	displacament := m.LoadCases[0].PointDisplacementGlobal[1]
 
 	for i := 1; i < 10; i++ {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
 			m := baseModel()
 			var b bytes.Buffer
-			m.SplitBeam(0, i)
+			if err := m.SplitBeam(0, i); err != nil {
+				t.Fatalf("Cannot split %d: %v", i, err)
+			}
 			if err := m.Run(&b); err != nil {
-				t.Logf("%s", m)
 				t.Fatalf("Error : %v", err)
 			}
 
 			r := m.LoadCases[0].Reactions[0]
 			for j := 0; j < 3; j++ {
 				diff := math.Abs((reaction[j] - r[j]) / r[j])
+				if diff > 1e-10 {
+					t.Fatalf("Diff[%d] is not ok : %15.5e", j, diff)
+				}
+			}
+
+			d := m.LoadCases[0].PointDisplacementGlobal[1]
+			for j := 0; j < 3; j++ {
+				diff := math.Abs((displacament[j] - d[j]) / d[j])
 				if diff > 1e-10 {
 					t.Fatalf("Diff[%d] is not ok : %15.5e", j, diff)
 				}
@@ -178,7 +188,9 @@ func TestSplitFail(t *testing.T) {
 
 func TestModelString(t *testing.T) {
 	m := baseModel()
-	m.SplitBeam(0, 10)
+	if err := m.SplitBeam(0, 10); err != nil {
+		t.Fatalf("Cannot split : %v", err)
+	}
 	var b bytes.Buffer
 	if err := m.Run(&b); err != nil {
 		t.Errorf("error : %v", err)
