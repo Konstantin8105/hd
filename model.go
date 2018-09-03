@@ -186,6 +186,7 @@ func (m *Model) run(lc *LoadCase) (err error) {
 	dataS := make([]float64, 6)
 	Zo := mat.NewDense(6, 1, data)
 	lc.BeamForces = make([][6]float64, len(m.Beams))
+	lc.Reactions = make([][3]float64, len(m.Points))
 	for bi, b := range m.Beams {
 		for i := 0; i < 3; i++ {
 			for j := 0; j < 2; j++ {
@@ -198,15 +199,23 @@ func (m *Model) run(lc *LoadCase) (err error) {
 		kr := m.getStiffBeam2d(bi)
 		s := mat.NewDense(6, 1, dataS)
 		s.Mul(kr, &z)
+		// calculate beam forces
 		for i := 0; i < 6; i++ {
 			lc.BeamForces[bi][i] = s.At(i, 0)
 		}
+		// calculate reactions
+		for i := 0; i < 2; i++ {
+			for j := 0; j < 3; j++ {
+				if m.Supports[b.N[i]][j] {
+					lc.Reactions[b.N[i]][j] += s.At(i*3+j, 0)
+				}
+			}
+		}
 	}
-
-	// TODO: add reaction calculation
 
 	fmt.Println("Global disp: ", lc.PointDisplacementGlobal)
 	fmt.Println("Local force: ", lc.BeamForces)
+	fmt.Println("Reactions  : ", lc.Reactions)
 
 	return nil
 }
