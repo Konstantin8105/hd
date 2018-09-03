@@ -156,8 +156,8 @@ func TestSplitFail(t *testing.T) {
 	tcs := []struct {
 		beamIndex, amounts int
 	}{
-		{-1, 0},
-		{100, 0},
+		{-1, 5},
+		{100, 5},
 		{0, -1},
 	}
 	for i, tc := range tcs {
