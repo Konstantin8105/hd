@@ -3,6 +3,7 @@ package hd
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"testing"
 )
 
@@ -69,5 +70,19 @@ func TestRun(t *testing.T) {
 	var b bytes.Buffer
 	if err := m.Run(&b); err != nil {
 		t.Fatalf("Error : %v", err)
+	}
+}
+
+func TestSplit(t *testing.T) {
+	for i := 1; i < 10; i++ {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			m := baseModel()
+			var b bytes.Buffer
+			m.SplitBeam(0, i)
+			if err := m.Run(&b); err != nil {
+				t.Logf("%s", m)
+				t.Fatalf("Error : %v", err)
+			}
+		})
 	}
 }
