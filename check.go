@@ -42,41 +42,41 @@ func (m *Model) checkInputData() error {
 	return nil
 }
 
-type ErrorFunc struct {
+type errorFunc struct {
 	isError bool
 	Err     error
 }
 
-func isNaN(f float64) ErrorFunc {
-	return ErrorFunc{
+func isNaN(f float64) errorFunc {
+	return errorFunc{
 		isError: math.IsNaN(f),
 		Err:     fmt.Errorf("NaN float"),
 	}
 }
 
-func isInf(f float64) ErrorFunc {
-	return ErrorFunc{
+func isInf(f float64) errorFunc {
+	return errorFunc{
 		isError: math.IsInf(f, 0),
 		Err:     fmt.Errorf("infinity float"),
 	}
 }
 
-func isPositive(f float64) ErrorFunc {
-	return ErrorFunc{
+func isPositive(f float64) errorFunc {
+	return errorFunc{
 		isError: f < 0,
 		Err:     fmt.Errorf("negative float"),
 	}
 }
 
-func isTrue(b bool) ErrorFunc {
-	return ErrorFunc{
+func isTrue(b bool) errorFunc {
+	return errorFunc{
 		isError: b,
 		Err:     fmt.Errorf("error case is true"),
 	}
 }
 
-func isNotZero(f float64) ErrorFunc {
-	return ErrorFunc{
+func isNotZero(f float64) errorFunc {
+	return errorFunc{
 		isError: f == 0,
 		Err:     fmt.Errorf("zero float"),
 	}
@@ -95,7 +95,7 @@ func (e ErrorPoint) Error() string {
 		e.Err)
 }
 
-func isOk(errs ...ErrorFunc) (err error) {
+func isOk(errs ...errorFunc) (err error) {
 	for _, e := range errs {
 		if e.isError {
 			return e.Err
@@ -295,7 +295,7 @@ func (m *Model) checkModal() (err error) {
 			err = isOk(
 				isNaN(ld.Mass),
 				isInf(ld.Mass),
-				ErrorFunc{
+				errorFunc{
 					isError: ld.Mass < 0,
 					Err:     fmt.Errorf("mass is negative"),
 				},
