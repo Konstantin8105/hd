@@ -152,17 +152,31 @@ func (m *Model) Run(out io.Writer) (err error) {
 		fmt.Fprintf(m.out, "Calculate load case %d of %d\n",
 			i,
 			len(m.LoadCases))
-		err = m.run(&m.LoadCases[i])
+		err = m.runLinearElastic(&m.LoadCases[i])
 		if err != nil {
 			e := fmt.Sprintf("Error in load case %d: %v", i, err)
 			fmt.Fprintf(m.out, e)
 			return errors.New(e)
 		}
 	}
+
+	// calculation by modal cases
+	for i := range m.ModalCases {
+		fmt.Fprintf(m.out, "Calculate modal case %d of %d\n",
+			i,
+			len(m.ModalCases))
+		err = m.runModal(&m.ModalCases[i])
+		if err != nil {
+			e := fmt.Sprintf("Error in modal case %d: %v", i, err)
+			fmt.Fprintf(m.out, e)
+			return errors.New(e)
+		}
+	}
+
 	return nil
 }
 
-func (m *Model) run(lc *LoadCase) (err error) {
+func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
 
 	// assembly matrix of stiffiner
@@ -283,6 +297,10 @@ func (m *Model) addSupport(k *mat.Dense) {
 			}
 		}
 	}
+}
+
+func (m *Model) runModal(lc *ModalCase) (err error) {
+	return
 }
 
 func (m Model) String() (out string) {
