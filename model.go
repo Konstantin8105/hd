@@ -317,7 +317,6 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		for j := 0; j < len(mc.ModalMasses); j++ {
 			if mc.ModalMasses[j].N == p {
 				mass += mc.ModalMasses[j].Mass
-				// TODO: mass cannot be negative
 			}
 		}
 		if mass == 0.0 {

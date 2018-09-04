@@ -27,6 +27,14 @@ func (m *Model) checkInputData() error {
 	if err := m.checkLoad(); err != nil {
 		et.Add(err)
 	}
+	// modal cases
+	if err := m.checkModalCases(); err != nil {
+		et.Add(err)
+	}
+	// modal
+	if err := m.checkModal(); err != nil {
+		et.Add(err)
+	}
 	// error handling
 	if et.IsError() {
 		return et
@@ -241,6 +249,63 @@ func (m *Model) checkLoad() (err error) {
 						Err:      err,
 					})
 				}
+			}
+		}
+	}
+	if et.IsError() {
+		return et
+	}
+	return nil
+}
+
+func (m *Model) checkModalCases() (err error) {
+	// always ok
+	return nil
+}
+
+type ErrorModal struct {
+	ModalCase int
+	ModalPos  int
+	Err       error
+}
+
+func (e ErrorModal) Error() string {
+	return fmt.Sprintf("Error in modal case %d, mass position %d : %v",
+		e.ModalCase,
+		e.ModalPos,
+		e.Err)
+}
+
+func (m *Model) checkModal() (err error) {
+	et := ErrorTree{Name: "checkModal"}
+	for i := range m.ModalCases {
+		for j := range m.ModalCases[i].ModalMasses {
+			ld := m.ModalCases[i].ModalMasses[j]
+			err := isOk(
+				isTrue(ld.N < 0),
+				isTrue(ld.N >= len(m.Points)),
+			)
+			if err != nil {
+				et.Add(ErrorModal{
+					ModalCase: i,
+					ModalPos:  j,
+					Err:       fmt.Errorf("outside index of point : %d", ld.N),
+				})
+			}
+			err = isOk(
+				isNaN(ld.Mass),
+				isInf(ld.Mass),
+				ErrorFunc{
+					isError: ld.Mass < 0,
+					Err:     fmt.Errorf("mass is negative"),
+				},
+			)
+			if err != nil {
+				et.Add(ErrorModal{
+					ModalCase: i,
+					ModalPos:  j,
+					Err:       err,
+				})
 			}
 		}
 	}

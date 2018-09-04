@@ -132,6 +132,16 @@ func TestModelFail(t *testing.T) {
 				},
 			},
 		},
+		ModalCases: []ModalCase{
+			ModalCase{
+				ModalMasses: []ModalMass{
+					{
+						N:    7,
+						Mass: -100,
+					},
+				},
+			},
+		},
 	}
 	f, err := ioutil.TempFile("", "")
 	if err != nil {
