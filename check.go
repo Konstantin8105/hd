@@ -309,6 +309,7 @@ func (m *Model) checkModal() (err error) {
 			}
 
 			// TODO: mass cannot be in support
+			// TODO: summ of mass is not zero or less zero
 		}
 	}
 	if et.IsError() {

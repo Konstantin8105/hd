@@ -49,7 +49,7 @@ func baseModel() Model {
 				ModalMasses: []ModalMass{
 					{
 						N:    1,
-						Mass: 100,
+						Mass: 10000,
 					},
 				},
 			},

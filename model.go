@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 
 	"gonum.org/v1/gonum/mat"
@@ -299,6 +300,9 @@ func (m *Model) addSupport(k *mat.Dense) {
 	}
 }
 
+// Earth gravity, m/sq.sec.
+const Gravity float64 = 9.80665
+
 func (m *Model) runModal(mc *ModalCase) (err error) {
 	fmt.Fprintf(m.out, "Modal Analysis\n")
 
@@ -309,10 +313,9 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	m.addSupport(k)
 
 	dof := 3 * len(m.Points)
-	data := make([]float64, dof)
-	ms := mat.NewDense(dof, 1, data)
 
-	dataH := make([]float64, dof*dof)
+	dataM := make([]float64, dof*dof)
+	M := mat.NewDense(dof, dof, dataM)
 
 	for p := 0; p < len(m.Points); p++ {
 		// summary mass
@@ -322,48 +325,79 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 				mass += mc.ModalMasses[j].Mass
 			}
 		}
-		if mass == 0.0 {
-			continue
+		// TODO
+		i := 1
+		j := 1
+		// for i := 0; i < 3; i++ {
+		// 	for j := 0; j < 3; j++ {
+		M.Set(p*3+i, p*3+j, mass/Gravity)
+		// 	}
+		// }
+	}
+
+	// fmt.Println("-- MASS --")
+	// view(M)
+
+	dataH := make([]float64, dof*dof)
+	h := mat.NewDense(dof, dof, dataH)
+
+	// 	// TODO: divide by 9.8
+	//
+	// 	// TODO: add Ho calculation
+
+	for col := 0; col < dof; col++ {
+		dataMS := make([]float64, dof)
+		MS := mat.NewDense(dof, 1, dataMS)
+		for i := 0; i < dof; i++ {
+			MS.Set(i, 0, M.At(i, col))
 		}
-		// zero initialization
-		for j := 0; j < dof; j++ {
-			ms.Set(j, 0, 0.0)
-		}
-		// create mass vector
-		ms.Set(3*p+0, 0, mass)
-		ms.Set(3*p+1, 0, mass)
 
-		// TODO: divide by 9.8
-
-		// TODO: add Ho calculation
-		// fmt.Println("mass = ", mass)
-		// view(ms)
-
-		// fmt.Println("calc h")
-		h := mat.NewDense(dof, 1, dataH[p*dof:(p+1)*dof])
-		err = h.Solve(k, ms)
+		datahh := make([]float64, dof)
+		hh := mat.NewDense(dof, 1, datahh)
+		err = hh.Solve(k, MS)
 		if err != nil {
 			return err
 		}
-		// view(h)
-		_ = h
 
-		// fmt.Println(">", dataH)
-
-		// fmt.Println("----")
+		for i := 0; i < dof; i++ {
+			h.Set(i, col, hh.At(i, 0))
+		}
 	}
 
-	// var e mat.Eigen
-	// h := mat.NewDense(dof, dof, dataH)
-	// ok := e.Factorize(h, true, true)
+	// fmt.Println("calc h")
+	// view(h)
+
+	var e mat.Eigen
+	// fmt.Println(">>>>>>> hhhh")
+	// view(h)
+	ok := e.Factorize(h, true, true)
+	if !ok {
+		return fmt.Errorf("Eigen factorization is not ok")
+	}
 	// fmt.Println(">> ", ok)
 	// fmt.Println("}} ", e.Values(nil))
+	// vals := e.Values(nil)
+	// for i := 0; i < len(vals); i++ {
+	// 	fmt.Println("Fz = ", 1./(math.Sqrt(real(vals[i]))*2.0*math.Pi))
+	// }
 	// fmt.Println("Vector :")
 	// view(e.Vectors())
-	// fmt.Println("Left vector:")
-	// view(e.LeftVectors())
 
-	// TODO
+	v := e.Vectors()
+	for i := 0; i < dof; i++ {
+		var max float64 = v.At(i, 0)
+		for j := 0; j < dof; j++ {
+			if math.Abs(v.At(j, i)) > math.Abs(max) {
+				max = v.At(j, i)
+			}
+		}
+		for j := 0; j < dof; j++ {
+			v.Set(j, i, v.At(j, i)/max)
+		}
+	}
+	// fmt.Println("----")
+	// view(v)
+	_ = v
 
 	return
 }
