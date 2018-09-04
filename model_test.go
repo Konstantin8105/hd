@@ -289,7 +289,9 @@ func TestTodo(t *testing.T) {
 			}
 		})
 	}
-	t.Logf("Amount TODO: %d", amount)
+	if amount > 0 {
+		t.Logf("Amount TODO: %d", amount)
+	}
 }
 
 func BenchmarkRun(b *testing.B) {
