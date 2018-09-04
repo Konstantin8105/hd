@@ -44,6 +44,16 @@ func baseModel() Model {
 				},
 			},
 		},
+		ModalCases: []ModalCase{
+			ModalCase{
+				ModalMasses: []ModalMass{
+					{
+						N:    1,
+						Mass: 100,
+					},
+				},
+			},
+		},
 	}
 }
 

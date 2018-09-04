@@ -299,7 +299,47 @@ func (m *Model) addSupport(k *mat.Dense) {
 	}
 }
 
-func (m *Model) runModal(lc *ModalCase) (err error) {
+func (m *Model) runModal(mc *ModalCase) (err error) {
+	fmt.Fprintf(m.out, "Modal Analysis\n")
+
+	// assembly matrix of stiffiner
+	k := m.assemblyK()
+
+	// add support
+	m.addSupport(k)
+
+	dof := 3 * len(m.Points)
+	data := make([]float64, dof)
+	ms := mat.NewDense(dof, 1, data)
+	for p := 0; p < len(m.Points); p++ {
+		// summary mass
+		var mass float64
+		for j := 0; j < len(mc.ModalMasses); j++ {
+			if mc.ModalMasses[j].N == p {
+				mass += mc.ModalMasses[j].Mass
+				// TODO: mass cannot be negative
+			}
+		}
+		if mass == 0.0 {
+			continue
+		}
+		// zero initialization
+		for j := 0; j < dof; j++ {
+			ms.Set(j, 0, 0.0)
+		}
+		// create mass vector
+		ms.Set(3*p+0, 0, mass)
+		ms.Set(3*p+1, 0, mass)
+
+		// TODO: divide by 9.8
+
+		// TODO: add Ho calculation
+		fmt.Println("mass = ", mass)
+		view(ms)
+	}
+
+	// TODO
+
 	return
 }
 
