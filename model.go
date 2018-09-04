@@ -33,6 +33,9 @@ type Model struct {
 	// LoadCases is slice of load cases
 	LoadCases []LoadCase
 
+	// ModalCases is slice of modal cases
+	ModalCases []ModalCase
+
 	// output file
 	out io.Writer
 }
@@ -100,6 +103,21 @@ type LoadCase struct {
 	Reactions [][3]float64
 }
 
+// ModalCase is modal calculation case
+type ModalCase struct {
+	ModalMasses []ModalMass
+}
+
+// ModalMass is mass of point
+type ModalMass struct {
+	// N is point index
+	N int
+
+	// Mass of point
+	// Unit: TODO
+	Mass float64
+}
+
 // LoadNode is node load on specific point
 type LoadNode struct {
 	// N is point index
@@ -110,6 +128,7 @@ type LoadNode struct {
 	// [0] - X
 	// [1] - Y
 	// [2] - M
+	// Unit: N
 	Forces [3]float64
 }
 
