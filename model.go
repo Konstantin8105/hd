@@ -311,6 +311,9 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	dof := 3 * len(m.Points)
 	data := make([]float64, dof)
 	ms := mat.NewDense(dof, 1, data)
+
+	dataH := make([]float64, dof*dof)
+
 	for p := 0; p < len(m.Points); p++ {
 		// summary mass
 		var mass float64
@@ -337,8 +340,7 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		// view(ms)
 
 		// fmt.Println("calc h")
-		dataH := make([]float64, dof)
-		h := mat.NewDense(dof, 1, dataH)
+		h := mat.NewDense(dof, 1, dataH[p*dof:(p+1)*dof])
 		err = h.Solve(k, ms)
 		if err != nil {
 			return err
@@ -346,12 +348,20 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		// view(h)
 		_ = h
 
+		// fmt.Println(">", dataH)
+
 		// fmt.Println("----")
-		// var e mat.Eigen
-		// ok := e.Factorize(h, false, false)
-		// fmt.Println(">> ", ok)
-		// fmt.Println("}} ", e.Values(nil))
 	}
+
+	// var e mat.Eigen
+	// h := mat.NewDense(dof, dof, dataH)
+	// ok := e.Factorize(h, true, true)
+	// fmt.Println(">> ", ok)
+	// fmt.Println("}} ", e.Values(nil))
+	// fmt.Println("Vector :")
+	// view(e.Vectors())
+	// fmt.Println("Left vector:")
+	// view(e.LeftVectors())
 
 	// TODO
 

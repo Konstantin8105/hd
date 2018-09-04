@@ -53,14 +53,14 @@ func baseModel() Model {
 					},
 				},
 			},
-			ModalCase{
-				ModalMasses: []ModalMass{
-					{
-						N: 1,
-						// Mass is zero
-					},
-				},
-			},
+			// ModalCase{
+			// 	ModalMasses: []ModalMass{
+			// 		{
+			// 			N: 1,
+			// 			// Mass is zero
+			// 		},
+			// 	},
+			// },
 		},
 	}
 }

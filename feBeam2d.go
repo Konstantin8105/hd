@@ -25,7 +25,7 @@ func view(k *mat.Dense) {
 	r, c := k.Dims()
 	for j := 0; j < r; j++ {
 		for i := 0; i < c; i++ {
-			fmt.Printf("\t%15.2e", k.At(j, i))
+			fmt.Printf(" %10.3e", k.At(j, i))
 		}
 		fmt.Printf("\n")
 	}
