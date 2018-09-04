@@ -307,6 +307,8 @@ func (m *Model) checkModal() (err error) {
 					Err:       err,
 				})
 			}
+
+			// TODO: mass cannot be in support
 		}
 	}
 	if et.IsError() {
