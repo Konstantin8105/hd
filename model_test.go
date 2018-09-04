@@ -53,6 +53,14 @@ func baseModel() Model {
 					},
 				},
 			},
+			ModalCase{
+				ModalMasses: []ModalMass{
+					{
+						N: 1,
+						// Mass is zero
+					},
+				},
+			},
 		},
 	}
 }
@@ -138,6 +146,14 @@ func TestModelFail(t *testing.T) {
 					{
 						N:    7,
 						Mass: -100,
+					},
+				},
+			},
+			ModalCase{
+				ModalMasses: []ModalMass{
+					{
+						N:    -1,
+						Mass: math.NaN(),
 					},
 				},
 			},
