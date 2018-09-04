@@ -344,6 +344,12 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			return err
 		}
 		view(h)
+
+		// fmt.Println("----")
+		// var e mat.Eigen
+		// ok := e.Factorize(h, false, false)
+		// fmt.Println(">> ", ok)
+		// fmt.Println("}} ", e.Values(nil))
 	}
 
 	// TODO
