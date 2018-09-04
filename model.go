@@ -333,17 +333,18 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		// TODO: divide by 9.8
 
 		// TODO: add Ho calculation
-		fmt.Println("mass = ", mass)
-		view(ms)
+		// fmt.Println("mass = ", mass)
+		// view(ms)
 
-		fmt.Println("calc h")
+		// fmt.Println("calc h")
 		dataH := make([]float64, dof)
 		h := mat.NewDense(dof, 1, dataH)
 		err = h.Solve(k, ms)
 		if err != nil {
 			return err
 		}
-		view(h)
+		// view(h)
+		_ = h
 
 		// fmt.Println("----")
 		// var e mat.Eigen
