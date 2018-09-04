@@ -1,12 +1,16 @@
 package hd
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"math"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/bradleyjkemp/cupaloy"
@@ -245,6 +249,47 @@ func TestModelString(t *testing.T) {
 	if err := cupaloy.SnapshotMulti("TestModelString", m.String()); err != nil {
 		t.Fatalf("error: %s", err)
 	}
+}
+
+func TestTodo(t *testing.T) {
+	// Show all todos in code
+	source, err := filepath.Glob(fmt.Sprintf("./%s", "*.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var amount int
+
+	for i := range source {
+		t.Run(source[i], func(t *testing.T) {
+			file, err := os.Open(source[i])
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer file.Close()
+
+			pos := 1
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				line := scanner.Text()
+				pos++
+				index := strings.Index(line, "//")
+				if index < 0 {
+					continue
+				}
+				if !strings.Contains(line, "TODO") {
+					continue
+				}
+				t.Logf("%d %s", pos, line[index:])
+				amount++
+			}
+
+			if err := scanner.Err(); err != nil {
+				log.Fatal(err)
+			}
+		})
+	}
+	t.Logf("Amount TODO: %d", amount)
 }
 
 func BenchmarkRun(b *testing.B) {
