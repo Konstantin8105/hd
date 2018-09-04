@@ -114,7 +114,7 @@ type ModalMass struct {
 	N int
 
 	// Mass of point
-	// Unit: TODO
+	// Unit: N
 	Mass float64
 }
 
