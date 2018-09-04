@@ -19,9 +19,15 @@ func (m *Model) checkInputData() error {
 	if err := m.checkSupports(); err != nil {
 		et.Add(err)
 	}
-
-	// TODO check loads, load cases
-
+	// load cases
+	if err := m.checkLoadCases(); err != nil {
+		et.Add(err)
+	}
+	// load
+	if err := m.checkLoad(); err != nil {
+		et.Add(err)
+	}
+	// error handling
 	if et.IsError() {
 		return et
 	}
@@ -51,6 +57,13 @@ func isPositive(f float64) ErrorFunc {
 	return ErrorFunc{
 		isError: f < 0,
 		Err:     fmt.Errorf("negative float"),
+	}
+}
+
+func isTrue(b bool) ErrorFunc {
+	return ErrorFunc{
+		isError: b,
+		Err:     fmt.Errorf("error case is true"),
 	}
 }
 
@@ -123,18 +136,15 @@ func (m *Model) checkBeams() error {
 	et := ErrorTree{Name: "checkBeams"}
 	for i, b := range m.Beams {
 		for j := 0; j < len(b.N); j++ {
-			if b.N[j] < 0 {
+			err := isOk(
+				isTrue(b.N[j] < 0),
+				isTrue(b.N[j] >= len(m.Points)),
+			)
+			if err != nil {
 				et.Add(ErrorBeam{
 					BeamIndex: i,
 					Detail:    fmt.Sprintf("Point %d", j),
-					Err:       fmt.Errorf("negative index of point"),
-				})
-			}
-			if b.N[j] >= len(m.Points) {
-				et.Add(ErrorBeam{
-					BeamIndex: i,
-					Detail:    fmt.Sprintf("Point %d", j),
-					Err:       fmt.Errorf("outside index of point"),
+					Err:       fmt.Errorf("outside index of point : %d", b.N[j]),
 				})
 			}
 		}
@@ -181,6 +191,61 @@ func (m *Model) checkBeams() error {
 func (m *Model) checkSupports() (err error) {
 	if len(m.Points) != len(m.Supports) {
 		return fmt.Errorf("Amount of supports is not same amount of points")
+	}
+	return nil
+}
+
+func (m *Model) checkLoadCases() (err error) {
+	// always ok
+	return nil
+}
+
+type ErrorLoad struct {
+	LoadCase int
+	LoadPos  int
+	Err      error
+}
+
+func (e ErrorLoad) Error() string {
+	return fmt.Sprintf("Error in load case %d, load position %d : %v",
+		e.LoadCase,
+		e.LoadPos,
+		e.Err)
+}
+
+func (m *Model) checkLoad() (err error) {
+	et := ErrorTree{Name: "checkLoad"}
+	for i := range m.LoadCases {
+		for j := range m.LoadCases[i].LoadNodes {
+			ld := m.LoadCases[i].LoadNodes[j]
+			err := isOk(
+				isTrue(ld.N < 0),
+				isTrue(ld.N >= len(m.Points)),
+			)
+			if err != nil {
+				et.Add(ErrorLoad{
+					LoadCase: i,
+					LoadPos:  j,
+					Err:      fmt.Errorf("outside index of point : %d", ld.N),
+				})
+			}
+			for k := 0; k < 3; k++ {
+				err := isOk(
+					isNaN(ld.Forces[k]),
+					isInf(ld.Forces[k]),
+				)
+				if err != nil {
+					et.Add(ErrorLoad{
+						LoadCase: i,
+						LoadPos:  j,
+						Err:      err,
+					})
+				}
+			}
+		}
+	}
+	if et.IsError() {
+		return et
 	}
 	return nil
 }
