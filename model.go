@@ -483,6 +483,7 @@ func (m Model) String() (out string) {
 	// points and supports
 	out += fmt.Sprintf("Point coordinates:\n")
 	out += fmt.Sprintf("%5s %15s %15s ", "Index", "X, m", "Y, m")
+	// TODO: add label s is SUPPORTS
 	out += fmt.Sprintf("%5s %5s %5s (0 - free, 1 - fixed)\n", "SX", "SY", "SM")
 	for i := 0; i < len(m.Points); i++ {
 		out += fmt.Sprintf("%5d %15.5f %15.5f ",
