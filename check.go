@@ -8,7 +8,7 @@ import (
 )
 
 func (m *Model) checkInputData() error {
-	et := errors.ErrorTree{Name: "checkInputData"}
+	et := errors.Tree{Name: "checkInputData"}
 	// points
 	if err := m.checkPoints(); err != nil {
 		et.Add(err)
@@ -108,7 +108,7 @@ func isOk(errs ...errorFunc) (err error) {
 }
 
 func (m *Model) checkPoints() error {
-	et := errors.ErrorTree{Name: "checkPoints"}
+	et := errors.Tree{Name: "checkPoints"}
 	for i := range m.Points {
 		for j := 0; j < len(m.Points[i]); j++ {
 			err := isOk(
@@ -144,7 +144,7 @@ func (e ErrorBeam) Error() string {
 }
 
 func (m *Model) checkBeams() error {
-	et := errors.ErrorTree{Name: "checkBeams"}
+	et := errors.Tree{Name: "checkBeams"}
 	for i, b := range m.Beams {
 		for j := 0; j < len(b.N); j++ {
 			err := isOk(
@@ -225,7 +225,7 @@ func (e ErrorLoad) Error() string {
 }
 
 func (m *Model) checkLoad() (err error) {
-	et := errors.ErrorTree{Name: "checkLoad"}
+	et := errors.Tree{Name: "checkLoad"}
 	for i := range m.LoadCases {
 		for j := range m.LoadCases[i].LoadNodes {
 			ld := m.LoadCases[i].LoadNodes[j]
@@ -280,7 +280,7 @@ func (e ErrorModal) Error() string {
 }
 
 func (m *Model) checkModal() (err error) {
-	et := errors.ErrorTree{Name: "checkModal"}
+	et := errors.Tree{Name: "checkModal"}
 	for i := range m.ModalCases {
 		for j := range m.ModalCases[i].ModalMasses {
 			ld := m.ModalCases[i].ModalMasses[j]
