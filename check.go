@@ -295,10 +295,7 @@ func (m *Model) checkModal() (err error) {
 			err = isOk(
 				isNaN(ld.Mass),
 				isInf(ld.Mass),
-				errorFunc{
-					isError: ld.Mass < 0,
-					Err:     fmt.Errorf("mass is negative"),
-				},
+				isPositive(ld.Mass),
 			)
 			if err != nil {
 				et.Add(ErrorModal{
