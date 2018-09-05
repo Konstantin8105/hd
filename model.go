@@ -287,10 +287,13 @@ func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 		for i := 0; i < 2; i++ {
 			for j := 0; j < 3; j++ {
 				if m.Supports[b.N[i]][j] {
+					fmt.Println(">", b.N[i], m.Supports[b.N[i]][j], s.At(i*3+j, 0))
+					fmt.Println(">>", lc.BeamForces[bi])
 					lc.Reactions[b.N[i]][j] += s.At(i*3+j, 0)
 				}
 			}
 		}
+		fmt.Println("")
 	}
 
 	return nil
