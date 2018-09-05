@@ -323,6 +323,10 @@ func (m *Model) addSupport(k *mat.Dense) {
 const Gravity float64 = 9.80665
 
 func (m *Model) runModal(mc *ModalCase) (err error) {
+	// empty modal mass
+	if len(mc.ModalMasses) == 0 {
+		return nil
+	}
 
 	mcCases := []struct {
 		name      string
