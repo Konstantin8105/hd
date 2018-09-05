@@ -58,6 +58,7 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 	kr.Set(2, 2, EJL)
 	kr.Set(5, 5, EJL)
 
+	fmt.Println("Pins:", m.Pins[pos])
 	fmt.Printf("%12.5e\n\n", mat.Formatted(kr))
 
 	return kr

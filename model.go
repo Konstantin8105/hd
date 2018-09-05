@@ -177,6 +177,8 @@ func (m *Model) Run(out io.Writer) (err error) {
 	}
 	m.out = out
 
+	// TODO: if pins is empty , then create with all false
+
 	// check
 	err = m.checkInputData()
 	if err != nil {
