@@ -1,7 +1,6 @@
 package hd
 
 import (
-	"fmt"
 	"math"
 
 	"gonum.org/v1/gonum/mat"
@@ -58,9 +57,16 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 	kr.Set(2, 2, EJL)
 	kr.Set(5, 5, EJL)
 
-	fmt.Println("Pins:", m.Pins[pos])
-	for i := 0; i < 6; i++ {
-		if !m.Pins[pos][i] { // DoF is rigid
+	// fmt.Println("Pins:", m.Pins[pos])
+	// fmt.Printf("%12.5e\n\n", mat.Formatted(kr))
+	// TODO: ?? where better add
+	if m.Pins[pos][2] && m.Pins[pos][5] {
+		// truss
+		m.Pins[pos][1] = true
+		m.Pins[pos][4] = true
+	}
+	for fr := 0; fr < 6; fr++ {
+		if !m.Pins[pos][fr] { // DoF is rigid
 			continue
 		}
 		// DoF is free
@@ -72,9 +78,76 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 		// [ 0   , 0   ]
 		// [ 0   , KS  ]
 		//
+		// where KAA is stiffiner coefficient with free DoF
+		//
 		// KS = [ KBB ] - [ KBA ] * [ KAA ]^(-1) * [ KAB ]
+		dataKBB := make([]float64, 5*5)
+		KBB := mat.NewDense(5, 5, dataKBB)
+
+		dataKBB2 := make([]float64, 5*5)
+		KBB2 := mat.NewDense(5, 5, dataKBB2)
+
+		dataKS := make([]float64, 5*5)
+		KS := mat.NewDense(5, 5, dataKS)
+
+		dataKBA := make([]float64, 5)
+		KBA := mat.NewDense(5, 1, dataKBA)
+
+		dataKAB := make([]float64, 5)
+		KAB := mat.NewDense(1, 5, dataKAB)
+
+		// initialization data
+		KAA := kr.At(fr, fr)
+		for i := 0; i < 6; i++ {
+			ia := i
+			if i == fr {
+				continue
+			} else if i > fr {
+				ia--
+			}
+			KBA.Set(ia, 0, kr.At(i, fr))
+			KAB.Set(0, ia, kr.At(fr, i))
+			for j := 0; j < 6; j++ {
+				ja := j
+				if j == fr {
+					continue
+				} else if j > fr {
+					ja--
+				}
+				KBB.Set(ia, ja, kr.At(i, j))
+			}
+		}
+		// calculate KS
+		KBB2.Mul(KBA, KAB)
+		KBB2.Scale(1/KAA, KBB2)
+		KS.Sub(KBB, KBB2)
+		// fmt.Printf("%12.5e\n\n", mat.Formatted(KS))
+
+		for i := 0; i < 5; i++ {
+			ia := i
+			if i == fr {
+				continue
+			} else if i > fr {
+				ia++
+			}
+			for j := 0; j < 5; j++ {
+				ja := j
+				if j == fr {
+					continue
+				} else if j > fr {
+					ja++
+				}
+				kr.Set(ia, ja, KS.At(i, j))
+			}
+		}
+		for i := 0; i < 6; i++ {
+			kr.Set(i, fr, 0.0)
+			kr.Set(fr, i, 0.0)
+		}
+		// fmt.Printf("%12.5e\n\n", mat.Formatted(kr))
+
 	}
-	fmt.Printf("%12.5e\n\n", mat.Formatted(kr))
+	// fmt.Printf("%12.5e\n\n", mat.Formatted(kr))
 
 	return kr
 }

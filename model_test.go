@@ -374,7 +374,7 @@ func TestTruss(t *testing.T) {
 						Forces: [3]float64{-70000, 0, 0},
 					}, {
 						N:      3,
-						Forces: [3]float64{2000, 0, 0},
+						Forces: [3]float64{42000, 0, 0},
 					},
 				},
 			},

@@ -226,8 +226,23 @@ func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 	// add support
 	m.addSupport(k)
 
-	// calculate nodal displacament
+	// add 1 for diagonal with zero
 	dof := 3 * len(m.Points)
+	for i := 0; i < dof; i++ {
+		isZero := true
+		for j := 0; j < dof; j++ {
+			if k.At(i, j) != 0.0 {
+				isZero = false
+				break
+			}
+		}
+		if !isZero {
+			continue
+		}
+		k.Set(i, i, 1)
+	}
+
+	// calculate nodal displacament
 	dataDisp := make([]float64, dof)
 	d := mat.NewDense(dof, 1, dataDisp)
 	err = d.Solve(k, p)
@@ -265,6 +280,7 @@ func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 			lc.BeamForces[bi][i] = s.At(i, 0)
 		}
 		// calculate reactions
+		// TODO: reaction is not correct for pins
 		for i := 0; i < 2; i++ {
 			for j := 0; j < 3; j++ {
 				if m.Supports[b.N[i]][j] {
