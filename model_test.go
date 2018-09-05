@@ -369,7 +369,7 @@ func TestDebug(t *testing.T) {
 				if !strings.Contains(line, "fmt"+"."+"Print") {
 					continue
 				}
-				t.Fatalf("Debug line: %d in file %s", pos, source[i])
+				t.Errorf("Debug line: %d in file %s", pos, source[i])
 			}
 
 			if err := scanner.Err(); err != nil {
