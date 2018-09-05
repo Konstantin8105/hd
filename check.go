@@ -296,6 +296,7 @@ func (m *Model) checkModal() (err error) {
 				isNaN(ld.Mass),
 				isInf(ld.Mass),
 				isPositive(ld.Mass),
+				isNotZero(ld.Mass),
 			)
 			if err != nil {
 				et.Add(ErrorModal{
@@ -315,8 +316,6 @@ func (m *Model) checkModal() (err error) {
 					}
 				}
 			}
-
-			// TODO: summ of mass is not zero or less zero
 		}
 	}
 	if et.IsError() {
