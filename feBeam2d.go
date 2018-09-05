@@ -59,6 +59,21 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 	kr.Set(5, 5, EJL)
 
 	fmt.Println("Pins:", m.Pins[pos])
+	for i := 0; i < 6; i++ {
+		if !m.Pins[pos][i] { // DoF is rigid
+			continue
+		}
+		// DoF is free
+		// Algorithm:
+		// from
+		// [ KAA , KAB ]
+		// [ KBA , KBB ]
+		// to
+		// [ 0   , 0   ]
+		// [ 0   , KS  ]
+		//
+		// KS = [ KBB ] - [ KBA ] * [ KAA ]^(-1) * [ KAB ]
+	}
 	fmt.Printf("%12.5e\n\n", mat.Formatted(kr))
 
 	return kr
