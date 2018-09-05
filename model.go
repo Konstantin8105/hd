@@ -229,23 +229,8 @@ func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 	// add support
 	m.addSupport(k)
 
-	// add 1 for diagonal with zero
-	dof := 3 * len(m.Points)
-	for i := 0; i < dof; i++ {
-		isZero := true
-		for j := 0; j < dof; j++ {
-			if k.At(i, j) != 0.0 {
-				isZero = false
-				break
-			}
-		}
-		if !isZero {
-			continue
-		}
-		k.Set(i, i, 1)
-	}
-
 	// calculate nodal displacament
+	dof := 3 * len(m.Points)
 	dataDisp := make([]float64, dof)
 	d := mat.NewDense(dof, 1, dataDisp)
 	err = d.Solve(k, p)
@@ -287,7 +272,7 @@ func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 		for i := 0; i < 2; i++ {
 			for j := 0; j < 3; j++ {
 				if m.Supports[b.N[i]][j] {
-					fmt.Println(">", b.N[i], m.Supports[b.N[i]][j], s.At(i*3+j, 0))
+					fmt.Println(">", i, b.N[i], m.Supports[b.N[i]][j], s.At(i*3+j, 0))
 					fmt.Println(">>", lc.BeamForces[bi])
 					lc.Reactions[b.N[i]][j] += s.At(i*3+j, 0)
 				}
@@ -327,6 +312,22 @@ func (m *Model) assemblyK() *mat.Dense {
 				}
 			}
 		}
+	}
+
+	// It is happen if we have pin nodes
+	// add 1 for diagonal with zero
+	for i := 0; i < dof; i++ {
+		isZero := true
+		for j := 0; j < dof; j++ {
+			if k.At(i, j) != 0.0 {
+				isZero = false
+				break
+			}
+		}
+		if !isZero {
+			continue
+		}
+		k.Set(i, i, 1)
 	}
 
 	return k
@@ -380,6 +381,8 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			direction: 1,
 		},
 	}
+
+	// TODO: add test Modal for truss.
 
 	// memory initialization
 	dof := 3 * len(m.Points)
