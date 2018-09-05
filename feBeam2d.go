@@ -57,9 +57,6 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 	kr.Set(2, 2, EJL)
 	kr.Set(5, 5, EJL)
 
-	// fmt.Println("Pins:", m.Pins[pos])
-	// fmt.Printf("%12.5e\n\n", mat.Formatted(kr))
-	// TODO: ?? where better add
 	if m.Pins[pos][2] && m.Pins[pos][5] {
 		// truss
 		m.Pins[pos][1] = true
@@ -121,7 +118,6 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 		KBB2.Mul(KBA, KAB)
 		KBB2.Scale(1/KAA, KBB2)
 		KS.Sub(KBB, KBB2)
-		// fmt.Printf("%12.5e\n\n", mat.Formatted(KS))
 
 		for i := 0; i < 5; i++ {
 			ia := i
@@ -144,10 +140,7 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 			kr.Set(i, fr, 0.0)
 			kr.Set(fr, i, 0.0)
 		}
-		// fmt.Printf("%12.5e\n\n", mat.Formatted(kr))
-
 	}
-	// fmt.Printf("%12.5e\n\n", mat.Formatted(kr))
 
 	return kr
 }
