@@ -307,8 +307,18 @@ func (m *Model) checkModal() (err error) {
 					Err:       err,
 				})
 			}
+			for s := 0; s < len(m.Supports); s++ {
+				if m.Supports[s][0] || m.Supports[s][1] || m.Supports[s][2] {
+					if ld.N == s {
+						et.Add(ErrorModal{
+							ModalCase: i,
+							ModalPos:  j,
+							Err:       fmt.Errorf("Modal mass on support"),
+						})
+					}
+				}
+			}
 
-			// TODO: mass cannot be in support
 			// TODO: summ of mass is not zero or less zero
 		}
 	}
