@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"math"
 	"os"
 
 	"gonum.org/v1/gonum/mat"
@@ -106,7 +105,31 @@ type LoadCase struct {
 
 // ModalCase is modal calculation case
 type ModalCase struct {
+	// ModalMasses is modal masses
 	ModalMasses []ModalMass
+
+	// Result of modal calculation
+	Result []ModalResult
+}
+
+type ModalResult struct {
+	// Natural frequency
+	Hz float64
+
+	// Modal direction
+	// 0 - X
+	// 1 - Y
+	Direction int
+
+	// Modal displacament in global system coordinate
+	//
+	// first index is point index
+	//
+	// [0] - X direction
+	// [1] - Y direction
+	// [2] - M direction
+	// Unit: Dimensionless
+	ModalDisplacement [][3]float64
 }
 
 // ModalMass is mass of point
@@ -304,100 +327,92 @@ func (m *Model) addSupport(k *mat.Dense) {
 const Gravity float64 = 9.80665
 
 func (m *Model) runModal(mc *ModalCase) (err error) {
-	fmt.Fprintf(m.out, "Modal Analysis\n")
 
-	// assembly matrix of stiffiner
-	k := m.assemblyK()
+	mcs := []struct {
+		name      string
+		direction int
+	}{
+		{
+			name:      "Modal Analysis by X\n",
+			direction: 0,
+		}, {
+			name:      "Modal Analysis by Y\n",
+			direction: 1,
+		},
+	}
 
-	// add support
-	m.addSupport(k)
-
-	dof := 3 * len(m.Points)
-
+	// memory initialization
 	dataM := make([]float64, dof*dof)
-	M := mat.NewDense(dof, dof, dataM)
-
-	for p := 0; p < len(m.Points); p++ {
-		// summary mass
-		var mass float64
-		for j := 0; j < len(mc.ModalMasses); j++ {
-			if mc.ModalMasses[j].N == p {
-				mass += mc.ModalMasses[j].Mass
-			}
-		}
-		// TODO
-		i := 1
-		j := 1
-		// for i := 0; i < 3; i++ {
-		// 	for j := 0; j < 3; j++ {
-		M.Set(p*3+i, p*3+j, mass/Gravity)
-		// 	}
-		// }
-	}
-
-	// fmt.Println("-- MASS --")
-	// view(M)
-
 	dataH := make([]float64, dof*dof)
-	h := mat.NewDense(dof, dof, dataH)
 
-	// 	// TODO: divide by 9.8
-	//
-	// 	// TODO: add Ho calculation
+	for _, mc := range mcs {
+		fmt.Fprintf(m.out, "%s", mc.name)
 
-	for col := 0; col < dof; col++ {
-		dataMS := make([]float64, dof)
-		MS := mat.NewDense(dof, 1, dataMS)
-		for i := 0; i < dof; i++ {
-			MS.Set(i, 0, M.At(i, col))
+		// assembly matrix of stiffiner
+		k := m.assemblyK()
+
+		// add support
+		m.addSupport(k)
+
+		dof := 3 * len(m.Points)
+
+		M := mat.NewDense(dof, dof, dataM)
+
+		for p := 0; p < len(m.Points); p++ {
+			// summary mass
+			var mass float64
+			for j := 0; j < len(mc.ModalMasses); j++ {
+				if mc.ModalMasses[j].N == p {
+					mass += mc.ModalMasses[j].Mass
+				}
+			}
+			M.Set(p*3+mc.direction, p*3+mc.direction, mass/Gravity)
 		}
 
-		datahh := make([]float64, dof)
-		hh := mat.NewDense(dof, 1, datahh)
-		err = hh.Solve(k, MS)
-		if err != nil {
-			return err
-		}
+		h := mat.NewDense(dof, dof, dataH)
 
-		for i := 0; i < dof; i++ {
-			h.Set(i, col, hh.At(i, 0))
-		}
-	}
+		for col := 0; col < dof; col++ {
+			dataMS := make([]float64, dof)
+			MS := mat.NewDense(dof, 1, dataMS)
+			isZero := true
+			for i := 0; i < dof; i++ {
+				if M.At(i, col) != 0 {
+					isZero = false
+				}
+				MS.Set(i, 0, M.At(i, col))
+			}
 
-	// fmt.Println("calc h")
-	// view(h)
+			if isZero {
+				continue
+			}
 
-	var e mat.Eigen
-	// fmt.Println(">>>>>>> hhhh")
-	// view(h)
-	ok := e.Factorize(h, true, true)
-	if !ok {
-		return fmt.Errorf("Eigen factorization is not ok")
-	}
-	// fmt.Println(">> ", ok)
-	// fmt.Println("}} ", e.Values(nil))
-	// vals := e.Values(nil)
-	// for i := 0; i < len(vals); i++ {
-	// 	fmt.Println("Fz = ", 1./(math.Sqrt(real(vals[i]))*2.0*math.Pi))
-	// }
-	// fmt.Println("Vector :")
-	// view(e.Vectors())
+			datahh := make([]float64, dof)
+			hh := mat.NewDense(dof, 1, datahh)
+			err = hh.Solve(k, MS)
+			if err != nil {
+				return err
+			}
 
-	v := e.Vectors()
-	for i := 0; i < dof; i++ {
-		var max float64 = v.At(i, 0)
-		for j := 0; j < dof; j++ {
-			if math.Abs(v.At(j, i)) > math.Abs(max) {
-				max = v.At(j, i)
+			for i := 0; i < dof; i++ {
+				h.Set(i, col, hh.At(i, 0))
 			}
 		}
-		for j := 0; j < dof; j++ {
-			v.Set(j, i, v.At(j, i)/max)
+
+		var e mat.Eigen
+		ok := e.Factorize(h, true, true)
+		if !ok {
+			return fmt.Errorf("Eigen factorization is not ok")
 		}
+		// fmt.Println(">> ", ok)
+		// fmt.Println("}} ", e.Values(nil))
+		// vals := e.Values(nil)
+		// for i := 0; i < len(vals); i++ {
+		// 	fmt.Println("Fz = ", 1./(math.Sqrt(real(vals[i]))*2.0*math.Pi))
+		// }
+		// fmt.Println("Vector :")
+		// view(e.Vectors())
+		_ = e
 	}
-	// fmt.Println("----")
-	// view(v)
-	_ = v
 
 	return
 }
