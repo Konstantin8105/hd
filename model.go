@@ -532,7 +532,5 @@ func (m Model) String() (out string) {
 		}
 	}
 
-	// TODO: add modal cases results
-
 	return
 }
