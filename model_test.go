@@ -294,6 +294,89 @@ func TestTodo(t *testing.T) {
 	}
 }
 
+func TestTruss(t *testing.T) {
+	m := Model{
+		Points: [][2]float64{
+			[2]float64{0.0, 0.0}, // 1
+			[2]float64{0.0, 12.}, // 2
+			[2]float64{4.0, 0.0}, // 3
+			[2]float64{4.0, 6.0}, // 4
+			[2]float64{8.0, 0.0}, // 5
+		},
+		Beams: []BeamProp{
+			{ // 1
+				N: [2]int{0, 1},
+				A: 40e-4,
+				J: 1,
+				E: 2.0e11,
+			},
+			{ // 2
+				N: [2]int{0, 2},
+				A: 64e-4,
+				J: 1,
+				E: 2.0e11,
+			},
+			{ // 3
+				N: [2]int{0, 3},
+				A: 60e-4,
+				J: 1,
+				E: 2.0e11,
+			},
+			{ // 4
+				N: [2]int{1, 3},
+				A: 60e-4,
+				J: 1,
+				E: 2.0e11,
+			},
+			{ // 5
+				N: [2]int{2, 3},
+				A: 40e-4,
+				J: 1,
+				E: 2.0e11,
+			},
+			{ // 6
+				N: [2]int{2, 4},
+				A: 64e-4,
+				J: 1,
+				E: 2.0e11,
+			},
+			{ // 7
+				N: [2]int{3, 4},
+				A: 60e-4,
+				J: 1,
+				E: 2.0e11,
+			},
+		},
+		Supports: [][3]bool{
+			[3]bool{true, true, false},   // 1
+			[3]bool{false, false, false}, // 2
+			[3]bool{false, true, false},  // 3
+			[3]bool{false, false, false}, // 4
+			[3]bool{false, true, false},  // 5
+		},
+		LoadCases: []LoadCase{
+			LoadCase{
+				LoadNodes: []LoadNode{
+					{
+						N:      1,
+						Forces: [3]float64{-70000, 0, 0},
+					},
+					{
+						N:      3,
+						Forces: [3]float64{2000, 0, 0},
+					},
+				},
+			},
+		},
+	}
+	var b bytes.Buffer
+	if err := m.Run(&b); err != nil {
+		t.Fatalf("Error : %v", err)
+	}
+	t.Log(b.String())
+	t.Log(m.String())
+}
+
 func BenchmarkRun(b *testing.B) {
 	tcs := []int{1, 2, 4, 8, 16, 32, 64, 128, 256, 512}
 	for _, tc := range tcs {
