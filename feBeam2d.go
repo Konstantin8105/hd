@@ -1,7 +1,6 @@
 package hd
 
 import (
-	"fmt"
 	"math"
 
 	"gonum.org/v1/gonum/mat"
@@ -19,16 +18,6 @@ func (m Model) distance(st, en int) (res float64) {
 		sum += math.Pow(m.Points[st][i]-m.Points[en][i], 2.0)
 	}
 	return math.Sqrt(sum)
-}
-
-func view(k *mat.Dense) {
-	r, c := k.Dims()
-	for j := 0; j < r; j++ {
-		for i := 0; i < c; i++ {
-			fmt.Printf(" %10.3e", k.At(j, i))
-		}
-		fmt.Printf("\n")
-	}
 }
 
 // matrix of stiffiner for beam 2d

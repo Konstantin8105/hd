@@ -19,8 +19,8 @@ import (
 func baseModel() Model {
 	return Model{
 		Points: [][2]float64{
-			[2]float64{0.0, 0.0},
-			[2]float64{1.0, 0.0},
+			{0.0, 0.0},
+			{1.0, 0.0},
 		},
 		Beams: []BeamProp{
 			{
@@ -31,11 +31,11 @@ func baseModel() Model {
 			},
 		},
 		Supports: [][3]bool{
-			[3]bool{true, true, true},
-			[3]bool{false, false, false},
+			{true, true, true},
+			{false, false, false},
 		},
 		LoadCases: []LoadCase{
-			LoadCase{
+			{
 				LoadNodes: []LoadNode{
 					{
 						N:      1,
@@ -49,7 +49,7 @@ func baseModel() Model {
 			},
 		},
 		ModalCases: []ModalCase{
-			ModalCase{
+			{
 				ModalMasses: []ModalMass{
 					{
 						N:    1,
@@ -95,9 +95,9 @@ func TestJsonModel(t *testing.T) {
 func TestModelFail(t *testing.T) {
 	m := Model{
 		Points: [][2]float64{
-			[2]float64{-math.MaxFloat64 - 1, math.NaN()},
-			[2]float64{0.0, 0.0},
-			[2]float64{0.0, math.Inf(0)},
+			{-math.MaxFloat64 - 1, math.NaN()},
+			{0.0, 0.0},
+			{0.0, math.Inf(0)},
 		},
 		Beams: []BeamProp{
 			{
@@ -107,7 +107,7 @@ func TestModelFail(t *testing.T) {
 				E: -2.0e11,
 			},
 			{
-				N: [2]int{1, 2},
+				N: [2]int{1, 1},
 				A: 12e-4,
 				J: 120e-6,
 				E: 2.0e11,
@@ -120,18 +120,18 @@ func TestModelFail(t *testing.T) {
 			},
 		},
 		Supports: [][3]bool{
-			[3]bool{true, true, true},
-			[3]bool{false, false, false},
-			[3]bool{false, true, false},
-			[3]bool{false, false, false},
-			[3]bool{false, false, false},
-			[3]bool{false, false, false},
-			[3]bool{false, false, false},
-			[3]bool{false, false, false},
-			[3]bool{false, false, false},
+			{true, true, true},
+			{false, false, false},
+			{false, true, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
 		},
 		LoadCases: []LoadCase{
-			LoadCase{
+			{
 				LoadNodes: []LoadNode{
 					{
 						N:      -1,
@@ -145,7 +145,7 @@ func TestModelFail(t *testing.T) {
 			},
 		},
 		ModalCases: []ModalCase{
-			ModalCase{
+			{
 				ModalMasses: []ModalMass{
 					{
 						N:    7,
@@ -153,10 +153,18 @@ func TestModelFail(t *testing.T) {
 					},
 				},
 			},
-			ModalCase{
+			{
 				ModalMasses: []ModalMass{
 					{
 						N:    -1,
+						Mass: math.NaN(),
+					},
+				},
+			},
+			{
+				ModalMasses: []ModalMass{
+					{
+						N:    0,
 						Mass: math.NaN(),
 					},
 				},
@@ -246,6 +254,7 @@ func TestModelString(t *testing.T) {
 	if err := m.Run(&b); err != nil {
 		t.Errorf("error : %v", err)
 	}
+	t.Log(m.String())
 	if err := cupaloy.SnapshotMulti("TestModelString", m.String()); err != nil {
 		t.Fatalf("error: %s", err)
 	}
