@@ -510,6 +510,27 @@ func (m Model) String() (out string) {
 			}
 		}
 	}
+	// modal cases
+	for mc := 0; mc < len(m.ModalCases); mc++ {
+		out += fmt.Sprintf("\nModal case #%3d\n", mc)
+		out += fmt.Sprintf("%5s %15s\n",
+			"Point", "Mass, N")
+		for _, mn := range m.ModalCases[mc].ModalMasses {
+			out += fmt.Sprintf("%5d %15.5f\n", mn.N, mn.Mass)
+		}
+		for _, mr := range m.ModalCases[mc].Result {
+			out += fmt.Sprintf("Natural frequency : %15.5f Hz\n", mr.Hz)
+			out += fmt.Sprintf("%5s %15s %15s %15s\n",
+				"Point", "X", "Y", "M")
+			for i := 0; i < len(mr.ModalDisplacement); i++ {
+				out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
+					i,
+					mr.ModalDisplacement[i][0],
+					mr.ModalDisplacement[i][1],
+					mr.ModalDisplacement[i][2])
+			}
+		}
+	}
 
 	// TODO: add modal cases results
 

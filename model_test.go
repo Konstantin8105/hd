@@ -246,6 +246,7 @@ func TestModelString(t *testing.T) {
 	if err := m.Run(&b); err != nil {
 		t.Errorf("error : %v", err)
 	}
+	t.Log(m.String())
 	if err := cupaloy.SnapshotMulti("TestModelString", m.String()); err != nil {
 		t.Fatalf("error: %s", err)
 	}
