@@ -479,6 +479,8 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		}
 	}
 
+	// TODO: add sort by frequency
+
 	return
 }
 
