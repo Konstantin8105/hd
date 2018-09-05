@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"os"
 
 	"gonum.org/v1/gonum/mat"
@@ -115,11 +116,6 @@ type ModalCase struct {
 type ModalResult struct {
 	// Natural frequency
 	Hz float64
-
-	// Modal direction
-	// 0 - X
-	// 1 - Y
-	Direction int
 
 	// Modal displacament in global system coordinate
 	//
@@ -328,7 +324,7 @@ const Gravity float64 = 9.80665
 
 func (m *Model) runModal(mc *ModalCase) (err error) {
 
-	mcs := []struct {
+	mcCases := []struct {
 		name      string
 		direction int
 	}{
@@ -342,19 +338,18 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	}
 
 	// memory initialization
+	dof := 3 * len(m.Points)
 	dataM := make([]float64, dof*dof)
 	dataH := make([]float64, dof*dof)
 
-	for _, mc := range mcs {
-		fmt.Fprintf(m.out, "%s", mc.name)
+	for _, mcCase := range mcCases {
+		fmt.Fprintf(m.out, "%s", mcCase.name)
 
 		// assembly matrix of stiffiner
 		k := m.assemblyK()
 
 		// add support
 		m.addSupport(k)
-
-		dof := 3 * len(m.Points)
 
 		M := mat.NewDense(dof, dof, dataM)
 
@@ -366,7 +361,7 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 					mass += mc.ModalMasses[j].Mass
 				}
 			}
-			M.Set(p*3+mc.direction, p*3+mc.direction, mass/Gravity)
+			M.Set(p*3+mcCase.direction, p*3+mcCase.direction, mass/Gravity)
 		}
 
 		h := mat.NewDense(dof, dof, dataH)
@@ -403,15 +398,38 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		if !ok {
 			return fmt.Errorf("Eigen factorization is not ok")
 		}
-		// fmt.Println(">> ", ok)
-		// fmt.Println("}} ", e.Values(nil))
-		// vals := e.Values(nil)
-		// for i := 0; i < len(vals); i++ {
-		// 	fmt.Println("Fz = ", 1./(math.Sqrt(real(vals[i]))*2.0*math.Pi))
-		// }
-		// fmt.Println("Vector :")
-		// view(e.Vectors())
-		_ = e
+
+		// add results
+		v := e.Values(nil)
+		eVector := e.Vectors()
+		for i := 0; i < len(v); i++ {
+			if math.Abs(imag(v[i])) > 0 {
+				continue
+			}
+			if real(v[i]) <= 0 {
+				continue
+			}
+
+			var mr ModalResult
+			mr.Hz = 1. / (math.Sqrt(real(v[i])) * 2.0 * math.Pi)
+			var isFound bool
+			for j := range mc.Result {
+				if (mc.Result[j].Hz-mr.Hz)/mr.Hz < 1e-10 {
+					isFound = true
+				}
+			}
+			if isFound {
+				continue
+			}
+
+			mr.ModalDisplacement = make([][3]float64, len(m.Points))
+			for p := 0; p < len(m.Points); p++ {
+				mr.ModalDisplacement[p][0] = eVector.At(3*p+0, i)
+				mr.ModalDisplacement[p][1] = eVector.At(3*p+1, i)
+				mr.ModalDisplacement[p][2] = eVector.At(3*p+2, i)
+			}
+			mc.Result = append(mc.Result, mr)
+		}
 	}
 
 	return
