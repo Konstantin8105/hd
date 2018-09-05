@@ -39,6 +39,7 @@ func (m *Model) checkInputData() error {
 	if et.IsError() {
 		return et
 	}
+	// TODO : add check pins
 	return nil
 }
 

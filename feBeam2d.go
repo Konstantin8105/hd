@@ -1,6 +1,7 @@
 package hd
 
 import (
+	"fmt"
 	"math"
 
 	"gonum.org/v1/gonum/mat"
@@ -56,6 +57,8 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 	EJL = 2 * EJL
 	kr.Set(2, 2, EJL)
 	kr.Set(5, 5, EJL)
+
+	fmt.Printf("%12.5e\n\n", mat.Formatted(kr))
 
 	return kr
 }

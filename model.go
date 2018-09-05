@@ -21,6 +21,22 @@ type Model struct {
 	// Beams is slice of point index and beam property
 	Beams []BeamProp
 
+	// Pins is slice of pins for beams in local system coordinate.
+	// Len of support must be same amount of Points.
+	// Or if len is zero, then all DoF(degree of freedom) is rigid.
+	//
+	// first index is point index
+	//
+	// [0] - X on start point
+	// [1] - Y on start point
+	// [2] - M on start point
+	// [3] - X on end point
+	// [4] - Y on end point
+	// [5] - M on end point
+	//
+	// if `true` then free degree of freedom
+	Pins [][6]bool
+
 	// Supports is slice of fixed supports.
 	// Len of support must be same amount of Points
 	//
@@ -470,6 +486,7 @@ func (m Model) String() (out string) {
 		out += fmt.Sprintf("%15.5e %15.5e %15.5e\n",
 			m.Beams[i].A, m.Beams[i].J, m.Beams[i].E)
 	}
+	// TODO: add pins report
 	// loads
 	for lc := 0; lc < len(m.LoadCases); lc++ {
 		out += fmt.Sprintf("\nLoad case #%3d\n", lc)

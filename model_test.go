@@ -357,6 +357,15 @@ func TestTruss(t *testing.T) {
 			{false, false, false}, // 4
 			{false, true, false},  // 5
 		},
+		Pins: [][6]bool{
+			{false, false, true, false, false, true}, // 1
+			{false, false, true, false, false, true}, // 2
+			{false, false, true, false, false, true}, // 3
+			{false, false, true, false, false, true}, // 4
+			{false, false, true, false, false, true}, // 5
+			{false, false, true, false, false, true}, // 6
+			{false, false, true, false, false, true}, // 7
+		},
 		LoadCases: []LoadCase{
 			{
 				LoadNodes: []LoadNode{
