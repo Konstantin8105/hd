@@ -303,6 +303,48 @@ func TestTodo(t *testing.T) {
 	}
 }
 
+func TestFmt(t *testing.T) {
+	// Show all todos in code
+	source, err := filepath.Glob(fmt.Sprintf("./%s", "*.go"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var amount int
+
+	for i := range source {
+		t.Run(source[i], func(t *testing.T) {
+			file, err := os.Open(source[i])
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer file.Close()
+
+			pos := 1
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				line := scanner.Text()
+				pos++
+				index := strings.Index(line, "//")
+				if index < 0 {
+					continue
+				}
+				if !strings.Contains(line, "fmt") {
+					continue
+				}
+				t.Logf("%d %s", pos, line[index:])
+				amount++
+			}
+
+			if err := scanner.Err(); err != nil {
+				log.Fatal(err)
+			}
+		})
+	}
+	if amount > 0 {
+		t.Logf("Amount commented fmt: %d", amount)
+	}
+}
 func TestTruss(t *testing.T) {
 	m := Model{
 		Points: [][2]float64{

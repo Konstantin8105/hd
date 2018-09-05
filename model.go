@@ -486,9 +486,11 @@ func (m Model) String() (out string) {
 			i, m.Points[i][0], m.Points[i][1])
 		for j := 0; j < 3; j++ {
 			if m.Supports[i][j] {
-				out += fmt.Sprintf("%5d ", 1) // fixed
+				// fixed
+				out += fmt.Sprintf("%5d ", 1)
 			} else {
-				out += fmt.Sprintf("%5d ", 0) // free
+				// free
+				out += fmt.Sprintf("%5d ", 0)
 			}
 		}
 		out += fmt.Sprintf("\n")
