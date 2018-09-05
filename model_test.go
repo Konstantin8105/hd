@@ -107,7 +107,7 @@ func TestModelFail(t *testing.T) {
 				E: -2.0e11,
 			},
 			{
-				N: [2]int{1, 2},
+				N: [2]int{1, 1},
 				A: 12e-4,
 				J: 120e-6,
 				E: 2.0e11,
@@ -157,6 +157,14 @@ func TestModelFail(t *testing.T) {
 				ModalMasses: []ModalMass{
 					{
 						N:    -1,
+						Mass: math.NaN(),
+					},
+				},
+			},
+			{
+				ModalMasses: []ModalMass{
+					{
+						N:    0,
 						Mass: math.NaN(),
 					},
 				},
