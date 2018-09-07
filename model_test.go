@@ -197,6 +197,10 @@ func TestModelFail(t *testing.T) {
 				{false, false, false},
 				{false, false, false},
 			},
+			Pins: [][6]bool{
+				{true, true, true, true, true, false},
+				{true, false, false, true, false, false},
+			},
 			LoadCases: []LoadCase{
 				{
 					LoadNodes: []LoadNode{

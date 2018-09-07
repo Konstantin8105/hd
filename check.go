@@ -21,6 +21,10 @@ func (m *Model) checkInputData() error {
 	if err := m.checkSupports(); err != nil {
 		et.Add(err)
 	}
+	// pins
+	if err := m.checkPins(); err != nil {
+		et.Add(err)
+	}
 	// load cases
 	if err := m.checkLoadCases(); err != nil {
 		et.Add(err)
@@ -41,7 +45,6 @@ func (m *Model) checkInputData() error {
 	if et.IsError() {
 		return et
 	}
-	// TODO : add check pins
 	return nil
 }
 
@@ -202,6 +205,55 @@ func (m *Model) checkBeams() error {
 func (m *Model) checkSupports() (err error) {
 	if len(m.Points) != len(m.Supports) {
 		return fmt.Errorf("Amount of supports is not same amount of points")
+	}
+	return nil
+}
+
+type ErrorPin struct {
+	Beam int
+	Err  error
+}
+
+func (e ErrorPin) Error() string {
+	return fmt.Sprintf("Error in pin of beam %d: %v",
+		e.Beam,
+		e.Err)
+}
+
+func (m *Model) checkPins() (err error) {
+	if len(m.Pins) == 0 {
+		return nil
+	}
+	et := errors.Tree{Name: "checkPins"}
+	if len(m.Beams) != len(m.Pins) {
+		et.Add(fmt.Errorf("Amount of pins is not same beams"))
+	}
+	for beam := range m.Pins {
+		// maximal allowable pins
+		maxPins := 4
+		pins := 0
+		for j := 0; j < 6; j++ {
+			if m.Pins[beam][j] {
+				pins++
+			}
+		}
+		if pins > maxPins {
+			et.Add(ErrorPin{
+				Beam: beam,
+				Err: fmt.Errorf("Amount of pins of point is %d more %d",
+					pins, maxPins),
+			})
+		}
+		// both X is free
+		if m.Pins[beam][0] && m.Pins[beam][3] {
+			et.Add(ErrorPin{
+				Beam: beam,
+				Err:  fmt.Errorf("Not acceptable X direction is free"),
+			})
+		}
+	}
+	if et.IsError() {
+		return et
 	}
 	return nil
 }
