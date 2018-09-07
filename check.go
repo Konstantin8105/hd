@@ -226,7 +226,8 @@ func (m *Model) checkPins() (err error) {
 	}
 	et := errors.Tree{Name: "checkPins"}
 	if len(m.Beams) != len(m.Pins) {
-		et.Add(fmt.Errorf("Amount of pins is not same beams"))
+		et.Add(fmt.Errorf("Amount of pins is not same beams, %d != %d",
+			len(m.Beams), len(m.Pins)))
 	}
 	for beam := range m.Pins {
 		// maximal allowable pins

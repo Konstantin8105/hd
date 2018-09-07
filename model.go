@@ -180,7 +180,7 @@ func (m *Model) Run(out io.Writer) (err error) {
 
 	// if pins is empty , then all rigid. So, create with all false
 	if len(m.Pins) == 0 {
-		m.Pins = make([][6]bool, len(m.Points))
+		m.Pins = make([][6]bool, len(m.Beams))
 	}
 
 	// check
