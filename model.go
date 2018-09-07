@@ -540,6 +540,7 @@ func (m Model) String() (out string) {
 			continue
 		}
 		if !pinHeader {
+			// TODO: add START and END for pin
 			out += fmt.Sprintf("Pins of beam in local system coordinate:\n")
 			out += fmt.Sprintf("%5s %7s %7s %7s %7s %7s %7s \n",
 				"Index", "X", "Y", "M", "X", "Y", "M")
