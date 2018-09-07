@@ -491,6 +491,7 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 // TODO: add picture draw. See https://github.com/fogleman/gg
 
 func (m Model) String() (out string) {
+	// TODO: use github.com/olekukonko/tablewriter for create table
 	out += "\n"
 	// points and supports
 	out += fmt.Sprintf("Point coordinates:\n")
