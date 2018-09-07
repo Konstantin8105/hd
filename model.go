@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"sort"
 
 	"gonum.org/v1/gonum/mat"
 )
@@ -483,7 +484,10 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		}
 	}
 
-	// TODO: add sort by frequency
+	// Sort by frequency
+	sort.SliceStable(mc.Result, func(i, j int) bool {
+		return mc.Result[i].Hz < mc.Result[j].Hz
+	})
 
 	return
 }
