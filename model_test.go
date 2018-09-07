@@ -460,8 +460,10 @@ func TestTruss(t *testing.T) {
 	if err := m.Run(&b); err != nil {
 		t.Fatalf("Error : %v", err)
 	}
-	t.Log(b.String())
 	t.Log(m.String())
+	if err := cupaloy.SnapshotMulti("Truss", m.String()); err != nil {
+		t.Fatalf("error: %s", err)
+	}
 }
 
 func BenchmarkRun(b *testing.B) {
