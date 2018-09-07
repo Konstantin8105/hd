@@ -181,24 +181,9 @@ func TestModelFail(t *testing.T) {
 			{0.0, math.Inf(0)},
 		},
 		Beams: []BeamProp{
-			{
-				N: [2]int{-1, 1},
-				A: -12e-4,
-				J: -120e-6,
-				E: -2.0e11,
-			},
-			{
-				N: [2]int{1, 1},
-				A: 12e-4,
-				J: 120e-6,
-				E: 2.0e11,
-			},
-			{
-				N: [2]int{1, 20},
-				A: 12e-4,
-				J: 120e-6,
-				E: math.Inf(-1),
-			},
+			{N: [2]int{-1, 1}, A: -12e-4, J: -120e-6, E: -2.0e11},
+			{N: [2]int{1, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{1, 20}, A: 12e-4, J: 120e-6, E: math.Inf(-1)},
 		},
 		Supports: [][3]bool{
 			{true, true, true},
@@ -214,42 +199,15 @@ func TestModelFail(t *testing.T) {
 		LoadCases: []LoadCase{
 			{
 				LoadNodes: []LoadNode{
-					{
-						N:      -1,
-						Forces: [3]float64{0, 2.3, 0},
-					},
-					{
-						N:      5,
-						Forces: [3]float64{math.Inf(1), 0, math.NaN()},
-					},
+					{N: -1, Forces: [3]float64{0, 2.3, 0}},
+					{N: 5, Forces: [3]float64{math.Inf(1), 0, math.NaN()}},
 				},
 			},
 		},
 		ModalCases: []ModalCase{
-			{
-				ModalMasses: []ModalMass{
-					{
-						N:    7,
-						Mass: -100,
-					},
-				},
-			},
-			{
-				ModalMasses: []ModalMass{
-					{
-						N:    -1,
-						Mass: math.NaN(),
-					},
-				},
-			},
-			{
-				ModalMasses: []ModalMass{
-					{
-						N:    0,
-						Mass: math.NaN(),
-					},
-				},
-			},
+			{ModalMasses: []ModalMass{{N: 7, Mass: -100}}},
+			{ModalMasses: []ModalMass{{N: -1, Mass: math.NaN()}}},
+			{ModalMasses: []ModalMass{{N: 0, Mass: math.NaN()}}},
 		},
 	}
 	f, err := ioutil.TempFile("", "")
