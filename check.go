@@ -262,9 +262,24 @@ func (m *Model) checkLoad() (err error) {
 }
 
 func (m *Model) checkModalCases() (err error) {
-	// always ok
+	et := errors.Tree{Name: "checkModalCases"}
+	// empty modal mass is not acceptable
+	for i := range m.ModalCases {
+		err := isOk(
+			isTrue(len(m.ModalCases[i].ModalMasses) == 0),
+		)
+		if err != nil {
+			et.Add(ErrorModal{
+				ModalCase: i,
+				ModalPos:  0,
+				Err:       fmt.Errorf("Modal case haven`t masses"),
+			})
+		}
+	}
+	if et.IsError() {
+		return et
+	}
 
-	// TODO: empty modal mass is not acceptable
 	return nil
 }
 

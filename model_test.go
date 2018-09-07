@@ -209,6 +209,7 @@ func TestModelFail(t *testing.T) {
 				{ModalMasses: []ModalMass{{N: 7, Mass: -100}}},
 				{ModalMasses: []ModalMass{{N: -1, Mass: math.NaN()}}},
 				{ModalMasses: []ModalMass{{N: 0, Mass: math.NaN()}}},
+				{}, // Modal mass is empty
 			},
 		},
 		// error of inpossible solving - all points are free. No fix supports
