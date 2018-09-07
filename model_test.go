@@ -57,14 +57,6 @@ func baseModel() Model {
 					},
 				},
 			},
-			// ModalCase{
-			// 	ModalMasses: []ModalMass{
-			// 		{
-			// 			N: 1,
-			// 			// Mass is zero
-			// 		},
-			// 	},
-			// },
 		},
 	}
 }
@@ -196,6 +188,7 @@ func TestSplit(t *testing.T) {
 	}
 	reaction := m.LoadCases[0].Reactions[0]
 	displacament := m.LoadCases[0].PointDisplacementGlobal[1]
+	hz := m.ModalCases[0].Result[0].Hz
 
 	for i := 1; i < 10; i++ {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
@@ -222,6 +215,12 @@ func TestSplit(t *testing.T) {
 				if diff > 1e-10 {
 					t.Fatalf("Diff[%d] is not ok : %15.5e", j, diff)
 				}
+			}
+
+			h := m.ModalCases[0].Result[0].Hz
+			diff := math.Abs((hz - h) / h)
+			if diff > 1e-10 {
+				t.Fatalf("Diff in natural frequency is not ok : %15.5e", diff)
 			}
 		})
 	}
