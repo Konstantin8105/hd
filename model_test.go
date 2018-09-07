@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"math"
 	"os"
@@ -174,57 +173,82 @@ func TestJsonModel(t *testing.T) {
 }
 
 func TestModelFail(t *testing.T) {
-	m := Model{
-		Points: [][2]float64{
-			{-math.MaxFloat64 - 1, math.NaN()},
-			{0.0, 0.0},
-			{0.0, math.Inf(0)},
-		},
-		Beams: []BeamProp{
-			{N: [2]int{-1, 1}, A: -12e-4, J: -120e-6, E: -2.0e11},
-			{N: [2]int{1, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
-			{N: [2]int{1, 20}, A: 12e-4, J: 120e-6, E: math.Inf(-1)},
-		},
-		Supports: [][3]bool{
-			{true, true, true},
-			{false, false, false},
-			{false, true, false},
-			{false, false, false},
-			{false, false, false},
-			{false, false, false},
-			{false, false, false},
-			{false, false, false},
-			{false, false, false},
-		},
-		LoadCases: []LoadCase{
-			{
-				LoadNodes: []LoadNode{
-					{N: -1, Forces: [3]float64{0, 2.3, 0}},
-					{N: 5, Forces: [3]float64{math.Inf(1), 0, math.NaN()}},
+	ms := []Model{
+		// error of input data
+		{
+			Points: [][2]float64{
+				{-math.MaxFloat64 - 1, math.NaN()},
+				{0.0, 0.0},
+				{0.0, math.Inf(0)},
+			},
+			Beams: []BeamProp{
+				{N: [2]int{-1, 1}, A: -12e-4, J: -120e-6, E: -2.0e11},
+				{N: [2]int{1, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{1, 20}, A: 12e-4, J: 120e-6, E: math.Inf(-1)},
+			},
+			Supports: [][3]bool{
+				{true, true, true},
+				{false, false, false},
+				{false, true, false},
+				{false, false, false},
+				{false, false, false},
+				{false, false, false},
+				{false, false, false},
+				{false, false, false},
+				{false, false, false},
+			},
+			LoadCases: []LoadCase{
+				{
+					LoadNodes: []LoadNode{
+						{N: -1, Forces: [3]float64{0, 2.3, 0}},
+						{N: 5, Forces: [3]float64{math.Inf(1), 0, math.NaN()}},
+					},
 				},
 			},
+			ModalCases: []ModalCase{
+				{ModalMasses: []ModalMass{{N: 7, Mass: -100}}},
+				{ModalMasses: []ModalMass{{N: -1, Mass: math.NaN()}}},
+				{ModalMasses: []ModalMass{{N: 0, Mass: math.NaN()}}},
+			},
 		},
-		ModalCases: []ModalCase{
-			{ModalMasses: []ModalMass{{N: 7, Mass: -100}}},
-			{ModalMasses: []ModalMass{{N: -1, Mass: math.NaN()}}},
-			{ModalMasses: []ModalMass{{N: 0, Mass: math.NaN()}}},
+		// error of inpossible solving - all points are free. No fix supports
+		{
+			Points: [][2]float64{
+				{0, 0},
+				{0, 1},
+				{1, 1},
+			},
+			Beams: []BeamProp{
+				{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			},
+			Supports: [][3]bool{
+				{false, false, false},
+				{false, false, false},
+				{false, false, false},
+			},
+			LoadCases: []LoadCase{
+				{
+					LoadNodes: []LoadNode{
+						{N: 1, Forces: [3]float64{0, 2.3, 0}},
+					},
+				},
+			},
+			ModalCases: []ModalCase{
+				{ModalMasses: []ModalMass{{N: 1, Mass: 100}}},
+			},
 		},
 	}
-	f, err := ioutil.TempFile("", "")
-	if err != nil {
-		t.Fatalf("cannot create temp file : %v", err)
+	for i := range ms {
+		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var b bytes.Buffer
+			err := ms[i].Run(&b)
+			if err == nil {
+				t.Fatalf("Error : %v", err)
+			}
+			t.Log(err)
+		})
 	}
-	stdout := os.Stdout
-	os.Stdout = f
-	defer func() {
-		os.Stdout = stdout
-	}()
-
-	err = m.Run(nil)
-	if err == nil {
-		t.Fatalf("Error : %v", err)
-	}
-	t.Log(err)
 }
 
 func TestSplit(t *testing.T) {

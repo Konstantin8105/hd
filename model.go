@@ -1,13 +1,13 @@
 package hd
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"math"
 	"os"
 	"sort"
 
+	"github.com/Konstantin8105/errors"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -189,16 +189,16 @@ func (m *Model) Run(out io.Writer) (err error) {
 		return
 	}
 
+	var eCalc errors.Tree
+	eCalc.Name = "Calculation errors"
+
 	// calculation by load cases
 	for i := range m.LoadCases {
 		fmt.Fprintf(m.out, "Calculate load case %d of %d\n",
 			i,
 			len(m.LoadCases))
-		err = m.runLinearElastic(&m.LoadCases[i])
-		if err != nil {
-			e := fmt.Sprintf("Error in load case %d: %v", i, err)
-			fmt.Fprintf(m.out, e)
-			return errors.New(e)
+		if err := m.runLinearElastic(&m.LoadCases[i]); err != nil {
+			eCalc.Add(fmt.Errorf("Error in load case %d: %v", i, err))
 		}
 	}
 
@@ -207,12 +207,14 @@ func (m *Model) Run(out io.Writer) (err error) {
 		fmt.Fprintf(m.out, "Calculate modal case %d of %d\n",
 			i,
 			len(m.ModalCases))
-		err = m.runModal(&m.ModalCases[i])
-		if err != nil {
-			e := fmt.Sprintf("Error in modal case %d: %v", i, err)
-			fmt.Fprintf(m.out, e)
-			return errors.New(e)
+		if err := m.runModal(&m.ModalCases[i]); err != nil {
+			eCalc.Add(fmt.Errorf("Error in modal case %d: %v", i, err))
 		}
+	}
+
+	if eCalc.IsError() {
+		fmt.Fprintf(m.out, eCalc.Error())
+		return eCalc
 	}
 
 	return nil
