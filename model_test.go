@@ -369,7 +369,7 @@ func TestModelString(t *testing.T) {
 }
 
 func TestTodo(t *testing.T) {
-	// Show all todos in code
+	// Show all to do`s in comment code
 	source, err := filepath.Glob(fmt.Sprintf("./%s", "*.go"))
 	if err != nil {
 		t.Fatal(err)
@@ -394,7 +394,7 @@ func TestTodo(t *testing.T) {
 				if index < 0 {
 					continue
 				}
-				if !strings.Contains(line, "TODO") {
+				if !strings.Contains(strings.ToUpper(line), "TODO") {
 					continue
 				}
 				t.Logf("%d %s", pos, line[index:])
@@ -412,7 +412,7 @@ func TestTodo(t *testing.T) {
 }
 
 func TestFmt(t *testing.T) {
-	// Show all todos in code
+	// Show all fmt`s in comments code
 	source, err := filepath.Glob(fmt.Sprintf("./%s", "*.go"))
 	if err != nil {
 		t.Fatal(err)
@@ -455,7 +455,7 @@ func TestFmt(t *testing.T) {
 }
 
 func TestDebug(t *testing.T) {
-	// Show all todos in code
+	// Show all debug information in code
 	source, err := filepath.Glob(fmt.Sprintf("./%s", "*.go"))
 	if err != nil {
 		t.Fatal(err)

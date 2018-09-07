@@ -263,6 +263,8 @@ func (m *Model) checkLoad() (err error) {
 
 func (m *Model) checkModalCases() (err error) {
 	// always ok
+
+	// TODO: empty modal mass is not acceptable
 	return nil
 }
 
