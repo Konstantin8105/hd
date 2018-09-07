@@ -55,6 +55,14 @@ func (m *Model) SplitBeam(beamIndex, amountIntermediantPoints int) (err error) {
 
 	// LoadNodes is not changed
 
-	// TODO: split beam with pins
+	// Change pins for splitted beams
+	if len(m.Pins) != 0 {
+		m.Pins = append(m.Pins, make([][6]bool, amountIntermediantPoints)...)
+		for i := 3; i < 6; i++ {
+			m.Pins[len(m.Beams)-1][i] = m.Pins[beamIndex][i]
+			m.Pins[beamIndex][i] = false
+		}
+	}
+
 	return nil
 }

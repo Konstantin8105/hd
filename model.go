@@ -236,7 +236,7 @@ func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 	d := mat.NewDense(dof, 1, dataDisp)
 	err = d.Solve(k, p)
 	if err != nil {
-		return err
+		return fmt.Errorf("Linear Elastic calculation error: %v", err)
 	}
 
 	// create result information
@@ -527,7 +527,34 @@ func (m Model) String() (out string) {
 		out += fmt.Sprintf("%15.5e %15.5e %15.5e\n",
 			m.Beams[i].A, m.Beams[i].J, m.Beams[i].E)
 	}
-	// TODO: add pins report
+	// pins
+	var pinHeader bool
+	for pin := 0; pin < len(m.Pins); pin++ {
+		var isPin bool
+		for i := 0; i < 6; i++ {
+			if m.Pins[pin][i] {
+				isPin = true
+			}
+		}
+		if !isPin {
+			continue
+		}
+		if !pinHeader {
+			out += fmt.Sprintf("Pins of beam in local system coordinate:\n")
+			out += fmt.Sprintf("%5s %7s %7s %7s %7s %7s %7s \n",
+				"Index", "X", "Y", "M", "X", "Y", "M")
+			pinHeader = true
+		}
+		out += fmt.Sprintf("%5d ", pin)
+		for i := 0; i < 6; i++ {
+			out += fmt.Sprintf("%7v ",
+				m.Pins[pin][i])
+		}
+		out += fmt.Sprintf("\n")
+	}
+	if !pinHeader {
+		out += fmt.Sprintf("All beams haven`t pins\n")
+	}
 	// loads
 	for lc := 0; lc < len(m.LoadCases); lc++ {
 		out += fmt.Sprintf("\nLoad case #%3d\n", lc)

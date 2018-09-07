@@ -61,6 +61,95 @@ func baseModel() Model {
 	}
 }
 
+func baseTruss() Model {
+	return Model{
+		Points: [][2]float64{
+			{0.0, 0.0}, // 1
+			{0.0, 12.}, // 2
+			{4.0, 0.0}, // 3
+			{4.0, 6.0}, // 4
+			{8.0, 0.0}, // 5
+		},
+		Beams: []BeamProp{
+			{ // 1
+				N: [2]int{0, 1},
+				A: 40e-4,
+				J: 1,
+				E: 2.0e11,
+			}, { // 2
+				N: [2]int{0, 2},
+				A: 64e-4,
+				J: 1,
+				E: 2.0e11,
+			}, { // 3
+				N: [2]int{0, 3},
+				A: 60e-4,
+				J: 1,
+				E: 2.0e11,
+			}, { // 4
+				N: [2]int{1, 3},
+				A: 60e-4,
+				J: 1,
+				E: 2.0e11,
+			}, { // 5
+				N: [2]int{2, 3},
+				A: 40e-4,
+				J: 1,
+				E: 2.0e11,
+			}, { // 6
+				N: [2]int{2, 4},
+				A: 64e-4,
+				J: 1,
+				E: 2.0e11,
+			}, { // 7
+				N: [2]int{3, 4},
+				A: 60e-4,
+				J: 1,
+				E: 2.0e11,
+			},
+		},
+		Supports: [][3]bool{
+			{true, true, false},   // 1
+			{false, false, false}, // 2
+			{false, true, false},  // 3
+			{false, false, false}, // 4
+			{false, true, false},  // 5
+		},
+		Pins: [][6]bool{
+			{false, false, true, false, false, true}, // 1
+			{false, false, true, false, false, true}, // 2
+			{false, false, true, false, false, true}, // 3
+			{false, false, true, false, false, true}, // 4
+			{false, false, true, false, false, true}, // 5
+			{false, false, true, false, false, true}, // 6
+			{false, false, true, false, false, true}, // 7
+		},
+		LoadCases: []LoadCase{
+			{
+				LoadNodes: []LoadNode{
+					{
+						N:      1,
+						Forces: [3]float64{-70000, 0, 0},
+					}, {
+						N:      3,
+						Forces: [3]float64{42000, 0, 0},
+					},
+				},
+			},
+		},
+		ModalCases: []ModalCase{
+			{
+				ModalMasses: []ModalMass{
+					{
+						N:    1,
+						Mass: 10000,
+					},
+				},
+			},
+		},
+	}
+}
+
 func TestJsonModel(t *testing.T) {
 	m := baseModel()
 	b, err := json.Marshal(m)
@@ -181,48 +270,53 @@ func TestModelFail(t *testing.T) {
 }
 
 func TestSplit(t *testing.T) {
-	m := baseModel()
-	var b bytes.Buffer
-	if err := m.Run(&b); err != nil {
-		t.Fatalf("Error : %v", err)
-	}
-	reaction := m.LoadCases[0].Reactions[0]
-	displacament := m.LoadCases[0].PointDisplacementGlobal[1]
-	hz := m.ModalCases[0].Result[0].Hz
+	models := []Model{baseModel(), baseTruss()}
+	for mindex, m := range models {
+		var b bytes.Buffer
+		if err := m.Run(&b); err != nil {
+			t.Fatalf("Error : %v", err)
+		}
+		reaction := m.LoadCases[0].Reactions[0]
+		displacament := m.LoadCases[0].PointDisplacementGlobal[1]
+		hz := m.ModalCases[0].Result[0].Hz
 
-	for i := 1; i < 10; i++ {
-		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
-			m := baseModel()
-			var b bytes.Buffer
-			if err := m.SplitBeam(0, i); err != nil {
-				t.Fatalf("Cannot split %d: %v", i, err)
-			}
-			if err := m.Run(&b); err != nil {
-				t.Fatalf("Error : %v", err)
-			}
-
-			r := m.LoadCases[0].Reactions[0]
-			for j := 0; j < 3; j++ {
-				diff := math.Abs((reaction[j] - r[j]) / r[j])
-				if diff > 1e-10 {
-					t.Fatalf("Diff[%d] is not ok : %15.5e", j, diff)
+		for i := 2; i < 10; i++ {
+			t.Run(fmt.Sprintf("Model%d Split%d", mindex, i), func(t *testing.T) {
+				mlocal := models[mindex]
+				var b bytes.Buffer
+				amountBeams := len(mlocal.Beams)
+				for j := 0; j < amountBeams; j++ {
+					if err := mlocal.SplitBeam(j, i); err != nil {
+						t.Fatalf("Cannot split %d: %v", i, err)
+					}
 				}
-			}
-
-			d := m.LoadCases[0].PointDisplacementGlobal[1]
-			for j := 0; j < 3; j++ {
-				diff := math.Abs((displacament[j] - d[j]) / d[j])
-				if diff > 1e-10 {
-					t.Fatalf("Diff[%d] is not ok : %15.5e", j, diff)
+				if err := mlocal.Run(&b); err != nil {
+					t.Fatalf("Error : %v", err)
 				}
-			}
 
-			h := m.ModalCases[0].Result[0].Hz
-			diff := math.Abs((hz - h) / h)
-			if diff > 1e-10 {
-				t.Fatalf("Diff in natural frequency is not ok : %15.5e", diff)
-			}
-		})
+				r := mlocal.LoadCases[0].Reactions[0]
+				for j := 0; j < 3; j++ {
+					diff := math.Abs((reaction[j] - r[j]) / r[j])
+					if diff > 1e-10 {
+						t.Fatalf("Diff[%d] is not ok : %15.5e", j, diff)
+					}
+				}
+
+				d := mlocal.LoadCases[0].PointDisplacementGlobal[1]
+				for j := 0; j < 3; j++ {
+					diff := math.Abs((displacament[j] - d[j]) / d[j])
+					if diff > 1e-10 {
+						t.Fatalf("Diff[%d] is not ok : %15.5e", j, diff)
+					}
+				}
+
+				h := mlocal.ModalCases[0].Result[0].Hz
+				diff := math.Abs((hz - h) / h)
+				if diff > 1e-10 {
+					t.Fatalf("Diff in natural frequency is not ok : %15.5e", diff)
+				}
+			})
+		}
 	}
 }
 
@@ -379,82 +473,7 @@ func TestDebug(t *testing.T) {
 }
 
 func TestTruss(t *testing.T) {
-	m := Model{
-		Points: [][2]float64{
-			{0.0, 0.0}, // 1
-			{0.0, 12.}, // 2
-			{4.0, 0.0}, // 3
-			{4.0, 6.0}, // 4
-			{8.0, 0.0}, // 5
-		},
-		Beams: []BeamProp{
-			{ // 1
-				N: [2]int{0, 1},
-				A: 40e-4,
-				J: 1,
-				E: 2.0e11,
-			}, { // 2
-				N: [2]int{0, 2},
-				A: 64e-4,
-				J: 1,
-				E: 2.0e11,
-			}, { // 3
-				N: [2]int{0, 3},
-				A: 60e-4,
-				J: 1,
-				E: 2.0e11,
-			}, { // 4
-				N: [2]int{1, 3},
-				A: 60e-4,
-				J: 1,
-				E: 2.0e11,
-			}, { // 5
-				N: [2]int{2, 3},
-				A: 40e-4,
-				J: 1,
-				E: 2.0e11,
-			}, { // 6
-				N: [2]int{2, 4},
-				A: 64e-4,
-				J: 1,
-				E: 2.0e11,
-			}, { // 7
-				N: [2]int{3, 4},
-				A: 60e-4,
-				J: 1,
-				E: 2.0e11,
-			},
-		},
-		Supports: [][3]bool{
-			{true, true, false},   // 1
-			{false, false, false}, // 2
-			{false, true, false},  // 3
-			{false, false, false}, // 4
-			{false, true, false},  // 5
-		},
-		Pins: [][6]bool{
-			{false, false, true, false, false, true}, // 1
-			{false, false, true, false, false, true}, // 2
-			{false, false, true, false, false, true}, // 3
-			{false, false, true, false, false, true}, // 4
-			{false, false, true, false, false, true}, // 5
-			{false, false, true, false, false, true}, // 6
-			{false, false, true, false, false, true}, // 7
-		},
-		LoadCases: []LoadCase{
-			{
-				LoadNodes: []LoadNode{
-					{
-						N:      1,
-						Forces: [3]float64{-70000, 0, 0},
-					}, {
-						N:      3,
-						Forces: [3]float64{42000, 0, 0},
-					},
-				},
-			},
-		},
-	}
+	m := baseTruss()
 	var b bytes.Buffer
 	if err := m.Run(&b); err != nil {
 		t.Fatalf("Error : %v", err)
