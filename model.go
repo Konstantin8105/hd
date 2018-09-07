@@ -267,18 +267,22 @@ func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 		for i := 0; i < 6; i++ {
 			lc.BeamForces[bi][i] = s.At(i, 0)
 		}
-		// calculate reactions
-		// TODO: reaction is not correct for pins
-		for i := 0; i < 2; i++ {
-			for j := 0; j < 3; j++ {
-				if m.Supports[b.N[i]][j] {
-					fmt.Println(">", i, b.N[i], m.Supports[b.N[i]][j], s.At(i*3+j, 0))
-					fmt.Println(">>", lc.BeamForces[bi])
-					lc.Reactions[b.N[i]][j] += s.At(i*3+j, 0)
-				}
+	}
+	// calculate reactions
+	k = m.assemblyK()
+	for pt := 0; pt < len(m.Points); pt++ {
+		for i := 0; i < 3; i++ {
+			if !m.Supports[pt][i] {
+				// free support
+				continue
 			}
+			// fix support
+			react := -p.At(3*pt+i, 0)
+			for j := 0; j < dof; j++ {
+				react += k.At(3*pt+i, j) * d.At(j, 0)
+			}
+			lc.Reactions[pt][i] = react
 		}
-		fmt.Println("")
 	}
 
 	return nil
