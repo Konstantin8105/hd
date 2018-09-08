@@ -255,8 +255,9 @@ func TestModelFail(t *testing.T) {
 }
 
 func TestSplit(t *testing.T) {
-	models := []Model{baseModel(), baseTruss()}
-	for mindex, m := range models {
+	models := []func() Model{baseModel, baseTruss}
+	for mindex := range models {
+		m := models[mindex]()
 		var b bytes.Buffer
 		if err := m.Run(&b); err != nil {
 			t.Fatalf("Error : %v", err)
@@ -265,19 +266,9 @@ func TestSplit(t *testing.T) {
 		displacament := m.LoadCases[0].PointDisplacementGlobal[1]
 		hz := m.ModalCases[0].Result[0].Hz
 
-		// TODO: if i = 1, then Truss model is error with singular problem
-		for i := 2; i < 10; i++ {
+		for i := 1; i < 10; i++ {
 			t.Run(fmt.Sprintf("Model%d Split%d", mindex, i), func(t *testing.T) {
-				mlocal := models[mindex]
-				// remove results from last iteration
-				for lc := 0; lc < len(mlocal.LoadCases); lc++ {
-					mlocal.LoadCases[lc].Reactions = [][3]float64{}
-					mlocal.LoadCases[lc].BeamForces = [][6]float64{}
-					mlocal.LoadCases[lc].PointDisplacementGlobal = [][3]float64{}
-				}
-				for mc := 0; mc < len(mlocal.ModalCases); mc++ {
-					mlocal.ModalCases[mc].Result = []ModalResult{}
-				}
+				mlocal := models[mindex]()
 
 				// split each beams
 				var b bytes.Buffer
