@@ -26,9 +26,8 @@ func (m *Model) checkInputData() error {
 		et.Add(err)
 	}
 	// load cases
-	if err := m.checkLoadCases(); err != nil {
-		et.Add(err)
-	}
+	// no test cases
+
 	// load
 	if err := m.checkLoad(); err != nil {
 		et.Add(err)
@@ -256,11 +255,6 @@ func (m *Model) checkPins() (err error) {
 	if et.IsError() {
 		return et
 	}
-	return nil
-}
-
-func (m *Model) checkLoadCases() (err error) {
-	// always ok
 	return nil
 }
 
