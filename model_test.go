@@ -414,7 +414,7 @@ func TestFmt(t *testing.T) {
 				if index < 0 {
 					continue
 				}
-				if !strings.Contains(line, "fmt") {
+				if !strings.Contains(line, "fmt.") {
 					continue
 				}
 				t.Logf("%d %s", pos, line[index:])
@@ -462,11 +462,6 @@ func TestDebug(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestTruss(t *testing.T) {
-	m := baseTruss()
-	t.Log(m.String())
 }
 
 func ExampleString() {
