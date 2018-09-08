@@ -455,7 +455,7 @@ func TestDebug(t *testing.T) {
 	}
 }
 
-func ExampleString() {
+func ExampleModel() {
 	ms := []Model{baseModel(), baseTruss()}
 	for _, m := range ms {
 		var b bytes.Buffer
