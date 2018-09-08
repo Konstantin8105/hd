@@ -9,14 +9,12 @@ FEM(finite element method) for structural engineer
 
 ```
 Specific of truss:
-* Generally truss finite element and beam finite element with moment free on 
-node is not the same.
-In detail:
+* Generally truss finite element and beam finite element with moment free on node is not the same.
 for truss stiffiner matrix look like that
-⎡ * 0 0 0 0 0 ⎤
+⎡ * 0 0 * 0 0 ⎤
 ⎢ 0 0 0 0 0 0 ⎥
 ⎢ 0 0 0 0 0 0 ⎥
-⎢ 0 0 0 * 0 0 ⎥
+⎢ * 0 0 * 0 0 ⎥
 ⎢ 0 0 0 0 0 0 ⎥
 ⎣ 0 0 0 0 0 0 ⎦
 for beam with moment free on nodes stiffiner matrix look like that
@@ -26,6 +24,7 @@ for beam with moment free on nodes stiffiner matrix look like that
 ⎢ * 0 0 * 0 0 ⎥
 ⎢ 0 * 0 0 * 0 ⎥
 ⎣ 0 0 0 0 0 0 ⎦
+So, if we have 2 free moment, then also add free by Y direction for bith beam points
 ```
 
 **TODO :**
