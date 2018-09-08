@@ -509,10 +509,13 @@ func (m Model) String() (out string) {
 		for j := 0; j < 3; j++ {
 			if m.Supports[i][j] {
 				// fixed
-				out += fmt.Sprintf("%5d ", 1)
+				out += fmt.Sprintf("%5d", 1)
 			} else {
 				// free
-				out += fmt.Sprintf("%5d ", 0)
+				out += fmt.Sprintf("%5d", 0)
+			}
+			if j < 5 {
+				out += " "
 			}
 		}
 		out += fmt.Sprintf("\n")
@@ -543,14 +546,17 @@ func (m Model) String() (out string) {
 		if !pinHeader {
 			// TODO: add START and END for pin
 			out += fmt.Sprintf("Pins of beam in local system coordinate:\n")
-			out += fmt.Sprintf("%5s %7s %7s %7s %7s %7s %7s \n",
+			out += fmt.Sprintf("%5s %7s %7s %7s %7s %7s %7s\n",
 				"Index", "X", "Y", "M", "X", "Y", "M")
 			pinHeader = true
 		}
 		out += fmt.Sprintf("%5d ", pin)
 		for i := 0; i < 6; i++ {
-			out += fmt.Sprintf("%7v ",
+			out += fmt.Sprintf("%7v",
 				m.Pins[pin][i])
+			if i < 5 {
+				out += " "
+			}
 		}
 		out += fmt.Sprintf("\n")
 	}
@@ -579,19 +585,22 @@ func (m Model) String() (out string) {
 		if len(l.BeamForces) > 0 {
 			// TODO: add labels START , END point
 			out += fmt.Sprintf("Local force in beam:\n")
-			out += fmt.Sprintf("%5s %15s %15s %15s %15s %15s %15s \n",
+			out += fmt.Sprintf("%5s %15s %15s %15s %15s %15s %15s\n",
 				"Index", "Fx, N", "Fy, N", "M, N*m", "Fx, N", "Fy, N", "M, N*m")
 			for i := 0; i < len(l.BeamForces); i++ {
 				out += fmt.Sprintf("%5d ", i)
 				for j := 0; j < 6; j++ {
-					out += fmt.Sprintf("%15.5e ", l.BeamForces[i][j])
+					out += fmt.Sprintf("%15.5e", l.BeamForces[i][j])
+					if j < 5 {
+						out += " "
+					}
 				}
 				out += fmt.Sprintf("\n")
 			}
 		}
 		if len(l.Reactions) > 0 {
 			out += fmt.Sprintf("Reaction on support:\n")
-			out += fmt.Sprintf("%5s %15s %15s %15s \n",
+			out += fmt.Sprintf("%5s %15s %15s %15s\n",
 				"Index", "Fx, N", "Fy, N", "M, N*m")
 			for i := 0; i < len(l.Reactions); i++ {
 				if l.Reactions[i][0] == 0 &&
@@ -599,7 +608,7 @@ func (m Model) String() (out string) {
 					l.Reactions[i][2] == 0 {
 					continue
 				}
-				out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e \n",
+				out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
 					i, l.Reactions[i][0], l.Reactions[i][1], l.Reactions[i][2])
 			}
 		}

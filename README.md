@@ -7,6 +7,27 @@
 
 FEM(finite element method) for structural engineer
 
+```
+Specific of truss:
+* Generally truss finite element and beam finite element with moment free on 
+node is not the same.
+In detail:
+for truss stiffiner matrix look like that
+⎡ * 0 0 0 0 0 ⎤
+⎢ 0 0 0 0 0 0 ⎥
+⎢ 0 0 0 0 0 0 ⎥
+⎢ 0 0 0 * 0 0 ⎥
+⎢ 0 0 0 0 0 0 ⎥
+⎣ 0 0 0 0 0 0 ⎦
+for beam with moment free on nodes stiffiner matrix look like that
+⎡ * 0 0 * 0 0 ⎤
+⎢ 0 * 0 0 * 0 ⎥
+⎢ 0 0 0 0 0 0 ⎥
+⎢ * 0 0 * 0 0 ⎥
+⎢ 0 * 0 0 * 0 ⎥
+⎣ 0 0 0 0 0 0 ⎦
+```
+
 **TODO :**
 ```
 #### For calculate the steel standalone flue gas stack

@@ -57,9 +57,8 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 	kr.Set(2, 2, EJL)
 	kr.Set(5, 5, EJL)
 
-	pins := m.Pins[pos]
 	for fr := 0; fr < 6; fr++ {
-		if !pins[fr] {
+		if !m.Pins[pos][fr] {
 			// DoF is rigid
 			continue
 		}
