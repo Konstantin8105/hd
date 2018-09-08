@@ -295,27 +295,34 @@ func TestSplit(t *testing.T) {
 					t.Fatalf("Error : %v", err)
 				}
 
+				// eps
+				eps := 1e-10
+
 				// compare results
 				r := mlocal.LoadCases[0].Reactions[0]
 				for j := 0; j < 3; j++ {
 					diff := math.Abs((reaction[j] - r[j]) / r[j])
-					if diff > 1e-10 {
-						t.Fatalf("Diff[%d] is not ok : %15.5e", j, diff)
+					t.Logf("Reactions : %15.5e != %15.5e , %15.5e",
+						reaction[j], r[j], diff)
+					if diff > eps {
+						t.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
 					}
 				}
 
 				d := mlocal.LoadCases[0].PointDisplacementGlobal[1]
 				for j := 0; j < 3; j++ {
 					diff := math.Abs((displacament[j] - d[j]) / d[j])
-					if diff > 1e-10 {
-						t.Fatalf("Diff[%d] is not ok : %15.5e", j, diff)
+					if diff > eps {
+						t.Logf("Displacament: %15.5e != %15.5e", displacament[j], d[j])
+						t.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
 					}
 				}
 
 				h := mlocal.ModalCases[0].Result[0].Hz
 				diff := math.Abs((hz - h) / h)
-				if diff > 1e-10 {
-					t.Fatalf("Diff in natural frequency is not ok : %15.5e", diff)
+				if diff > eps {
+					t.Logf("Narural frequency: %15.5e != %15.5e", hz, h)
+					t.Errorf("Diff in natural frequency is not ok : %15.5e", diff)
 				}
 			})
 		}

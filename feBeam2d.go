@@ -57,13 +57,10 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 	kr.Set(2, 2, EJL)
 	kr.Set(5, 5, EJL)
 
-	if m.Pins[pos][2] && m.Pins[pos][5] {
-		// truss
-		m.Pins[pos][1] = true
-		m.Pins[pos][4] = true
-	}
+	pins := m.Pins[pos]
 	for fr := 0; fr < 6; fr++ {
-		if !m.Pins[pos][fr] { // DoF is rigid
+		if !pins[fr] {
+			// DoF is rigid
 			continue
 		}
 		// DoF is free
