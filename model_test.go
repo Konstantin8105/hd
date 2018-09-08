@@ -5,15 +5,18 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/pmezard/go-difflib/difflib"
 )
 
-func baseModel() Model {
+func baseBeam() Model {
 	return Model{
 		Points: [][2]float64{
 			{0.0, 0.0},
@@ -148,7 +151,7 @@ func baseTruss() Model {
 }
 
 func TestJsonModel(t *testing.T) {
-	m := baseModel()
+	m := baseBeam()
 	b, err := json.Marshal(m)
 	if err != nil {
 		t.Fatal(err)
@@ -255,7 +258,7 @@ func TestModelFail(t *testing.T) {
 }
 
 func TestSplit(t *testing.T) {
-	models := []func() Model{baseModel, baseTruss}
+	models := []func() Model{baseBeam, baseTruss}
 	for mIndex := range models {
 		m := models[mIndex]()
 		var b bytes.Buffer
@@ -319,7 +322,7 @@ func TestSplit(t *testing.T) {
 }
 
 func TestSplitFail(t *testing.T) {
-	m := baseModel()
+	m := baseBeam()
 	tcs := []struct {
 		beamIndex, amounts int
 	}{
@@ -455,125 +458,60 @@ func TestDebug(t *testing.T) {
 	}
 }
 
-func ExampleModel() {
-	ms := []Model{baseModel(), baseTruss()}
+func TestModelString(t *testing.T) {
+	ms := []struct {
+		m        Model
+		filename string
+	}{{
+		m:        baseBeam(),
+		filename: "beam",
+	}, {
+		m:        baseTruss(),
+		filename: "truss",
+	}}
 	for _, m := range ms {
 		var b bytes.Buffer
-		if err := m.Run(&b); err != nil {
+		if err := m.m.Run(&b); err != nil {
 			continue
 		}
 		b.Reset()
-		fmt.Fprintln(os.Stdout, m.String())
+
+		// compare files
+		actual := []byte(m.m.String())
+
+		if os.Getenv("UPDATE") != "" {
+			err := ioutil.WriteFile("./testdata/"+m.filename, actual, 0644)
+			if err != nil {
+				t.Fatalf("Cannot Update: %v", err)
+			}
+		}
+
+		expect, err := ioutil.ReadFile("./testdata/" + m.filename)
+		if err != nil {
+			t.Fatalf("Cannot read file : %v", err)
+		}
+
+		if !bytes.Equal(expect, actual) {
+			// show a diff between files
+			diff := difflib.UnifiedDiff{
+				A:        difflib.SplitLines(string(expect)),
+				B:        difflib.SplitLines(string(actual)),
+				FromFile: "Original",
+				ToFile:   "Current",
+				Context:  30000,
+			}
+			text, _ := difflib.GetUnifiedDiffString(diff)
+			t.Log(text)
+			t.Errorf("result is not same")
+		}
 	}
-
-	// Output:
-
-	// Point coordinates:
-	// Index            X, m            Y, m    SX    SY    SM (0 - free, 1 - fixed)
-	//     0         0.00000         0.00000     1     1     1
-	//     1         1.00000         0.00000     0     0     0
-	// Beam property:
-	// Index     Start point       End point       Area,sq.m Moment inertia,m4   Elasticity,Pa
-	//     0               0               1     1.20000e-03     1.20000e-04     2.00000e+11
-	// All beams haven`t pins
-	//
-	// Load case #  0
-	// Point           Fx, N           Fy, N          M, N*m
-	//     1         0.00000         2.30000         0.00000
-	//     1        10.00000         0.00000         0.00000
-	// Point displacament in global system coordinate:
-	// Point           DX, m           DY, m
-	//     0     0.00000e+00     0.00000e+00
-	//     1     4.16667e-08     3.19444e-08
-	// Local force in beam:
-	// Index           Fx, N           Fy, N          M, N*m           Fx, N           Fy, N          M, N*m
-	//     0    -1.00000e+01    -2.30000e+00    -2.30000e+00     1.00000e+01     2.30000e+00     8.88178e-16
-	// Reaction on support:
-	// Index           Fx, N           Fy, N          M, N*m
-	//     0    -1.00000e+01    -2.30000e+00    -2.30000e+00
-	//
-	// Modal case #  0
-	// Point         Mass, N
-	//     1     10000.00000
-	// Natural frequency :        42.29088 Hz
-	// Point               X               Y               M
-	//     0     0.00000e+00     0.00000e+00     0.00000e+00
-	//     1     0.00000e+00     5.54700e-01     8.32050e-01
-	// Natural frequency :        77.21223 Hz
-	// Point               X               Y               M
-	//     0     0.00000e+00     0.00000e+00     0.00000e+00
-	//     1     1.00000e+00     0.00000e+00     0.00000e+00
-	//
-	//
-	// Point coordinates:
-	// Index            X, m            Y, m    SX    SY    SM (0 - free, 1 - fixed)
-	//     0         0.00000         0.00000     1     1     0
-	//     1         0.00000        12.00000     0     0     0
-	//     2         4.00000         0.00000     0     1     0
-	//     3         4.00000         6.00000     0     0     0
-	//     4         8.00000         0.00000     0     1     0
-	// Beam property:
-	// Index     Start point       End point       Area,sq.m Moment inertia,m4   Elasticity,Pa
-	//     0               0               1     4.00000e-03     1.00000e+00     2.00000e+11
-	//     1               0               2     6.40000e-03     1.00000e+00     2.00000e+11
-	//     2               0               3     6.00000e-03     1.00000e+00     2.00000e+11
-	//     3               1               3     6.00000e-03     1.00000e+00     2.00000e+11
-	//     4               2               3     4.00000e-03     1.00000e+00     2.00000e+11
-	//     5               2               4     6.40000e-03     1.00000e+00     2.00000e+11
-	//     6               3               4     6.00000e-03     1.00000e+00     2.00000e+11
-	// Pins of beam in local system coordinate:
-	// Index       X       Y       M       X       Y       M
-	//     0   false   false    true   false   false    true
-	//     1   false   false    true   false   false    true
-	//     2   false   false    true   false   false    true
-	//     3   false   false    true   false   false    true
-	//     4   false   false    true   false   false    true
-	//     5   false   false    true   false   false    true
-	//     6   false   false    true   false   false    true
-	//
-	// Load case #  0
-	// Point           Fx, N           Fy, N          M, N*m
-	//     1    -70000.00000         0.00000         0.00000
-	//     3     42000.00000         0.00000         0.00000
-	// Point displacament in global system coordinate:
-	// Point           DX, m           DY, m
-	//     0     0.00000e+00     0.00000e+00
-	//     1    -4.61042e-03    -1.57500e-03
-	//     2    -1.06771e-04     0.00000e+00
-	//     3    -3.80192e-04     3.33751e-04
-	//     4    -2.13541e-04     0.00000e+00
-	// Local force in beam:
-	// Index           Fx, N           Fy, N          M, N*m           Fx, N           Fy, N          M, N*m
-	//     0     1.05000e+05     0.00000e+00     0.00000e+00    -1.05000e+05     0.00000e+00     0.00000e+00
-	//     1     3.41666e+04     0.00000e+00     0.00000e+00    -3.41666e+04     0.00000e+00     0.00000e+00
-	//     2    -1.11170e+04     9.56479e-10     0.00000e+00     1.11170e+04    -9.56479e-10     0.00000e+00
-	//     3    -1.26194e+05     8.73289e-09     0.00000e+00     1.26194e+05    -8.73289e-09     0.00000e+00
-	//     4    -4.45001e+04     0.00000e+00     0.00000e+00     4.45001e+04     0.00000e+00     0.00000e+00
-	//     5     3.41666e+04     0.00000e+00     0.00000e+00    -3.41666e+04     0.00000e+00     0.00000e+00
-	//     6    -6.15948e+04    -8.86350e-11     0.00000e+00     6.15948e+04     8.86350e-11     0.00000e+00
-	// Reaction on support:
-	// Index           Fx, N           Fy, N          M, N*m
-	//     0     2.80000e+04    -9.57501e+04     0.00000e+00
-	//     2     0.00000e+00     4.45001e+04     0.00000e+00
-	//     4     0.00000e+00     5.12499e+04     0.00000e+00
-	//
-	// Modal case #  0
-	// Point         Mass, N
-	//     1     10000.00000
-	// Natural frequency :        18.42543 Hz
-	// Point               X               Y               M
-	//     0     0.00000e+00     0.00000e+00     0.00000e+00
-	//     1     9.39632e-01     2.88945e-01     0.00000e+00
-	//     2     3.09602e-02     0.00000e+00     0.00000e+00
-	//     3     1.56363e-01    -6.60315e-02     0.00000e+00
-	//     4     6.19204e-02     0.00000e+00     0.00000e+00
 }
 
 func BenchmarkRun(b *testing.B) {
 	tcs := []int{1, 2, 4, 8, 16, 32, 64, 128, 256, 512}
 	for _, tc := range tcs {
 		b.Run(fmt.Sprintf("%5d", tc), func(b *testing.B) {
-			m := baseModel()
+			m := baseBeam()
 			var bb bytes.Buffer
 			_ = m.SplitBeam(0, tc)
 			b.ResetTimer()
