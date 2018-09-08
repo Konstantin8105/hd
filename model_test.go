@@ -256,8 +256,8 @@ func TestModelFail(t *testing.T) {
 
 func TestSplit(t *testing.T) {
 	models := []func() Model{baseModel, baseTruss}
-	for mindex := range models {
-		m := models[mindex]()
+	for mIndex := range models {
+		m := models[mIndex]()
 		var b bytes.Buffer
 		if err := m.Run(&b); err != nil {
 			t.Fatalf("Error : %v", err)
@@ -267,20 +267,20 @@ func TestSplit(t *testing.T) {
 		hz := m.ModalCases[0].Result[0].Hz
 
 		for i := 1; i < 10; i++ {
-			t.Run(fmt.Sprintf("Model%d Split%d", mindex, i), func(t *testing.T) {
-				mlocal := models[mindex]()
+			t.Run(fmt.Sprintf("Model%d Split%d", mIndex, i), func(t *testing.T) {
+				mLocal := models[mIndex]()
 
 				// split each beams
 				var b bytes.Buffer
-				amountBeams := len(mlocal.Beams)
+				amountBeams := len(mLocal.Beams)
 				for j := 0; j < amountBeams; j++ {
-					if err := mlocal.SplitBeam(j, i); err != nil {
+					if err := mLocal.SplitBeam(j, i); err != nil {
 						t.Fatalf("Cannot split %d: %v", i, err)
 					}
 				}
 
 				// calculation
-				if err := mlocal.Run(&b); err != nil {
+				if err := mLocal.Run(&b); err != nil {
 					t.Fatalf("Error : %v", err)
 				}
 
@@ -288,7 +288,7 @@ func TestSplit(t *testing.T) {
 				eps := 1e-9
 
 				// compare results
-				r := mlocal.LoadCases[0].Reactions[0]
+				r := mLocal.LoadCases[0].Reactions[0]
 				for j := 0; j < 3; j++ {
 					diff := math.Abs((reaction[j] - r[j]) / r[j])
 					if diff > eps {
@@ -298,7 +298,7 @@ func TestSplit(t *testing.T) {
 					}
 				}
 
-				d := mlocal.LoadCases[0].PointDisplacementGlobal[1]
+				d := mLocal.LoadCases[0].PointDisplacementGlobal[1]
 				for j := 0; j < 3; j++ {
 					diff := math.Abs((displacament[j] - d[j]) / d[j])
 					if diff > eps {
@@ -307,7 +307,7 @@ func TestSplit(t *testing.T) {
 					}
 				}
 
-				h := mlocal.ModalCases[0].Result[0].Hz
+				h := mLocal.ModalCases[0].Result[0].Hz
 				diff := math.Abs((hz - h) / h)
 				if diff > eps {
 					t.Logf("Narural frequency: %15.5e != %15.5e", hz, h)
