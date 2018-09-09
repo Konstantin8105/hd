@@ -595,8 +595,13 @@ func (m Model) String() (out string) {
 		}
 		// results
 		if len(l.BeamForces) > 0 {
-			// TODO: add labels START , END point
 			out += fmt.Sprintf("Local force in beam:\n")
+			out += fmt.Sprintf("%5s %45s %45s\n",
+				"", "START OF BEAM     ", "END OF BEAM       ")
+			out += fmt.Sprintf("%5s %45s %45s\n",
+				"",
+				"------------------------------------",
+				"------------------------------------")
 			out += fmt.Sprintf("%5s %15s %15s %15s %15s %15s %15s\n",
 				"Index", "Fx, N", "Fy, N", "M, N*m", "Fx, N", "Fy, N", "M, N*m")
 			for i := 0; i < len(l.BeamForces); i++ {
