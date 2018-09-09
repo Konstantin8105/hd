@@ -1,5 +1,6 @@
 
 Point coordinates:
+                                         SUPPORT DIRECTION
 Index            X, m            Y, m    SX    SY    SM (0 - free, 1 - fixed)
     0         0.00000         0.00000     1     1     1 
     1         1.00000         0.00000     0     0     0 

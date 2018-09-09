@@ -509,6 +509,7 @@ func (m Model) String() (out string) {
 	out += "\n"
 	// points and supports
 	out += fmt.Sprintf("Point coordinates:\n")
+	out += fmt.Sprintf("%37s %17s\n", "", "   SUPPORT DIRECTION")
 	out += fmt.Sprintf("%5s %15s %15s ", "Index", "X, m", "Y, m")
 	// TODO: add label s is SUPPORTS
 	out += fmt.Sprintf("%5s %5s %5s (0 - free, 1 - fixed)\n", "SX", "SY", "SM")
@@ -553,7 +554,6 @@ func (m Model) String() (out string) {
 			continue
 		}
 		if !pinHeader {
-			// TODO: add START and END for pin
 			out += fmt.Sprintf("Pins of beam in local system coordinate:\n")
 			out += fmt.Sprintf("%5s %23s %23s\n",
 				"", "START OF BEAM     ", "END OF BEAM       ")
