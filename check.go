@@ -220,9 +220,6 @@ func (e ErrorPin) Error() string {
 }
 
 func (m *Model) checkPins() (err error) {
-	if len(m.Pins) == 0 {
-		return nil
-	}
 	et := errors.Tree{Name: "checkPins"}
 	if len(m.Beams) != len(m.Pins) {
 		et.Add(fmt.Errorf("Amount of pins is not same beams, %d != %d",
