@@ -248,7 +248,7 @@ func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 	err = d.Solve(k, p)
 	if err != nil {
 		if _, ok := err.(mat.Condition); ok {
-			// TODO: try solve by another algoritm
+			// TODO: try solve by another algorithm
 			return fmt.Errorf("Linear Elastic calculation condition error: %v", err)
 		}
 		return fmt.Errorf("Linear Elastic calculation error: %v", err)
