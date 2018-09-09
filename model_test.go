@@ -496,6 +496,32 @@ func TestDebug(t *testing.T) {
 	}
 }
 
+func TestWriter(t *testing.T) {
+	m := baseTruss()
+	tf, err := ioutil.TempFile("", "testWriter")
+	if err != nil {
+		t.Fatalf("Cannot create temp file: %v", err)
+	}
+	old := os.Stdout
+	os.Stdout = tf
+	defer func() {
+		os.Stdout = old
+	}()
+	if err := m.Run(nil); err != nil {
+		t.Fatalf("Cannot calculate : %v", err)
+	}
+	if err := tf.Close(); err != nil {
+		t.Fatalf("Cannot close file : %v", err)
+	}
+	b, err := ioutil.ReadFile(tf.Name())
+	if err != nil {
+		t.Fatalf("Cannot read file : %v", err)
+	}
+	if len(b) == 0 {
+		t.Fatalf("File is empty")
+	}
+}
+
 func TestModelString(t *testing.T) {
 	ms := []struct {
 		m        Model
