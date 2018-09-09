@@ -37,25 +37,14 @@ func baseBeam() Model {
 		LoadCases: []LoadCase{
 			{
 				LoadNodes: []LoadNode{
-					{
-						N:      1,
-						Forces: [3]float64{0, 2.3, 0},
-					},
-					{
-						N:      1,
-						Forces: [3]float64{10, 0, 0},
-					},
+					{N: 1, Forces: [3]float64{0, 2.3, 0}},
+					{N: 1, Forces: [3]float64{10, 0, 0}},
 				},
 			},
 		},
 		ModalCases: []ModalCase{
 			{
-				ModalMasses: []ModalMass{
-					{
-						N:    1,
-						Mass: 10000,
-					},
-				},
+				ModalMasses: []ModalMass{{N: 1, Mass: 10000}},
 			},
 		},
 	}
