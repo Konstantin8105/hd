@@ -50,6 +50,55 @@ func baseBeam() Model {
 	}
 }
 
+func baseDoubleBeam() Model {
+	return Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{1.0, 0.0},
+			{0.0, 1.0},
+			{2.0, 1.0},
+		},
+		Beams: []BeamProp{
+			{
+				N: [2]int{0, 1},
+				A: 12e-4,
+				J: 120e-6,
+				E: 2.0e11,
+			},
+			{
+				N: [2]int{2, 3},
+				A: 12e-4,
+				J: 120e-6,
+				E: 2.0e11,
+			},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+			{true, true, true},
+			{false, false, false},
+		},
+		LoadCases: []LoadCase{
+			{
+				LoadNodes: []LoadNode{
+					{N: 1, Forces: [3]float64{0, 2.3, 0}},
+					{N: 1, Forces: [3]float64{10, 0, 0}},
+					{N: 3, Forces: [3]float64{0, 2.3, 0}},
+					{N: 3, Forces: [3]float64{10, 0, 0}},
+				},
+			},
+		},
+		ModalCases: []ModalCase{
+			{
+				ModalMasses: []ModalMass{
+					{N: 1, Mass: 10000},
+					{N: 3, Mass: 10000},
+				},
+			},
+		},
+	}
+}
+
 func baseTruss() Model {
 	return Model{
 		Points: [][2]float64{
@@ -247,7 +296,7 @@ func TestModelFail(t *testing.T) {
 }
 
 func TestSplit(t *testing.T) {
-	models := []func() Model{baseBeam, baseTruss}
+	models := []func() Model{baseBeam, baseTruss, baseDoubleBeam}
 	for mIndex := range models {
 		m := models[mIndex]()
 		var b bytes.Buffer
@@ -457,6 +506,9 @@ func TestModelString(t *testing.T) {
 	}, {
 		m:        baseTruss(),
 		filename: "truss",
+	}, {
+		m:        baseDoubleBeam(),
+		filename: "double-beam",
 	}}
 	for _, m := range ms {
 		var b bytes.Buffer
