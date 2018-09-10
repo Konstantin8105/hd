@@ -106,7 +106,7 @@ type LoadCase struct {
 	// [3] - Fx on end point
 	// [4] - Fy on end point
 	// [5] - M  on end point
-	// Unit: N
+	// Unit: N and N*m
 	BeamForces [][6]float64
 
 	// Reactions is reaction loads in support points.
@@ -117,7 +117,7 @@ type LoadCase struct {
 	// [0] - Fx
 	// [1] - Fy
 	// [2] - M
-	// Unit: N
+	// Unit: N and N*m
 	Reactions [][3]float64
 }
 
