@@ -92,7 +92,7 @@ type LoadCase struct {
 	// [0] - X
 	// [1] - Y
 	// [2] - M
-	// Unit: meter
+	// Unit: meter and rad.
 	PointDisplacementGlobal [][3]float64
 
 	// BeamForces is beam forces in local system coordinate.
