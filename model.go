@@ -259,8 +259,6 @@ func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 		}
 	}
 
-	// TODO: add model with many load cases
-	// TODO: add benchmark for many load cases
 	// TODO: try LU decomposition for optimize calc time
 
 	data := make([]float64, 6)
