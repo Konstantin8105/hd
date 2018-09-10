@@ -306,7 +306,7 @@ func TestSplit(t *testing.T) {
 			t.Fatalf("Error : %v", err)
 		}
 		reactions := m.LoadCases[0].Reactions
-		displacament := m.LoadCases[0].PointDisplacementGlobal[1]
+		displacaments := m.LoadCases[0].PointDisplacementGlobal
 		hz := m.ModalCases[0].Result[0].Hz
 
 		for i := 1; i < 10; i++ {
@@ -344,12 +344,15 @@ func TestSplit(t *testing.T) {
 					}
 				}
 
-				d := mLocal.LoadCases[0].PointDisplacementGlobal[1]
-				for j := 0; j < 3; j++ {
-					diff := math.Abs((displacament[j] - d[j]) / d[j])
-					if diff > eps {
-						t.Logf("Displacament: %15.5e != %15.5e", displacament[j], d[j])
-						t.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
+				for di := range displacaments {
+					displacament := displacaments[di]
+					d := mLocal.LoadCases[0].PointDisplacementGlobal[di]
+					for j := 0; j < 3; j++ {
+						diff := math.Abs((displacament[j] - d[j]) / d[j])
+						if diff > eps {
+							t.Logf("Displacament: %15.5e != %15.5e", displacament[j], d[j])
+							t.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
+						}
 					}
 				}
 
