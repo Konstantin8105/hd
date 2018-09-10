@@ -40,6 +40,9 @@ func baseBeam() Model {
 					{N: 1, Forces: [3]float64{0, 2.3, 0}},
 					{N: 1, Forces: [3]float64{10, 0, 0}},
 				},
+				LoadUniforms: []LoadUniform{
+					{B: 0, Forces: [3]float64{-1.3, 3.4, 0.5}},
+				},
 			},
 		},
 		ModalCases: []ModalCase{

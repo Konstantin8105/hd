@@ -166,10 +166,11 @@ type LoadNode struct {
 
 	// Forces is node loads on each direction
 	//
-	// [0] - X
-	// [1] - Y
-	// [2] - M
-	// Unit: N
+	// [0] - X , Unit: N
+	//
+	// [1] - Y , Unit: N
+	//
+	// [2] - M , Unit: N*m
 	Forces [3]float64
 }
 
@@ -180,10 +181,11 @@ type LoadUniform struct {
 
 	// Forces is uniformly-distributed loads on each direction
 	//
-	// [0] - X
-	// [1] - Y
-	// [2] - M
-	// Unit: N/m
+	// [0] - X , Unit: N/m
+	//
+	// [1] - Y , Unit: N/m
+	//
+	// [2] - M , Unit: N*m/m
 	Forces [3]float64
 }
 
