@@ -399,8 +399,6 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		},
 	}
 
-	// TODO: add test Modal for truss.
-
 	// memory initialization
 	dof := 3 * len(m.Points)
 	dataM := make([]float64, dof*dof)
