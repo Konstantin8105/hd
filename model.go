@@ -460,10 +460,7 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		v := e.Values(nil)
 		eVector := e.Vectors()
 		for i := 0; i < len(v); i++ {
-			if math.Abs(imag(v[i])) > 0 {
-				continue
-			}
-			if real(v[i]) == 0 {
+			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
 				continue
 			}
 			if real(v[i]) < 0 {
