@@ -329,6 +329,50 @@ func baseModalBeamRotate() Model {
 	return m
 }
 
+func baseModalBeam3mass() Model {
+	E := 2e11
+	J := 15e-4
+	m := 250.0
+	l := 4.0
+	A := 12e-2
+	return Model{
+		Points: [][2]float64{
+			{0.0, 0.000},     // 0
+			{0.0, l / 6.0},   // 1
+			{0.0, l / 2.0},   // 2
+			{0.0, l - l/6.0}, // 3
+			{0.0, l},         // 4
+		},
+		Beams: []BeamProp{
+			{ // 0
+				N: [2]int{0, 1}, A: A, J: J, E: E,
+			}, { // 1
+				N: [2]int{1, 2}, A: A, J: J, E: E,
+			}, { // 2
+				N: [2]int{2, 3}, A: A, J: J, E: E,
+			}, { // 3
+				N: [2]int{3, 4}, A: A, J: J, E: E,
+			},
+		},
+		Supports: [][3]bool{
+			{true, true, false},   // 0
+			{false, false, false}, // 1
+			{false, false, false}, // 2
+			{false, false, false}, // 3
+			{true, false, false},  // 4
+		},
+		ModalCases: []ModalCase{
+			{
+				ModalMasses: []ModalMass{
+					{N: 1, Mass: m * Gravity},
+					{N: 2, Mass: m * Gravity},
+					{N: 3, Mass: m * Gravity},
+				},
+			},
+		},
+	}
+}
+
 func TestJsonModel(t *testing.T) {
 	m := baseBeam()
 	b, err := json.Marshal(m)
@@ -704,6 +748,9 @@ func TestModelString(t *testing.T) {
 	}, {
 		m:        baseModalBeamRotate(),
 		filename: "beam-modal-rotate",
+	}, {
+		m:        baseModalBeam3mass(),
+		filename: "beam-modal-3mass",
 	}}
 	for _, m := range ms {
 		t.Run(m.filename, func(t *testing.T) {
