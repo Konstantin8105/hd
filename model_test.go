@@ -206,6 +206,45 @@ func baseModalTruss() Model {
 	return m
 }
 
+func baseModalTrussRotate() Model {
+	A := math.Pi * math.Pow(0.050, 2) / 4.0
+	J := math.Pi * math.Pow(0.050, 4) / 64.0
+	m := Model{
+		Points: [][2]float64{
+			{0.0, 0.000}, // 0
+			{0.0, 0.400}, // 1
+			{0.0, 1.000}, // 2
+		},
+		Beams: []BeamProp{
+			{ // 0
+				N: [2]int{0, 1}, A: A, J: J, E: 2e11,
+			}, { // 1
+				N: [2]int{1, 2}, A: A, J: J, E: 2e11,
+			},
+		},
+		Supports: [][3]bool{
+			{true, true, true},    // 0
+			{false, false, false}, // 1
+			{true, true, true},    // 2
+		},
+		Pins: [][6]bool{
+			{false, false, true, false, false, false}, // 0
+			{false, false, false, true, false, true},  // 1
+		},
+		ModalCases: []ModalCase{
+			{
+				ModalMasses: []ModalMass{
+					{
+						N:    1,
+						Mass: 100 * Gravity,
+					},
+				},
+			},
+		},
+	}
+	return m
+}
+
 func baseModalBeam() Model {
 	A := math.Pi * math.Pow(0.050, 2) / 4.0
 	J := math.Pi * math.Pow(0.050, 4) / 64.0
@@ -602,6 +641,9 @@ func TestModelString(t *testing.T) {
 	}, {
 		m:        baseModalTruss(),
 		filename: "truss-modal",
+	}, {
+		m:        baseModalTrussRotate(),
+		filename: "truss-modal-rotate",
 	}, {
 		m:        baseModalBeam(),
 		filename: "beam-modal",

@@ -401,10 +401,11 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 
 	// memory initialization
 	dof := 3 * len(m.Points)
-	dataM := make([]float64, dof*dof)
-	dataH := make([]float64, dof*dof)
 
 	for _, mcCase := range mcCases {
+		dataM := make([]float64, dof*dof)
+		dataH := make([]float64, dof*dof)
+
 		fmt.Fprintf(m.out, "%s", mcCase.name)
 
 		// assembly matrix of stiffiner
@@ -415,15 +416,9 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 
 		M := mat.NewDense(dof, dof, dataM)
 
-		for p := 0; p < len(m.Points); p++ {
-			// summary mass
-			var mass float64
-			for j := 0; j < len(mc.ModalMasses); j++ {
-				if mc.ModalMasses[j].N == p {
-					mass += mc.ModalMasses[j].Mass
-				}
-			}
-			M.Set(p*3+mcCase.direction, p*3+mcCase.direction, mass/Gravity)
+		for _, mm := range mc.ModalMasses {
+			index := mm.N*3 + mcCase.direction
+			M.Set(index, index, M.At(index, index)+mm.Mass/Gravity)
 		}
 
 		h := mat.NewDense(dof, dof, dataH)
@@ -468,15 +463,19 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			if math.Abs(imag(v[i])) > 0 {
 				continue
 			}
-			if real(v[i]) <= 0 {
+			if real(v[i]) == 0 {
 				continue
+			}
+			if real(v[i]) < 0 {
+				// TODO: change sign. Check is it important
+				v[i] = complex(math.Abs(real(v[i])), 0)
 			}
 
 			var mr ModalResult
 			mr.Hz = 1. / (math.Sqrt(real(v[i])) * 2.0 * math.Pi)
 			var isFound bool
 			for j := range mc.Result {
-				if (mc.Result[j].Hz-mr.Hz)/mr.Hz < 1e-10 {
+				if math.Abs((mc.Result[j].Hz-mr.Hz)/mr.Hz) < 1e-10 {
 					isFound = true
 				}
 			}
