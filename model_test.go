@@ -536,7 +536,7 @@ func TestTodo(t *testing.T) {
 			}
 			defer file.Close()
 
-			pos := 1
+			pos := 0
 			scanner := bufio.NewScanner(file)
 			for scanner.Scan() {
 				line := scanner.Text()
