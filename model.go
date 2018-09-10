@@ -155,7 +155,7 @@ type ModalMass struct {
 	Mass float64
 }
 
-// LoadNode is node load on specific point
+// LoadNode is node load on specific point in global system coordinate
 type LoadNode struct {
 	// N is point index
 	N int
