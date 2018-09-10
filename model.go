@@ -11,6 +11,8 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
+// TODO: global rename nodal to node
+
 // Model is structural calculation model
 type Model struct {
 	// Points is slice of point coordinate
@@ -83,10 +85,6 @@ type BeamProp struct {
 type LoadCase struct {
 	// LoadNodes is nodal loads in global system coordinate
 	LoadNodes []LoadNode
-
-	// LoadUniforms is uniformly-distributed beam loads in global system
-	// coordinate
-	LoadUniforms []LoadUniform
 
 	// Point displacement in global system coordinate.
 	// Return data.
@@ -171,21 +169,6 @@ type LoadNode struct {
 	// [1] - Y , Unit: N
 	//
 	// [2] - M , Unit: N*m
-	Forces [3]float64
-}
-
-// LoadUniform is uniformly-distributed beam loads in global system coordinate
-type LoadUniform struct {
-	// B is beam index
-	B int
-
-	// Forces is uniformly-distributed loads on each direction
-	//
-	// [0] - X , Unit: N/m
-	//
-	// [1] - Y , Unit: N/m
-	//
-	// [2] - M , Unit: N*m/m
 	Forces [3]float64
 }
 
@@ -377,12 +360,12 @@ func (m *Model) assemblyNodalLoad(lc *LoadCase) (p *mat.Dense) {
 	dof := 3 * len(m.Points)
 	data := make([]float64, dof)
 	p = mat.NewDense(dof, 1, data)
+	// nodal loads
 	for _, ln := range lc.LoadNodes {
 		for i := 0; i < 3; i++ {
 			p.Set(ln.N*3+i, 0, p.At(ln.N*3+i, 0)+ln.Forces[i])
 		}
 	}
-	// TODO : add uniform load
 	return
 }
 
@@ -599,6 +582,8 @@ func (m Model) String() (out string) {
 	// loads
 	for lc := 0; lc < len(m.LoadCases); lc++ {
 		out += fmt.Sprintf("\nLoad case #%3d\n", lc)
+
+		// TODO : don`t show if we haven`t node point
 		out += fmt.Sprintf("%5s %15s %15s %15s\n",
 			"Point", "Fx, N", "Fy, N", "M, N*m")
 		for _, ln := range m.LoadCases[lc].LoadNodes {

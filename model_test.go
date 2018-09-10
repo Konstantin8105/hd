@@ -40,9 +40,6 @@ func baseBeam() Model {
 					{N: 1, Forces: [3]float64{0, 2.3, 0}},
 					{N: 1, Forces: [3]float64{10, 0, 0}},
 				},
-				LoadUniforms: []LoadUniform{
-					{B: 0, Forces: [3]float64{-1.3, 3.4, 0.5}},
-				},
 			},
 		},
 		ModalCases: []ModalCase{
@@ -308,6 +305,7 @@ func TestSplit(t *testing.T) {
 		if err := m.Run(&b); err != nil {
 			t.Fatalf("Error : %v", err)
 		}
+		// TODO: add test for add cases
 		reactions := m.LoadCases[0].Reactions
 		displacaments := m.LoadCases[0].PointDisplacementGlobal
 		hz := m.ModalCases[0].Result[0].Hz
