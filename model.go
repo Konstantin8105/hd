@@ -263,7 +263,6 @@ func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 	// TODO: add benchmark for many load cases
 	// TODO: try LU decomposition for optimize calc time
 
-	// TODO: try to use memory pool
 	data := make([]float64, 6)
 	dataS := make([]float64, 6)
 	Zo := mat.NewDense(6, 1, data)
@@ -357,7 +356,6 @@ func (m *Model) assemblyK() *mat.Dense {
 
 func (m *Model) assemblyNodeLoad(lc *LoadCase) (p *mat.Dense) {
 	dof := 3 * len(m.Points)
-	// TODO: try to use memory pool
 	data := make([]float64, dof)
 	p = mat.NewDense(dof, 1, data)
 	// node loads
@@ -406,7 +404,6 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 
 	for _, mcCase := range mcCases {
 		// TODO: memory optimize for modal calc
-		// TODO: try to use memory pool
 		dataM := make([]float64, dof*dof)
 		dataH := make([]float64, dof*dof)
 
@@ -428,7 +425,6 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		h := mat.NewDense(dof, dof, dataH)
 
 		for col := 0; col < dof; col++ {
-			// TODO: try to use memory pool
 			dataMS := make([]float64, dof)
 			MS := mat.NewDense(dof, 1, dataMS)
 			isZero := true
@@ -443,7 +439,6 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 				continue
 			}
 
-			// TODO: try to use memory pool
 			datahh := make([]float64, dof)
 			hh := mat.NewDense(dof, 1, datahh)
 			err = hh.Solve(k, MS)

@@ -22,7 +22,6 @@ func (m Model) distance(st, en int) (res float64) {
 
 // matrix of stiffiner for beam 2d
 func (m Model) getStiffBeam2d(pos int) *mat.Dense {
-	// TODO: try to use memory pool
 	data := make([]float64, 36)
 	kr := mat.NewDense(6, 6, data)
 
@@ -78,7 +77,6 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 		dataKBB := make([]float64, 5*5)
 		KBB := mat.NewDense(5, 5, dataKBB)
 
-		// TODO: try to use memory pool
 		dataKBB2 := make([]float64, 5*5)
 		KBB2 := mat.NewDense(5, 5, dataKBB2)
 
@@ -144,7 +142,6 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 }
 
 func (m Model) getCoordTransStiffBeam2d(pos int) *mat.Dense {
-	// TODO: try to use memory pool
 	data := make([]float64, 36)
 	tr := mat.NewDense(6, 6, data)
 
