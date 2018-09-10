@@ -580,8 +580,6 @@ func (m Model) String() (out string) {
 	// loads
 	for lc := 0; lc < len(m.LoadCases); lc++ {
 		out += fmt.Sprintf("\nLoad case #%3d\n", lc)
-
-		// TODO : don`t show if we haven`t node point
 		out += fmt.Sprintf("%5s %15s %15s %15s\n",
 			"Point", "Fx, N", "Fy, N", "M, N*m")
 		for _, ln := range m.LoadCases[lc].LoadNodes {
