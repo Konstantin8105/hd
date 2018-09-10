@@ -99,8 +99,6 @@ func baseDoubleBeam() Model {
 	}
 }
 
-// TODO : add uniform load test
-
 func baseTruss() Model {
 	return Model{
 		Points: [][2]float64{

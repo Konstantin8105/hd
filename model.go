@@ -597,8 +597,6 @@ func (m Model) String() (out string) {
 					i, l.PointDisplacementGlobal[i][0], l.PointDisplacementGlobal[i][1])
 			}
 		}
-		// TODO : add uniform load
-
 		// results
 		if len(l.BeamForces) > 0 {
 			out += fmt.Sprintf("Local force in beam:\n")
