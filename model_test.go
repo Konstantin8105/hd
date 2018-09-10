@@ -41,6 +41,12 @@ func baseBeam() Model {
 					{N: 1, Forces: [3]float64{10, 0, 0}},
 				},
 			},
+			{ // test for 2 cases with different positions
+				LoadNodes: []LoadNode{
+					{N: 1, Forces: [3]float64{10, 0, 0}},
+					{N: 1, Forces: [3]float64{0, 2.3, 0}},
+				},
+			},
 		},
 		ModalCases: []ModalCase{
 			{
@@ -431,16 +437,19 @@ func TestModelFail(t *testing.T) {
 }
 
 func TestSplit(t *testing.T) {
-	models := []func() Model{baseBeam, baseTruss, baseDoubleBeam}
+	models := []func() Model{
+		baseBeam, baseDoubleBeam,
+		baseTruss,
+		baseModalBeam, baseModalBeamRotate,
+		baseModalTruss, baseModalTrussRotate,
+	}
 	for mIndex := range models {
 		m := models[mIndex]()
 		var b bytes.Buffer
 		if err := m.Run(&b); err != nil {
 			t.Fatalf("Error : %v", err)
 		}
-		// TODO: add test for add cases
-		reactions := m.LoadCases[0].Reactions
-		displacaments := m.LoadCases[0].PointDisplacementGlobal
+		expectResult := m.LoadCases
 		hz := m.ModalCases[0].Result[0].Hz
 
 		for i := 1; i < 10; i++ {
@@ -464,28 +473,34 @@ func TestSplit(t *testing.T) {
 				// eps
 				eps := 1e-9
 
-				// compare results
-				for ri := range reactions {
-					reaction := reactions[ri]
-					r := mLocal.LoadCases[0].Reactions[ri]
-					for j := 0; j < 3; j++ {
-						diff := math.Abs((reaction[j] - r[j]) / r[j])
-						if diff > eps {
-							t.Logf("Reactions : %15.5e != %15.5e , %15.5e",
-								reaction[j], r[j], diff)
-							t.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
+				// compare results for all cases
+				for elc := range expectResult {
+					reactions := expectResult[elc].Reactions
+					displacaments := expectResult[elc].PointDisplacementGlobal
+
+					// compare results
+					for ri := range reactions {
+						reaction := reactions[ri]
+						r := mLocal.LoadCases[elc].Reactions[ri]
+						for j := 0; j < 3; j++ {
+							diff := math.Abs((reaction[j] - r[j]) / r[j])
+							if diff > eps {
+								t.Logf("Reactions : %15.5e != %15.5e , %15.5e",
+									reaction[j], r[j], diff)
+								t.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
+							}
 						}
 					}
-				}
 
-				for di := range displacaments {
-					displacament := displacaments[di]
-					d := mLocal.LoadCases[0].PointDisplacementGlobal[di]
-					for j := 0; j < 3; j++ {
-						diff := math.Abs((displacament[j] - d[j]) / d[j])
-						if diff > eps {
-							t.Logf("Displacament: %15.5e != %15.5e", displacament[j], d[j])
-							t.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
+					for di := range displacaments {
+						displacament := displacaments[di]
+						d := mLocal.LoadCases[elc].PointDisplacementGlobal[di]
+						for j := 0; j < 3; j++ {
+							diff := math.Abs((displacament[j] - d[j]) / d[j])
+							if diff > eps {
+								t.Logf("Displacament: %15.5e != %15.5e", displacament[j], d[j])
+								t.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
+							}
 						}
 					}
 				}
