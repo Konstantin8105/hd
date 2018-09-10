@@ -206,6 +206,45 @@ func baseModalTruss() Model {
 	return m
 }
 
+func baseModalBeam() Model {
+	A := math.Pi * math.Pow(0.050, 2) / 4.0
+	J := math.Pi * math.Pow(0.050, 4) / 64.0
+	m := Model{
+		Points: [][2]float64{
+			{0.000, 0.0}, // 0
+			{0.400, 0.0}, // 1
+			{1.000, 0.0}, // 2
+		},
+		Beams: []BeamProp{
+			{ // 0
+				N: [2]int{0, 1}, A: A, J: J, E: 2e11,
+			}, { // 1
+				N: [2]int{1, 2}, A: A, J: J, E: 2e11,
+			},
+		},
+		Supports: [][3]bool{
+			{true, true, false},   // 0
+			{false, false, false}, // 1
+			{false, true, false},  // 2
+		},
+		Pins: [][6]bool{
+			{false, false, false, false, false, false}, // 0
+			{false, false, false, false, false, false}, // 1
+		},
+		ModalCases: []ModalCase{
+			{
+				ModalMasses: []ModalMass{
+					{
+						N:    1,
+						Mass: 100 * Gravity,
+					},
+				},
+			},
+		},
+	}
+	return m
+}
+
 func TestJsonModel(t *testing.T) {
 	m := baseBeam()
 	b, err := json.Marshal(m)
@@ -563,6 +602,9 @@ func TestModelString(t *testing.T) {
 	}, {
 		m:        baseModalTruss(),
 		filename: "truss-modal",
+	}, {
+		m:        baseModalBeam(),
+		filename: "beam-modal",
 	}}
 	for _, m := range ms {
 		t.Run(m.filename, func(t *testing.T) {
