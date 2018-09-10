@@ -563,7 +563,7 @@ func TestTodo(t *testing.T) {
 				if !strings.Contains(strings.ToUpper(line), "TODO") {
 					continue
 				}
-				t.Logf("%d %s", pos, line[index:])
+				t.Logf("%13s:%-4d %s", source[i], pos, line[index:])
 				amount++
 			}
 
