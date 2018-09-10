@@ -110,40 +110,19 @@ func baseTruss() Model {
 		},
 		Beams: []BeamProp{
 			{ // 1
-				N: [2]int{0, 1},
-				A: 40e-4,
-				J: 1,
-				E: 2.0e11,
+				N: [2]int{0, 1}, A: 40e-4, J: 1, E: 2.0e11,
 			}, { // 2
-				N: [2]int{0, 2},
-				A: 64e-4,
-				J: 1,
-				E: 2.0e11,
+				N: [2]int{0, 2}, A: 64e-4, J: 1, E: 2.0e11,
 			}, { // 3
-				N: [2]int{0, 3},
-				A: 60e-4,
-				J: 1,
-				E: 2.0e11,
+				N: [2]int{0, 3}, A: 60e-4, J: 1, E: 2.0e11,
 			}, { // 4
-				N: [2]int{1, 3},
-				A: 60e-4,
-				J: 1,
-				E: 2.0e11,
+				N: [2]int{1, 3}, A: 60e-4, J: 1, E: 2.0e11,
 			}, { // 5
-				N: [2]int{2, 3},
-				A: 40e-4,
-				J: 1,
-				E: 2.0e11,
+				N: [2]int{2, 3}, A: 40e-4, J: 1, E: 2.0e11,
 			}, { // 6
-				N: [2]int{2, 4},
-				A: 64e-4,
-				J: 1,
-				E: 2.0e11,
+				N: [2]int{2, 4}, A: 64e-4, J: 1, E: 2.0e11,
 			}, { // 7
-				N: [2]int{3, 4},
-				A: 60e-4,
-				J: 1,
-				E: 2.0e11,
+				N: [2]int{3, 4}, A: 60e-4, J: 1, E: 2.0e11,
 			},
 		},
 		Supports: [][3]bool{
@@ -186,6 +165,45 @@ func baseTruss() Model {
 			},
 		},
 	}
+}
+
+func baseModalTruss() Model {
+	A := math.Pi * math.Pow(0.050, 2) / 4.0
+	J := math.Pi * math.Pow(0.050, 4) / 64.0
+	m := Model{
+		Points: [][2]float64{
+			{0.000, 0.0}, // 0
+			{0.400, 0.0}, // 1
+			{1.000, 0.0}, // 2
+		},
+		Beams: []BeamProp{
+			{ // 0
+				N: [2]int{0, 1}, A: A, J: J, E: 2e11,
+			}, { // 1
+				N: [2]int{1, 2}, A: A, J: J, E: 2e11,
+			},
+		},
+		Supports: [][3]bool{
+			{true, true, true},    // 0
+			{false, false, false}, // 1
+			{true, true, true},    // 2
+		},
+		Pins: [][6]bool{
+			{false, false, true, false, false, false}, // 0
+			{false, false, false, true, false, true},  // 1
+		},
+		ModalCases: []ModalCase{
+			{
+				ModalMasses: []ModalMass{
+					{
+						N:    1,
+						Mass: 100 * Gravity,
+					},
+				},
+			},
+		},
+	}
+	return m
 }
 
 func TestJsonModel(t *testing.T) {
@@ -542,42 +560,47 @@ func TestModelString(t *testing.T) {
 	}, {
 		m:        baseDoubleBeam(),
 		filename: "double-beam",
+	}, {
+		m:        baseModalTruss(),
+		filename: "truss-modal",
 	}}
 	for _, m := range ms {
-		var b bytes.Buffer
-		if err := m.m.Run(&b); err != nil {
-			continue
-		}
-		b.Reset()
+		t.Run(m.filename, func(t *testing.T) {
+			var b bytes.Buffer
+			if err := m.m.Run(&b); err != nil {
+				t.Errorf("Cannot calculate : %v", err)
+			}
+			b.Reset()
 
-		// compare files
-		actual := []byte(m.m.String())
+			// compare files
+			actual := []byte(m.m.String())
 
-		if os.Getenv("UPDATE") != "" {
-			err := ioutil.WriteFile("./testdata/"+m.filename, actual, 0644)
+			if os.Getenv("UPDATE") != "" {
+				err := ioutil.WriteFile("./testdata/"+m.filename, actual, 0644)
+				if err != nil {
+					t.Fatalf("Cannot Update: %v", err)
+				}
+			}
+
+			expect, err := ioutil.ReadFile("./testdata/" + m.filename)
 			if err != nil {
-				t.Fatalf("Cannot Update: %v", err)
+				t.Fatalf("Cannot read file : %v", err)
 			}
-		}
 
-		expect, err := ioutil.ReadFile("./testdata/" + m.filename)
-		if err != nil {
-			t.Fatalf("Cannot read file : %v", err)
-		}
-
-		if !bytes.Equal(expect, actual) {
-			// show a diff between files
-			diff := difflib.UnifiedDiff{
-				A:        difflib.SplitLines(string(expect)),
-				B:        difflib.SplitLines(string(actual)),
-				FromFile: "Original",
-				ToFile:   "Current",
-				Context:  30000,
+			if !bytes.Equal(expect, actual) {
+				// show a diff between files
+				diff := difflib.UnifiedDiff{
+					A:        difflib.SplitLines(string(expect)),
+					B:        difflib.SplitLines(string(actual)),
+					FromFile: "Original",
+					ToFile:   "Current",
+					Context:  30000,
+				}
+				text, _ := difflib.GetUnifiedDiffString(diff)
+				t.Log(text)
+				t.Errorf("result is not same")
 			}
-			text, _ := difflib.GetUnifiedDiffString(diff)
-			t.Log(text)
-			t.Errorf("result is not same")
-		}
+		})
 	}
 }
 
