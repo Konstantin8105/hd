@@ -11,8 +11,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// TODO: global rename nodal to node
-
 // Model is structural calculation model
 type Model struct {
 	// Points is slice of point coordinate
@@ -83,7 +81,7 @@ type BeamProp struct {
 
 // LoadCase is summary combination of loads
 type LoadCase struct {
-	// LoadNodes is nodal loads in global system coordinate
+	// LoadNodes is node loads in global system coordinate
 	LoadNodes []LoadNode
 
 	// Point displacement in global system coordinate.
@@ -238,13 +236,13 @@ func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
 	// assembly matrix of stiffiner
 	k := m.assemblyK()
 
-	// assembly nodal load
-	p := m.assemblyNodalLoad(lc)
+	// assembly node load
+	p := m.assemblyNodeLoad(lc)
 
 	// add support
 	m.addSupport(k)
 
-	// calculate nodal displacament
+	// calculate node displacament
 	dof := 3 * len(m.Points)
 	dataDisp := make([]float64, dof)
 	d := mat.NewDense(dof, 1, dataDisp)
@@ -356,11 +354,11 @@ func (m *Model) assemblyK() *mat.Dense {
 	return k
 }
 
-func (m *Model) assemblyNodalLoad(lc *LoadCase) (p *mat.Dense) {
+func (m *Model) assemblyNodeLoad(lc *LoadCase) (p *mat.Dense) {
 	dof := 3 * len(m.Points)
 	data := make([]float64, dof)
 	p = mat.NewDense(dof, 1, data)
-	// nodal loads
+	// node loads
 	for _, ln := range lc.LoadNodes {
 		for i := 0; i < 3; i++ {
 			p.Set(ln.N*3+i, 0, p.At(ln.N*3+i, 0)+ln.Forces[i])
