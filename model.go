@@ -81,8 +81,12 @@ type BeamProp struct {
 
 // LoadCase is summary combination of loads
 type LoadCase struct {
-	// LoadNodes is nodal loads
+	// LoadNodes is nodal loads in global system coordinate
 	LoadNodes []LoadNode
+
+	// LoadUniforms is uniformly-distributed beam loads in global system
+	// coordinate
+	LoadUniforms []LoadUniform
 
 	// Point displacement in global system coordinate.
 	// Return data.
@@ -160,12 +164,26 @@ type LoadNode struct {
 	// N is point index
 	N int
 
-	// Forces is node load on each direction
+	// Forces is node loads on each direction
 	//
 	// [0] - X
 	// [1] - Y
 	// [2] - M
 	// Unit: N
+	Forces [3]float64
+}
+
+// LoadUniform is uniformly-distributed beam loads in global system coordinate
+type LoadUniform struct {
+	// B is beam index
+	B int
+
+	// Forces is uniformly-distributed loads on each direction
+	//
+	// [0] - X
+	// [1] - Y
+	// [2] - M
+	// Unit: N/m
 	Forces [3]float64
 }
 
@@ -362,6 +380,7 @@ func (m *Model) assemblyNodalLoad(lc *LoadCase) (p *mat.Dense) {
 			p.Set(ln.N*3+i, 0, p.At(ln.N*3+i, 0)+ln.Forces[i])
 		}
 	}
+	// TODO : add uniform load
 	return
 }
 
@@ -593,6 +612,8 @@ func (m Model) String() (out string) {
 					i, l.PointDisplacementGlobal[i][0], l.PointDisplacementGlobal[i][1])
 			}
 		}
+		// TODO : add uniform load
+
 		// results
 		if len(l.BeamForces) > 0 {
 			out += fmt.Sprintf("Local force in beam:\n")

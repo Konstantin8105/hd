@@ -32,6 +32,9 @@ func (m *Model) checkInputData() error {
 	if err := m.checkLoad(); err != nil {
 		et.Add(err)
 	}
+
+	// TODO : check uniform load
+
 	// modal cases
 	if err := m.checkModalCases(); err != nil {
 		et.Add(err)

@@ -55,6 +55,8 @@ func (m *Model) SplitBeam(beamIndex, amountIntermediantPoints int) (err error) {
 
 	// LoadNodes is not changed
 
+	// TODO : add uniform load
+
 	// Change pins for splitted beams
 	if len(m.Pins) != 0 {
 		m.Pins = append(m.Pins, make([][6]bool, amountIntermediantPoints)...)
