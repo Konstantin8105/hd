@@ -269,7 +269,6 @@ func (m *Model) runLinearElastic() (err error) {
 		}
 
 		data := make([]float64, 6)
-		dataS := make([]float64, 6)
 		Zo := mat.NewDense(6, 1, data)
 		lc.BeamForces = make([][6]float64, len(m.Beams))
 		lc.Reactions = make([][3]float64, len(m.Points))
@@ -283,12 +282,9 @@ func (m *Model) runLinearElastic() (err error) {
 			var z mat.Dense
 			z.Mul(tr, Zo)
 			kr := m.getStiffBeam2d(bi)
-			s := mat.NewDense(6, 1, dataS)
-			s.Mul(kr, &z)
+			s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
 			// calculate beam forces
-			for i := 0; i < 6; i++ {
-				lc.BeamForces[bi][i] = s.At(i, 0)
-			}
+			s.Mul(kr, &z)
 		}
 		// calculate reactions
 		for pt := 0; pt < len(m.Points); pt++ {
