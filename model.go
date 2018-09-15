@@ -341,13 +341,8 @@ func (m *Model) assemblyK() *mat.Dense {
 	// It is happen if we have pin nodes
 	// add 1 for diagonal with zero
 	for i := 0; i < dof; i++ {
-		isZero := true
-		for j := 0; j < dof; j++ {
-			if k.At(i, j) != 0.0 {
-				isZero = false
-				break
-			}
-		}
+		isZero := k.At(i, i) == 0.0
+		// TODO : add checking only for pin direction
 		if !isZero {
 			continue
 		}
