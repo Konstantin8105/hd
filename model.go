@@ -203,13 +203,8 @@ func (m *Model) Run(out io.Writer) (err error) {
 	eCalc.Name = "Calculation errors"
 
 	// calculation by load cases
-	for i := range m.LoadCases {
-		fmt.Fprintf(m.out, "Calculate load case %d of %d\n",
-			i,
-			len(m.LoadCases))
-		if err := m.runLinearElastic(&m.LoadCases[i]); err != nil {
-			eCalc.Add(fmt.Errorf("Error in load case %d: %v", i, err))
-		}
+	if err := m.runLinearElastic(); err != nil {
+		eCalc.Add(fmt.Errorf("Error in load case :%v", err))
 	}
 
 	// calculation by modal cases
@@ -230,73 +225,79 @@ func (m *Model) Run(out io.Writer) (err error) {
 	return nil
 }
 
-func (m *Model) runLinearElastic(lc *LoadCase) (err error) {
+func (m *Model) runLinearElastic() (err error) {
 	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
 
 	// assembly matrix of stiffiner
 	k := m.assemblyK()
 
-	// assembly node load
-	p := m.assemblyNodeLoad(lc)
+	for ilc := range m.LoadCases {
+		lc := &m.LoadCases[ilc]
 
-	// add support
-	m.addSupport(k)
+		fmt.Fprintf(m.out, "Calculate load case %d of %d\n", ilc, len(m.LoadCases))
 
-	// calculate node displacament
-	dof := 3 * len(m.Points)
-	dataDisp := make([]float64, dof)
-	d := mat.NewDense(dof, 1, dataDisp)
-	err = d.Solve(k, p)
-	if err != nil {
-		return fmt.Errorf("Linear Elastic calculation error: %v", err)
-	}
+		// assembly node load
+		p := m.assemblyNodeLoad(lc)
 
-	// create result information
-	lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
-	for p := 0; p < len(m.Points); p++ {
-		for i := 0; i < 3; i++ {
-			lc.PointDisplacementGlobal[p][i] = d.At(3*p+i, 0)
+		// add support
+		m.addSupport(k)
+
+		// calculate node displacament
+		dof := 3 * len(m.Points)
+		dataDisp := make([]float64, dof)
+		d := mat.NewDense(dof, 1, dataDisp)
+		err = d.Solve(k, p)
+		if err != nil {
+			return fmt.Errorf("Linear Elastic calculation error: %v", err)
 		}
-	}
 
-	// TODO: try LU decomposition for optimize calc time
-
-	data := make([]float64, 6)
-	dataS := make([]float64, 6)
-	Zo := mat.NewDense(6, 1, data)
-	lc.BeamForces = make([][6]float64, len(m.Beams))
-	lc.Reactions = make([][3]float64, len(m.Points))
-	for bi, b := range m.Beams {
-		for i := 0; i < 3; i++ {
-			for j := 0; j < 2; j++ {
-				Zo.Set(j*3+i, 0, d.At(b.N[j]*3+i, 0))
+		// create result information
+		lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
+		for p := 0; p < len(m.Points); p++ {
+			for i := 0; i < 3; i++ {
+				lc.PointDisplacementGlobal[p][i] = d.At(3*p+i, 0)
 			}
 		}
-		tr := m.getCoordTransStiffBeam2d(bi)
-		var z mat.Dense
-		z.Mul(tr, Zo)
-		kr := m.getStiffBeam2d(bi)
-		s := mat.NewDense(6, 1, dataS)
-		s.Mul(kr, &z)
-		// calculate beam forces
-		for i := 0; i < 6; i++ {
-			lc.BeamForces[bi][i] = s.At(i, 0)
+
+		// TODO: try LU decomposition for optimize calc time
+
+		data := make([]float64, 6)
+		dataS := make([]float64, 6)
+		Zo := mat.NewDense(6, 1, data)
+		lc.BeamForces = make([][6]float64, len(m.Beams))
+		lc.Reactions = make([][3]float64, len(m.Points))
+		for bi, b := range m.Beams {
+			for i := 0; i < 3; i++ {
+				for j := 0; j < 2; j++ {
+					Zo.Set(j*3+i, 0, d.At(b.N[j]*3+i, 0))
+				}
+			}
+			tr := m.getCoordTransStiffBeam2d(bi)
+			var z mat.Dense
+			z.Mul(tr, Zo)
+			kr := m.getStiffBeam2d(bi)
+			s := mat.NewDense(6, 1, dataS)
+			s.Mul(kr, &z)
+			// calculate beam forces
+			for i := 0; i < 6; i++ {
+				lc.BeamForces[bi][i] = s.At(i, 0)
+			}
 		}
-	}
-	// calculate reactions
-	k = m.assemblyK()
-	for pt := 0; pt < len(m.Points); pt++ {
-		for i := 0; i < 3; i++ {
-			if !m.Supports[pt][i] {
-				// free support
-				continue
+		// calculate reactions
+		k = m.assemblyK()
+		for pt := 0; pt < len(m.Points); pt++ {
+			for i := 0; i < 3; i++ {
+				if !m.Supports[pt][i] {
+					// free support
+					continue
+				}
+				// fix support
+				react := -p.At(3*pt+i, 0)
+				for j := 0; j < dof; j++ {
+					react += k.At(3*pt+i, j) * d.At(j, 0)
+				}
+				lc.Reactions[pt][i] = react
 			}
-			// fix support
-			react := -p.At(3*pt+i, 0)
-			for j := 0; j < dof; j++ {
-				react += k.At(3*pt+i, j) * d.At(j, 0)
-			}
-			lc.Reactions[pt][i] = react
 		}
 	}
 
