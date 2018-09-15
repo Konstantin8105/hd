@@ -372,9 +372,9 @@ func (m *Model) assemblyNodeLoad(lc *LoadCase) (p *mat.Dense) {
 
 func (m *Model) addSupport(k *mat.Dense) {
 	dof := 3 * len(m.Points)
-	for n, s := range m.Supports {
-		for i := 0; i < len(s); i++ {
-			if s[i] {
+	for n := range m.Supports {
+		for i := 0; i < 3; i++ {
+			if m.Supports[n][i] {
 				for j := 0; j < dof; j++ {
 					k.Set(j, n*3+i, 0)
 					k.Set(n*3+i, j, 0)
