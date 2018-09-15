@@ -445,6 +445,7 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 
 			datahh := make([]float64, dof)
 			hh := mat.NewDense(dof, 1, datahh)
+			// add LU decomposition
 			err = hh.Solve(k, MS)
 			if err != nil {
 				return err
