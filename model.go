@@ -315,14 +315,13 @@ func (m *Model) assemblyK() *mat.Dense {
 	data := make([]float64, dof*dof)
 	k := mat.NewDense(dof, dof, data)
 
-	dataTrT := make([]float64, dof*dof)
-	trt := mat.NewDense(dof, dof, dataTrT)
-
+	dataTrT := make([]float64, 6*6)
 	for i := range m.Beams {
 		kr := m.getStiffBeam2d(i)
 		tr := m.getCoordTransStiffBeam2d(i)
 
-		trt.Clone(tr)
+		trt := mat.NewDense(6, 6, dataTrT)
+		trt.Copy(tr)
 		trt.T()
 
 		kr.Mul(trt, kr)
