@@ -241,6 +241,11 @@ func (m *Model) runLinearElastic() (err error) {
 	// repair stiffiner matrix
 	k = m.assemblyK()
 
+	// calculate node displacament
+	dof := 3 * len(m.Points)
+	dataDisp := make([]float64, dof)
+	d := mat.NewDense(dof, 1, dataDisp)
+
 	for ilc := range m.LoadCases {
 		lc := &m.LoadCases[ilc]
 
@@ -248,11 +253,6 @@ func (m *Model) runLinearElastic() (err error) {
 
 		// assembly node load
 		p := m.assemblyNodeLoad(lc)
-
-		// calculate node displacament
-		dof := 3 * len(m.Points)
-		dataDisp := make([]float64, dof)
-		d := mat.NewDense(dof, 1, dataDisp)
 
 		// solve by LU decomposition
 		err = lu.Solve(d, false, p)
