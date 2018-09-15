@@ -231,6 +231,16 @@ func (m *Model) runLinearElastic() (err error) {
 	// assembly matrix of stiffiner
 	k := m.assemblyK()
 
+	// add support
+	m.addSupport(k)
+
+	// LU decomposition
+	var lu mat.LU
+	lu.Factorize(k)
+
+	// repair stiffiner matrix
+	k = m.assemblyK()
+
 	for ilc := range m.LoadCases {
 		lc := &m.LoadCases[ilc]
 
@@ -239,14 +249,13 @@ func (m *Model) runLinearElastic() (err error) {
 		// assembly node load
 		p := m.assemblyNodeLoad(lc)
 
-		// add support
-		m.addSupport(k)
-
 		// calculate node displacament
 		dof := 3 * len(m.Points)
 		dataDisp := make([]float64, dof)
 		d := mat.NewDense(dof, 1, dataDisp)
-		err = d.Solve(k, p)
+
+		// solve by LU decomposition
+		err = lu.Solve(d, false, p)
 		if err != nil {
 			return fmt.Errorf("Linear Elastic calculation error: %v", err)
 		}
@@ -258,8 +267,6 @@ func (m *Model) runLinearElastic() (err error) {
 				lc.PointDisplacementGlobal[p][i] = d.At(3*p+i, 0)
 			}
 		}
-
-		// TODO: try LU decomposition for optimize calc time
 
 		data := make([]float64, 6)
 		dataS := make([]float64, 6)
@@ -284,7 +291,6 @@ func (m *Model) runLinearElastic() (err error) {
 			}
 		}
 		// calculate reactions
-		k = m.assemblyK()
 		for pt := 0; pt < len(m.Points); pt++ {
 			for i := 0; i < 3; i++ {
 				if !m.Supports[pt][i] {
