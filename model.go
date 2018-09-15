@@ -246,6 +246,10 @@ func (m *Model) runLinearElastic() (err error) {
 	dataDisp := make([]float64, dof)
 	d := mat.NewDense(dof, 1, dataDisp)
 
+	// templorary data for displacement in global system coordinate
+	data := make([]float64, 6)
+	Zo := mat.NewDense(6, 1, data)
+
 	for ilc := range m.LoadCases {
 		lc := &m.LoadCases[ilc]
 
@@ -268,8 +272,6 @@ func (m *Model) runLinearElastic() (err error) {
 			}
 		}
 
-		data := make([]float64, 6)
-		Zo := mat.NewDense(6, 1, data)
 		lc.BeamForces = make([][6]float64, len(m.Beams))
 		lc.Reactions = make([][3]float64, len(m.Points))
 		for bi, b := range m.Beams {
