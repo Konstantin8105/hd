@@ -406,18 +406,18 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	// memory initialization
 	dof := 3 * len(m.Points)
 
+	// assembly matrix of stiffiner
+	k := m.assemblyK()
+
+	// add support
+	m.addSupport(k)
+
 	for _, mcCase := range mcCases {
 		// TODO: memory optimize for modal calc
 		dataM := make([]float64, dof*dof)
 		dataH := make([]float64, dof*dof)
 
 		fmt.Fprintf(m.out, "%s", mcCase.name)
-
-		// assembly matrix of stiffiner
-		k := m.assemblyK()
-
-		// add support
-		m.addSupport(k)
 
 		M := mat.NewDense(dof, dof, dataM)
 
