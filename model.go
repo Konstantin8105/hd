@@ -430,6 +430,8 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		lu.Factorize(k)
 	}
 
+	var e mat.Eigen
+
 	for _, mcCase := range mcCases {
 		// TODO: memory optimize for modal calc
 		dataM := make([]float64, dof*dof)
@@ -474,7 +476,6 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			}
 		}
 
-		var e mat.Eigen
 		ok := e.Factorize(h, true, true)
 		if !ok {
 			return fmt.Errorf("Eigen factorization is not ok")
