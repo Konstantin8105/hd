@@ -366,6 +366,7 @@ func (m *Model) assemblyNodeLoad(lc *LoadCase) (p *mat.Dense) {
 	return
 }
 
+// TODO: need recode part of solving (Ax=b,eigen) for avoid that function
 // For avoid matrix singular value of support is must be:
 // 1) not zero
 // 2) like absolute value of k

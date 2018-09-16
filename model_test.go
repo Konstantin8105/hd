@@ -794,7 +794,7 @@ func TestModelString(t *testing.T) {
 
 func BenchmarkRun(b *testing.B) {
 	minimalLoadCases := 20
-	for ic := 1; ic <= 256; ic *= 2 {
+	for ic := 1; ic <= 128; ic *= 2 {
 		b.Run(fmt.Sprintf("%5d-cases%d", ic, minimalLoadCases), func(b *testing.B) {
 			// prepare model
 			m := baseBeam()

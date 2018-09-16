@@ -34,7 +34,7 @@ func (m *Model) SplitBeam(beamIndex, amountIntermediantPoints int) (err error) {
 			} else {
 				delta := float64(i+1) * (endPoint[j] - startPoint[j]) /
 					float64(amountIntermediantPoints+1)
-				// TODO use float128 for more precition separation
+
 				m.Points[lastPointIndex+i][j] = startPoint[j] + delta
 			}
 		}
