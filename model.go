@@ -247,6 +247,7 @@ func (m *Model) runLinearElastic() (err error) {
 	var lu mat.LU
 	lu.Factorize(k)
 	// TODO : need sparse saving of data
+	// TODO : try https://github.com/james-bowman/sparse
 	// TODO : need concurency solver
 
 	// repair stiffiner matrix
