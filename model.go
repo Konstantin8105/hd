@@ -434,6 +434,10 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	datahh := make([]float64, dof)
 	hh := mat.NewDense(dof, 1, datahh)
 
+	// templorary data for mass preparing
+	dataMS := make([]float64, dof)
+	MS := mat.NewDense(dof, 1, dataMS)
+
 	var e mat.Eigen
 
 	for _, mcCase := range mcCases {
@@ -453,8 +457,9 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		h := mat.NewDense(dof, dof, dataH)
 
 		for col := 0; col < dof; col++ {
-			dataMS := make([]float64, dof)
-			MS := mat.NewDense(dof, 1, dataMS)
+			for i := 0; i < dof; i++ {
+				MS.Set(i, 0, 0.0)
+			}
 			isZero := true
 			for i := 0; i < dof; i++ {
 				if M.At(i, col) != 0 {
