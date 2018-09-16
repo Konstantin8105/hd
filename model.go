@@ -237,6 +237,8 @@ func (m *Model) runLinearElastic() (err error) {
 	// LU decomposition
 	var lu mat.LU
 	lu.Factorize(k)
+	// TODO : need sparse saving of data
+	// TODO : need concurency solver
 
 	// repair stiffiner matrix
 	k = m.assemblyK()
