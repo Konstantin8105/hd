@@ -56,6 +56,48 @@ func baseBeam() Model {
 	}
 }
 
+func baseGBeam() Model {
+	return Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{1.0, 0.0},
+			{1.0, 1.0},
+		},
+		Beams: []BeamProp{
+			{
+				N: [2]int{0, 1},
+				A: 12e-4,
+				J: 120e-6,
+				E: 2.0e11,
+			},
+			{
+				N: [2]int{1, 2},
+				A: 12e-4,
+				J: 120e-6,
+				E: 2.0e11,
+			},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+			{true, true, true},
+		},
+		LoadCases: []LoadCase{
+			{
+				LoadNodes: []LoadNode{
+					{N: 1, Forces: [3]float64{0, 13, 0}},
+					{N: 1, Forces: [3]float64{13, 0, 0}},
+				},
+			},
+		},
+		ModalCases: []ModalCase{
+			{
+				ModalMasses: []ModalMass{{N: 1, Mass: 10000}},
+			},
+		},
+	}
+}
+
 func baseDoubleBeam() Model {
 	return Model{
 		Points: [][2]float64{
@@ -483,6 +525,7 @@ func TestModelFail(t *testing.T) {
 func TestSplit(t *testing.T) {
 	models := []func() Model{
 		baseBeam, baseDoubleBeam,
+		baseGBeam,
 		baseTruss,
 		baseModalBeam, baseModalBeamRotate,
 		baseModalTruss, baseModalTrussRotate,
@@ -517,36 +560,9 @@ func TestSplit(t *testing.T) {
 				// eps
 				eps := 1e-9
 
-				// compare results for all cases
-				for elc := range expectResult {
-					reactions := expectResult[elc].Reactions
-					displacaments := expectResult[elc].PointDisplacementGlobal
-
-					// compare results
-					for ri := range reactions {
-						reaction := reactions[ri]
-						r := mLocal.LoadCases[elc].Reactions[ri]
-						for j := 0; j < 3; j++ {
-							diff := math.Abs((reaction[j] - r[j]) / r[j])
-							if diff > eps {
-								t.Logf("Reactions : %15.5e != %15.5e , %15.5e",
-									reaction[j], r[j], diff)
-								t.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
-							}
-						}
-					}
-
-					for di := range displacaments {
-						displacament := displacaments[di]
-						d := mLocal.LoadCases[elc].PointDisplacementGlobal[di]
-						for j := 0; j < 3; j++ {
-							diff := math.Abs((displacament[j] - d[j]) / d[j])
-							if diff > eps {
-								t.Logf("Displacament: %15.5e != %15.5e", displacament[j], d[j])
-								t.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
-							}
-						}
-					}
+				if err := compare(expectResult, mLocal.LoadCases, eps); err != nil {
+					t.Log(mLocal.String())
+					t.Errorf("Result is not same: %v", err)
 				}
 
 				h := mLocal.ModalCases[0].Result[0].Hz
@@ -558,6 +574,52 @@ func TestSplit(t *testing.T) {
 			})
 		}
 	}
+}
+
+func compare(exp, act []LoadCase, eps float64) error {
+
+	// compare reactions
+	for e := range exp {
+		for r := range exp[e].Reactions {
+			expReact := exp[e].Reactions[r]
+			actReact := act[e].Reactions[r]
+			for j := 0; j < 3; j++ {
+				if expReact[j] == 0.0 {
+					if math.Abs(actReact[j]) > eps {
+						return fmt.Errorf("expReact is zero, actReact != 0")
+					}
+					continue
+				}
+				diff := math.Abs((expReact[j] - actReact[j]) / expReact[j])
+				if diff > eps {
+					return fmt.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
+				}
+			}
+		}
+	}
+
+	// compare displacement
+	for e := range exp {
+		for d := range exp[e].PointDisplacementGlobal {
+			expDisp := exp[e].PointDisplacementGlobal[d]
+			actDisp := act[e].PointDisplacementGlobal[d]
+			for j := 0; j < 3; j++ {
+				if expDisp[j] == 0.0 {
+					if math.Abs(actDisp[j]) > eps {
+						return fmt.Errorf("expDisp is zero, actDisp != 0\n"+
+							"actDisp = %10.8e", actDisp[j])
+					}
+					continue
+				}
+				diff := math.Abs((expDisp[j] - actDisp[j]) / expDisp[j])
+				if diff > eps {
+					return fmt.Errorf("Diff[%d] is not ok : %15.5e", j, diff)
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func TestSplitFail(t *testing.T) {
@@ -733,6 +795,9 @@ func TestModelString(t *testing.T) {
 	}, {
 		m:        baseTruss(),
 		filename: "truss",
+	}, {
+		m:        baseGBeam(),
+		filename: "g-beam",
 	}, {
 		m:        baseDoubleBeam(),
 		filename: "double-beam",
