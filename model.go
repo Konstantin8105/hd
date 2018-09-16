@@ -417,11 +417,18 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	// memory initialization
 	dof := 3 * len(m.Points)
 
-	// assembly matrix of stiffiner
-	k := m.assemblyK()
+	// LU decomposition
+	var lu mat.LU
+	{
+		// assembly matrix of stiffiner
+		k := m.assemblyK()
 
-	// add support
-	m.addSupport(k)
+		// add support
+		m.addSupport(k)
+
+		// LU factorization
+		lu.Factorize(k)
+	}
 
 	for _, mcCase := range mcCases {
 		// TODO: memory optimize for modal calc
@@ -456,8 +463,8 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 
 			datahh := make([]float64, dof)
 			hh := mat.NewDense(dof, 1, datahh)
-			// add LU decomposition
-			err = hh.Solve(k, MS)
+			// LU decomposition
+			err = lu.Solve(hh, false, MS)
 			if err != nil {
 				return err
 			}
