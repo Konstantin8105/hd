@@ -514,6 +514,7 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 
 			var mr ModalResult
 			mr.Hz = 1. / (math.Sqrt(real(v[i])) * 2.0 * math.Pi)
+			// TODO: G-beam test have 2 frequency on 2 different direction. I think, that checking must be removed.
 			var isFound bool
 			for j := range mc.Result {
 				if math.Abs((mc.Result[j].Hz-mr.Hz)/mr.Hz) < 1e-10 {
