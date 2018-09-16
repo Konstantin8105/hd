@@ -442,11 +442,10 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 
 	for _, mcCase := range mcCases {
 		// TODO: memory optimize for modal calc
-		dataM := make([]float64, dof*dof)
-		dataH := make([]float64, dof*dof)
 
 		fmt.Fprintf(m.out, "%s", mcCase.name)
 
+		dataM := make([]float64, dof*dof)
 		M := mat.NewDense(dof, dof, dataM)
 
 		for _, mm := range mc.ModalMasses {
@@ -454,10 +453,12 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			M.Set(index, index, M.At(index, index)+mm.Mass/Gravity)
 		}
 
+		dataH := make([]float64, dof*dof)
 		h := mat.NewDense(dof, dof, dataH)
 
 		for col := 0; col < dof; col++ {
 			for i := 0; i < dof; i++ {
+				// initialization by 0.0
 				MS.Set(i, 0, 0.0)
 			}
 			isZero := true
@@ -488,7 +489,7 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			return fmt.Errorf("Eigen factorization is not ok")
 		}
 
-		// add results
+		// create result report
 		v := e.Values(nil)
 		eVector := e.Vectors()
 		for i := 0; i < len(v); i++ {
