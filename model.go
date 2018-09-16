@@ -174,12 +174,12 @@ type LoadNode struct {
 func (m *Model) Run(out io.Writer) (err error) {
 	// remove result data
 	for ind := 0; ind < len(m.LoadCases); ind++ {
-		m.LoadCases[ind].PointDisplacementGlobal = [][3]float64{}
-		m.LoadCases[ind].BeamForces = [][6]float64{}
-		m.LoadCases[ind].Reactions = [][3]float64{}
+		m.LoadCases[ind].PointDisplacementGlobal = nil
+		m.LoadCases[ind].BeamForces = nil
+		m.LoadCases[ind].Reactions = nil
 	}
 	for ind := 0; ind < len(m.ModalCases); ind++ {
-		m.ModalCases[ind].Result = []ModalResult{}
+		m.ModalCases[ind].Result = nil
 	}
 
 	// by default output in standart stdio
