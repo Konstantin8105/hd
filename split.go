@@ -1,6 +1,8 @@
 package hd
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // SplitBeam is split beam on small parts.
 // Rules of splitting:
@@ -30,9 +32,10 @@ func (m *Model) SplitBeam(beamIndex, amountIntermediantPoints int) (err error) {
 			if startPoint[j] == endPoint[j] {
 				m.Points[lastPointIndex+i][j] = startPoint[j]
 			} else {
-				m.Points[lastPointIndex+i][j] = startPoint[j] +
-					float64(i+1)*(endPoint[j]-startPoint[j])/
-						float64(amountIntermediantPoints+1)
+				delta := float64(i+1) * (endPoint[j] - startPoint[j]) /
+					float64(amountIntermediantPoints+1)
+				// TODO use float128 for more precition separation
+				m.Points[lastPointIndex+i][j] = startPoint[j] + delta
 			}
 		}
 	}

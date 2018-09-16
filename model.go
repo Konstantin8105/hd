@@ -340,13 +340,14 @@ func (m *Model) assemblyK() *mat.Dense {
 
 	// It is happen if we have pin nodes
 	// add 1 for diagonal with zero
+	value := getAverageValueOfK(k)
 	for i := 0; i < dof; i++ {
 		isZero := k.At(i, i) == 0.0
 		// TODO : add checking only for pin direction
 		if !isZero {
 			continue
 		}
-		k.Set(i, i, 1)
+		k.Set(i, i, value)
 	}
 
 	return k
@@ -365,8 +366,23 @@ func (m *Model) assemblyNodeLoad(lc *LoadCase) (p *mat.Dense) {
 	return
 }
 
+// For avoid matrix singular value of support is must be:
+// 1) not zero
+// 2) like absolute value of k
+func getAverageValueOfK(k *mat.Dense) (value float64) {
+	c, _ := k.Dims()
+	for i := 0; i < c; i++ {
+		if value < math.Abs(k.At(i, i)) {
+			value = math.Abs(k.At(i, i))
+		}
+	}
+	return
+}
+
 func (m *Model) addSupport(k *mat.Dense) {
 	dof := 3 * len(m.Points)
+	// choose value for support
+	supportValue := getAverageValueOfK(k)
 	for n := range m.Supports {
 		for i := 0; i < 3; i++ {
 			if m.Supports[n][i] {
@@ -374,7 +390,7 @@ func (m *Model) addSupport(k *mat.Dense) {
 					k.Set(j, n*3+i, 0)
 					k.Set(n*3+i, j, 0)
 				}
-				k.Set(n*3+i, n*3+i, 1)
+				k.Set(n*3+i, n*3+i, supportValue)
 			}
 		}
 	}

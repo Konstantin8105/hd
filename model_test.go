@@ -793,25 +793,34 @@ func TestModelString(t *testing.T) {
 }
 
 func BenchmarkRun(b *testing.B) {
-	tcs := []int{1, 2, 4, 8, 16, 32, 64, 128, 256}
 	minimalLoadCases := 20
-	for _, tc := range tcs {
-		b.Run(fmt.Sprintf("%5d-cases%d", tc, minimalLoadCases), func(b *testing.B) {
+	for ic := 1; ic <= 256; ic *= 2 {
+		b.Run(fmt.Sprintf("%5d-cases%d", ic, minimalLoadCases), func(b *testing.B) {
 			// prepare model
 			m := baseBeam()
 			// add more finite elements
-			_ = m.SplitBeam(0, tc)
+			err := m.SplitBeam(0, ic)
+			if err != nil {
+				panic(err)
+			}
 			// add more cases
 			for i := 0; len(m.LoadCases) < minimalLoadCases; i++ {
 				lc := m.LoadCases[0]
 				lc.LoadNodes[0].Forces[1] += float64(i)
 				m.LoadCases = append(m.LoadCases, lc)
 			}
+			for i := 2; i < len(m.Points); i += 2 {
+				m.ModalCases[0].ModalMasses = append(m.ModalCases[0].ModalMasses,
+					ModalMass{N: i, Mass: 100})
+			}
 			var bb bytes.Buffer
 			b.ResetTimer()
 			// run benchmark
 			for i := 0; i < b.N; i++ {
-				_ = m.Run(&bb)
+				err := m.Run(&bb)
+				if err != nil {
+					panic(err)
+				}
 				bb.Reset()
 			}
 		})
