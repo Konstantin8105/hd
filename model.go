@@ -430,6 +430,10 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		lu.Factorize(k)
 	}
 
+	// templorary data for calc matrix H
+	datahh := make([]float64, dof)
+	hh := mat.NewDense(dof, 1, datahh)
+
 	var e mat.Eigen
 
 	for _, mcCase := range mcCases {
@@ -463,8 +467,6 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 				continue
 			}
 
-			datahh := make([]float64, dof)
-			hh := mat.NewDense(dof, 1, datahh)
 			// LU decomposition
 			err = lu.Solve(hh, false, MS)
 			if err != nil {
