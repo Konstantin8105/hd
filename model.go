@@ -320,7 +320,7 @@ func (m *Model) runLinearElastic() (err error) {
 	return nil
 }
 
-func (m *Model) assemblyK() *mat.Dense {
+func (m *Model) assemblyK() mat.Mutable {
 	dof := 3 * len(m.Points)
 	data := make([]float64, dof*dof)
 	k := mat.NewDense(dof, dof, data)
@@ -382,7 +382,7 @@ func (m *Model) assemblyNodeLoad(lc *LoadCase) (p *mat.Dense) {
 // For avoid matrix singular value of support is must be:
 // 1) not zero
 // 2) like absolute value of k
-func getAverageValueOfK(k *mat.Dense) (value float64) {
+func getAverageValueOfK(k mat.Matrix) (value float64) {
 	c, _ := k.Dims()
 	for i := 0; i < c; i++ {
 		if value < math.Abs(k.At(i, i)) {
@@ -392,7 +392,7 @@ func getAverageValueOfK(k *mat.Dense) (value float64) {
 	return
 }
 
-func (m *Model) addSupport(k *mat.Dense) {
+func (m *Model) addSupport(k mat.Mutable) {
 	dof := 3 * len(m.Points)
 	// choose value for support
 	supportValue := getAverageValueOfK(k)
