@@ -8,6 +8,7 @@ import (
 	"sort"
 
 	"github.com/Konstantin8105/errors"
+	"github.com/Konstantin8105/golis"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -322,8 +323,10 @@ func (m *Model) runLinearElastic() (err error) {
 
 func (m *Model) assemblyK() mat.Mutable {
 	dof := 3 * len(m.Points)
-	data := make([]float64, dof*dof)
-	k := mat.NewDense(dof, dof, data)
+	// TODO : clean Dense matrix
+	// data := make([]float64, dof*dof)
+	// k := mat.NewDense(dof, dof, data)
+	k := golis.NewSparseMatrix(dof, dof)
 
 	dataTrT := make([]float64, 6*6)
 	trt := mat.NewDense(6, 6, dataTrT)
@@ -343,7 +346,9 @@ func (m *Model) assemblyK() mat.Mutable {
 					for r2 := 0; r2 < 3; r2++ {
 						x := m.Beams[i].N[p1]*3 + r1
 						y := m.Beams[i].N[p2]*3 + r2
-						k.Set(x, y, k.At(x, y)+kr.At(p1*3+r1, p2*3+r2))
+						// TODO : clean Dense matrix
+						// k.Set(x, y, k.At(x, y)+kr.At(p1*3+r1, p2*3+r2))
+						k.Add(x, y, kr.At(p1*3+r1, p2*3+r2))
 					}
 				}
 			}
@@ -365,17 +370,21 @@ func (m *Model) assemblyK() mat.Mutable {
 	return k
 }
 
-func (m *Model) assemblyNodeLoad(lc *LoadCase) (p *mat.Dense) {
+func (m *Model) assemblyNodeLoad(lc *LoadCase) mat.Matrix {
 	dof := 3 * len(m.Points)
-	data := make([]float64, dof)
-	p = mat.NewDense(dof, 1, data)
+	// TODO : clean Dense matrix
+	// data := make([]float64, dof)
+	// p = mat.NewDense(dof, 1, data)
+	p := golis.NewSparseMatrix(dof, 1)
 	// node loads
 	for _, ln := range lc.LoadNodes {
 		for i := 0; i < 3; i++ {
-			p.Set(ln.N*3+i, 0, p.At(ln.N*3+i, 0)+ln.Forces[i])
+			// TODO : clean Dense matrix
+			// p.Set(ln.N*3+i, 0, p.At(ln.N*3+i, 0)+ln.Forces[i])
+			p.Add(ln.N*3+i, 0, ln.Forces[i])
 		}
 	}
-	return
+	return p
 }
 
 // TODO: need recode part of solving (Ax=b,eigen) for avoid that function
@@ -399,9 +408,14 @@ func (m *Model) addSupport(k mat.Mutable) {
 	for n := range m.Supports {
 		for i := 0; i < 3; i++ {
 			if m.Supports[n][i] {
-				for j := 0; j < dof; j++ {
-					k.Set(j, n*3+i, 0)
-					k.Set(n*3+i, j, 0)
+				switch v := k.(type) {
+				case *golis.SparseMatrix:
+					v.SetZeroForRowColumn(n*3 + i)
+				default:
+					for j := 0; j < dof; j++ {
+						k.Set(j, n*3+i, 0)
+						k.Set(n*3+i, j, 0)
+					}
 				}
 				k.Set(n*3+i, n*3+i, supportValue)
 			}
