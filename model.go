@@ -326,7 +326,8 @@ func (m *Model) assemblyK() mat.Mutable {
 	// TODO : clean Dense matrix
 	// data := make([]float64, dof*dof)
 	// k := mat.NewDense(dof, dof, data)
-	k := golis.NewSparseMatrix(dof, dof)
+	// k := golis.NewSparseMatrix(dof, dof)
+	k := golis.NewSparseMatrixSymmetric(dof)
 
 	for i := range m.Beams {
 		kr := m.getStiffBeam2d(i)
@@ -343,6 +344,9 @@ func (m *Model) assemblyK() mat.Mutable {
 						y := m.Beams[i].N[p2]*3 + r2
 						// TODO : clean Dense matrix
 						// k.Set(x, y, k.At(x, y)+kr.At(p1*3+r1, p2*3+r2))
+						if x > y {
+							continue
+						}
 						k.Add(x, y, kr.At(p1*3+r1, p2*3+r2))
 					}
 				}
