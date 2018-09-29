@@ -328,18 +328,13 @@ func (m *Model) assemblyK() mat.Mutable {
 	// k := mat.NewDense(dof, dof, data)
 	k := golis.NewSparseMatrix(dof, dof)
 
-	dataTrT := make([]float64, 6*6)
-	trt := mat.NewDense(6, 6, dataTrT)
-
 	for i := range m.Beams {
 		kr := m.getStiffBeam2d(i)
 		tr := m.getCoordTransStiffBeam2d(i)
 
-		trt.Copy(tr)
-		trt.T()
-
-		kr.Mul(trt, kr)
+		kr.Mul(tr.T(), kr)
 		kr.Mul(kr, tr)
+
 		for p1 := 0; p1 < 2; p1++ {
 			for p2 := 0; p2 < 2; p2++ {
 				for r1 := 0; r1 < 3; r1++ {
@@ -410,6 +405,8 @@ func (m *Model) addSupport(k mat.Mutable) {
 			if m.Supports[n][i] {
 				switch v := k.(type) {
 				case *golis.SparseMatrix:
+					v.SetZeroForRowColumn(n*3 + i)
+				case *golis.SparseMatrixSymmetric:
 					v.SetZeroForRowColumn(n*3 + i)
 				default:
 					for j := 0; j < dof; j++ {
