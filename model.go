@@ -321,7 +321,7 @@ func (m *Model) runLinearElastic() (err error) {
 	return nil
 }
 
-func (m *Model) assemblyK() mat.Mutable {
+func (m *Model) assemblyK() mat.MutableSymmetric {
 	dof := 3 * len(m.Points)
 	// TODO : clean Dense matrix
 	// data := make([]float64, dof*dof)
@@ -363,7 +363,7 @@ func (m *Model) assemblyK() mat.Mutable {
 		if !isZero {
 			continue
 		}
-		k.Set(i, i, value)
+		k.SetSym(i, i, value)
 	}
 
 	return k
@@ -400,25 +400,27 @@ func getAverageValueOfK(k mat.Matrix) (value float64) {
 	return
 }
 
-func (m *Model) addSupport(k mat.Mutable) {
-	dof := 3 * len(m.Points)
+func (m *Model) addSupport(k mat.MutableSymmetric) {
+	// dof := 3 * len(m.Points)
 	// choose value for support
 	supportValue := getAverageValueOfK(k)
 	for n := range m.Supports {
 		for i := 0; i < 3; i++ {
 			if m.Supports[n][i] {
 				switch v := k.(type) {
-				case *golis.SparseMatrix:
-					v.SetZeroForRowColumn(n*3 + i)
+				// case *golis.SparseMatrix:
+				// 	v.SetZeroForRowColumn(n*3 + i)
 				case *golis.SparseMatrixSymmetric:
 					v.SetZeroForRowColumn(n*3 + i)
 				default:
-					for j := 0; j < dof; j++ {
-						k.Set(j, n*3+i, 0)
-						k.Set(n*3+i, j, 0)
-					}
+					panic("")
+					// for j := 0; j < dof; j++ {
+					// 	k.Set(j, n*3+i, 0)
+					// 	k.Set(n*3+i, j, 0)
+					// }
 				}
-				k.Set(n*3+i, n*3+i, supportValue)
+				// k.Set(n*3+i, n*3+i, supportValue)
+				k.SetSym(n*3+i, n*3+i, supportValue)
 			}
 		}
 	}
