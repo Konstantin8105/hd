@@ -5,6 +5,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/Konstantin8105/errors"
@@ -235,29 +236,35 @@ func (m *Model) Run(out io.Writer) (err error) {
 	return nil
 }
 
+func init() {
+	goPath := os.Getenv("GOPATH")
+	lisPath := filepath.Join(goPath, "src/github.com/Konstantin8105/golis/bin/bin")
+	golis.LisPath = lisPath
+}
+
 func (m *Model) runLinearElastic() (err error) {
 	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
 
 	// assembly matrix of stiffiner
-	k := m.assemblyK()
+	ko := m.assemblyK()
 
 	// add support
-	m.addSupport(k)
+	m.addSupport(ko)
 
 	// LU decomposition
-	var lu mat.LU
-	lu.Factorize(k)
+	// var lu mat.LU
+	// lu.Factorize(k)
 	// TODO : need sparse saving of data
 	// TODO : try https://github.com/james-bowman/sparse
 	// TODO : need concurency solver
 
 	// repair stiffiner matrix
-	k = m.assemblyK()
+	k := m.assemblyK()
 
 	// calculate node displacament
 	dof := 3 * len(m.Points)
-	dataDisp := make([]float64, dof)
-	d := mat.NewDense(dof, 1, dataDisp)
+	// dataDisp := make([]float64, dof)
+	// d := mat.NewDense(dof, 1, dataDisp)
 
 	// templorary data for displacement in global system coordinate
 	data := make([]float64, 6)
@@ -272,7 +279,8 @@ func (m *Model) runLinearElastic() (err error) {
 		p := m.assemblyNodeLoad(lc)
 
 		// solve by LU decomposition
-		err = lu.Solve(d, false, p)
+		d, _, _, err := golis.Lsolve(ko, p, "-f quad")
+		// err = lu.Solve(d, false, p)
 		if err != nil {
 			return fmt.Errorf("Linear Elastic calculation error: %v", err)
 		}
