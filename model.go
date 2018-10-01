@@ -279,7 +279,7 @@ func (m *Model) runLinearElastic() (err error) {
 		p := m.assemblyNodeLoad(lc)
 
 		// solve by LU decomposition
-		d, _, _, err := golis.Lsolve(ko, p, "-f quad")
+		d, _, _, err := golis.Lsolve(ko, p, "-f quad -maxiter 90000 -tol 1e-5")
 		// err = lu.Solve(d, false, p)
 		if err != nil {
 			return fmt.Errorf("Linear Elastic calculation error: %v", err)
