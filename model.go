@@ -327,7 +327,8 @@ func (m *Model) assemblyK() mat.MutableSymmetric {
 	// data := make([]float64, dof*dof)
 	// k := mat.NewDense(dof, dof, data)
 	// k := golis.NewSparseMatrix(dof, dof)
-	k := golis.NewSparseMatrixSymmetric(dof)
+	// k := golis.NewSparseMatrixSymmetric(dof)
+	k := mat.NewSymDense(dof, nil)
 
 	for i := range m.Beams {
 		kr := m.getStiffBeam2d(i)
@@ -347,7 +348,8 @@ func (m *Model) assemblyK() mat.MutableSymmetric {
 						if x > y {
 							continue
 						}
-						k.Add(x, y, kr.At(p1*3+r1, p2*3+r2))
+						// k.Add(x, y, kr.At(p1*3+r1, p2*3+r2))
+						k.SetSym(x, y, k.At(x, y)+kr.At(p1*3+r1, p2*3+r2))
 					}
 				}
 			}
@@ -401,7 +403,7 @@ func getAverageValueOfK(k mat.Matrix) (value float64) {
 }
 
 func (m *Model) addSupport(k mat.MutableSymmetric) {
-	// dof := 3 * len(m.Points)
+	dof := 3 * len(m.Points)
 	// choose value for support
 	supportValue := getAverageValueOfK(k)
 	for n := range m.Supports {
@@ -412,6 +414,15 @@ func (m *Model) addSupport(k mat.MutableSymmetric) {
 				// 	v.SetZeroForRowColumn(n*3 + i)
 				case *golis.SparseMatrixSymmetric:
 					v.SetZeroForRowColumn(n*3 + i)
+				case *mat.SymDense:
+					for j := 0; j < dof; j++ {
+						if j >= n*3+i {
+							k.SetSym(j, n*3+i, 0)
+						}
+						if j <= n*3+i {
+							k.SetSym(n*3+i, j, 0)
+						}
+					}
 				default:
 					panic("")
 					// for j := 0; j < dof; j++ {
