@@ -9,6 +9,8 @@ import (
 
 	"github.com/Konstantin8105/errors"
 	"github.com/Konstantin8105/golis"
+	"github.com/gonum/exp/linsolve"
+	"github.com/gonum/floats"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -238,26 +240,34 @@ func (m *Model) Run(out io.Writer) (err error) {
 func (m *Model) runLinearElastic() (err error) {
 	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
 
+	dof := 3 * len(m.Points)
+
 	// assembly matrix of stiffiner
-	k := m.assemblyK()
+	ko := m.assemblyK()
 
 	// add support
-	m.addSupport(k)
+	m.addSupport(ko)
+
+	ctx := linsolve.Context{
+		X:        make([]float64, dof),
+		Residual: make([]float64, dof),
+		Src:      make([]float64, dof),
+		Dst:      make([]float64, dof),
+	}
 
 	// LU decomposition
-	var lu mat.LU
-	lu.Factorize(k)
+	// var lu mat.LU
+	// lu.Factorize(k)
 	// TODO : need sparse saving of data
 	// TODO : try https://github.com/james-bowman/sparse
 	// TODO : need concurency solver
 
 	// repair stiffiner matrix
-	k = m.assemblyK()
+	k := m.assemblyK()
 
 	// calculate node displacament
-	dof := 3 * len(m.Points)
-	dataDisp := make([]float64, dof)
-	d := mat.NewDense(dof, 1, dataDisp)
+	// dataDisp := make([]float64, dof)
+	// d := mat.NewDense(dof, 1, dataDisp)
 
 	// templorary data for displacement in global system coordinate
 	data := make([]float64, 6)
@@ -272,16 +282,71 @@ func (m *Model) runLinearElastic() (err error) {
 		p := m.assemblyNodeLoad(lc)
 
 		// solve by LU decomposition
-		err = lu.Solve(d, false, p)
+		// err = lu.Solve(d, false, p)
+
+		pp := make([]float64, dof)
+		for i := 0; i < dof; i++ {
+			pp = append(pp, p.At(i, 0))
+		}
+
+		const tol = 1e-6
+		bnorm := floats.Norm(pp, 2)
+		var (
+			numiter int
+			rnorms  []float64
+			cg      linsolve.GMRES
+		)
+		copy(ctx.Residual, pp)
+		cg.Init(dof)
+	MainLoop:
+		for {
+			op, err := cg.Iterate(&ctx)
+			if err != nil {
+				fmt.Println("Error:", err)
+				return err
+			}
+			fmt.Printf("X: %.6f\n", ctx.X)
+			fmt.Println("Op : ", op)
+			switch op {
+			case linsolve.MulVec:
+				fmt.Println("+")
+				dst := mat.NewVecDense(dof, ctx.Dst)
+				dst.MulVec(ko, mat.NewVecDense(dof, ctx.Src))
+			case linsolve.PreconSolve:
+				fmt.Println("-")
+				copy(ctx.Dst, ctx.Src)
+			case linsolve.MajorIteration:
+				fmt.Println("M")
+				numiter++
+				if numiter > dof {
+					fmt.Printf("# iterations: %v\n", numiter)
+					fmt.Printf("Residual history: %.6g\n", rnorms)
+					fmt.Printf("Final solution: %.6f\n", ctx.X)
+					return fmt.Errorf("Out iterations")
+				}
+				rnorm := floats.Norm(ctx.Residual, 2) / bnorm
+				rnorms = append(rnorms, rnorm)
+				if rnorm < tol {
+					break MainLoop
+				}
+			}
+			fmt.Println("_+_+_+_+")
+		}
+
 		if err != nil {
 			return fmt.Errorf("Linear Elastic calculation error: %v", err)
 		}
+		fmt.Printf("# iterations: %v\n", numiter)
+		fmt.Printf("Residual history: %.6g\n", rnorms)
+		fmt.Printf("Final solution: %.6f\n", ctx.X)
+
+		d := ctx.X
 
 		// create result information
 		lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
 		for p := 0; p < len(m.Points); p++ {
 			for i := 0; i < 3; i++ {
-				lc.PointDisplacementGlobal[p][i] = d.At(3*p+i, 0)
+				lc.PointDisplacementGlobal[p][i] = d[3*p+i] // d.At(3*p+i, 0)
 			}
 		}
 
@@ -290,7 +355,7 @@ func (m *Model) runLinearElastic() (err error) {
 		for bi, b := range m.Beams {
 			for i := 0; i < 3; i++ {
 				for j := 0; j < 2; j++ {
-					Zo.Set(j*3+i, 0, d.At(b.N[j]*3+i, 0))
+					Zo.Set(j*3+i, 0, d[b.N[j]*3+i]) //d.At(b.N[j]*3+i, 0))
 				}
 			}
 			tr := m.getCoordTransStiffBeam2d(bi)
@@ -311,7 +376,7 @@ func (m *Model) runLinearElastic() (err error) {
 				// fix support
 				react := -p.At(3*pt+i, 0)
 				for j := 0; j < dof; j++ {
-					react += k.At(3*pt+i, j) * d.At(j, 0)
+					react += k.At(3*pt+i, j) * d[j] //d.At(j, 0)
 				}
 				lc.Reactions[pt][i] = react
 			}
