@@ -13,6 +13,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Konstantin8105/cs"
 	"github.com/pmezard/go-difflib/difflib"
 )
 
@@ -638,6 +639,10 @@ func TestSplitFail(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestCodeStyle(t *testing.T) {
+	cs.All(t)
 }
 
 func TestTodo(t *testing.T) {

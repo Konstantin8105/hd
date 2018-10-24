@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/Konstantin8105/hd"
 )
@@ -79,7 +80,7 @@ next:
 
 	// show all results in stdout
 	for _, r := range rs {
-		fmt.Printf("%10d %30s\n", r.AmountIntermediantPoints, r.Displacement)
+		fmt.Fprintf(os.Stdout, "%10d %30s\n", r.AmountIntermediantPoints, r.Displacement)
 	}
 
 	// calculate next amount separation points
@@ -89,7 +90,7 @@ next:
 			a = r.AmountIntermediantPoints * 2
 		}
 	}
-	fmt.Printf("Calculate with %d intermediant points\n", a)
+	fmt.Fprintf(os.Stdout, "Calculate with %d intermediant points\n", a)
 	m := baseBeam()
 	err = m.SplitBeam(0, a)
 	if err != nil {
