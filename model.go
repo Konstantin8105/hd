@@ -8,7 +8,7 @@ import (
 	"sort"
 
 	"github.com/Konstantin8105/errors"
-	"github.com/Konstantin8105/golis"
+	"github.com/Konstantin8105/sparse"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -245,7 +245,7 @@ func (m *Model) runLinearElastic() (err error) {
 	m.addSupport(k)
 
 	// LU decomposition
-	var lu mat.LU
+	var lu sparse.LU
 	lu.Factorize(k)
 	// TODO : need sparse saving of data
 	// TODO : try https://github.com/james-bowman/sparse
@@ -257,7 +257,7 @@ func (m *Model) runLinearElastic() (err error) {
 	// calculate node displacament
 	dof := 3 * len(m.Points)
 	dataDisp := make([]float64, dof)
-	d := mat.NewDense(dof, 1, dataDisp)
+	d := make([]float64, dof) // mat.NewDense(dof, 1, dataDisp)
 
 	// templorary data for displacement in global system coordinate
 	data := make([]float64, 6)
@@ -272,7 +272,7 @@ func (m *Model) runLinearElastic() (err error) {
 		p := m.assemblyNodeLoad(lc)
 
 		// solve by LU decomposition
-		err = lu.Solve(d, false, p)
+		d, err = lu.Solve(p)
 		if err != nil {
 			return fmt.Errorf("Linear Elastic calculation error: %v", err)
 		}
@@ -281,7 +281,7 @@ func (m *Model) runLinearElastic() (err error) {
 		lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
 		for p := 0; p < len(m.Points); p++ {
 			for i := 0; i < 3; i++ {
-				lc.PointDisplacementGlobal[p][i] = d.At(3*p+i, 0)
+				lc.PointDisplacementGlobal[p][i] = d[3*p+i]
 			}
 		}
 
@@ -290,7 +290,7 @@ func (m *Model) runLinearElastic() (err error) {
 		for bi, b := range m.Beams {
 			for i := 0; i < 3; i++ {
 				for j := 0; j < 2; j++ {
-					Zo.Set(j*3+i, 0, d.At(b.N[j]*3+i, 0))
+					Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
 				}
 			}
 			tr := m.getCoordTransStiffBeam2d(bi)
@@ -309,9 +309,9 @@ func (m *Model) runLinearElastic() (err error) {
 					continue
 				}
 				// fix support
-				react := -p.At(3*pt+i, 0)
+				react := -p[3*pt+i]
 				for j := 0; j < dof; j++ {
-					react += k.At(3*pt+i, j) * d.At(j, 0)
+					react += k.At(3*pt+i, j) * d[j]
 				}
 				lc.Reactions[pt][i] = react
 			}
@@ -321,13 +321,17 @@ func (m *Model) runLinearElastic() (err error) {
 	return nil
 }
 
-func (m *Model) assemblyK() mat.MutableSymmetric {
+func (m *Model) assemblyK() *sparse.Matrix { // mat.MutableSymmetric {
 	dof := 3 * len(m.Points)
 	// TODO : clean Dense matrix
 	// data := make([]float64, dof*dof)
 	// k := mat.NewDense(dof, dof, data)
 	// k := golis.NewSparseMatrix(dof, dof)
-	k := golis.NewSparseMatrixSymmetric(dof)
+	// k := golis.NewSparseMatrixSymmetric(dof)
+	T, err := sparse.NewTriplet()
+	if err != nil {
+		panic(err)
+	}
 
 	for i := range m.Beams {
 		kr := m.getStiffBeam2d(i)
@@ -344,43 +348,51 @@ func (m *Model) assemblyK() mat.MutableSymmetric {
 						y := m.Beams[i].N[p2]*3 + r2
 						// TODO : clean Dense matrix
 						// k.Set(x, y, k.At(x, y)+kr.At(p1*3+r1, p2*3+r2))
-						if x > y {
-							continue
+						// if x > y {
+						// 	continue
+						// }
+						// k.Add(x, y, kr.At(p1*3+r1, p2*3+r2))
+						if err := sparse.Entry(T, x, y, kr.At(p1*3+r1, p2*3+r2)); err != nil {
+							panic(err)
 						}
-						k.Add(x, y, kr.At(p1*3+r1, p2*3+r2))
 					}
 				}
 			}
 		}
 	}
 
+	k, err := sparse.Compress(T)
+	if err != nil {
+		panic(err)
+	}
+
 	// It is happen if we have pin nodes
 	// add 1 for diagonal with zero
-	value := getAverageValueOfK(k)
-	for i := 0; i < dof; i++ {
-		isZero := k.At(i, i) == 0.0
-		// TODO : add checking only for pin direction
-		if !isZero {
-			continue
-		}
-		k.SetSym(i, i, value)
-	}
+	// value := getAverageValueOfK(k)
+	// for i := 0; i < dof; i++ {
+	// 	isZero := k.At(i, i) == 0.0
+	// 	// TODO : add checking only for pin direction
+	// 	if !isZero {
+	// 		continue
+	// 	}
+	// 	k.SetSym(i, i, value)
+	// }
 
 	return k
 }
 
-func (m *Model) assemblyNodeLoad(lc *LoadCase) mat.Matrix {
+func (m *Model) assemblyNodeLoad(lc *LoadCase) []float64 { // mat.Matrix {
 	dof := 3 * len(m.Points)
 	// TODO : clean Dense matrix
 	// data := make([]float64, dof)
 	// p = mat.NewDense(dof, 1, data)
-	p := golis.NewSparseMatrix(dof, 1)
+	p := make([]float64, dof) // golis.NewSparseMatrix(dof, 1)
 	// node loads
 	for _, ln := range lc.LoadNodes {
 		for i := 0; i < 3; i++ {
 			// TODO : clean Dense matrix
 			// p.Set(ln.N*3+i, 0, p.At(ln.N*3+i, 0)+ln.Forces[i])
-			p.Add(ln.N*3+i, 0, ln.Forces[i])
+			p[ln.N*3+i] += ln.Forces[i]
 		}
 	}
 	return p
@@ -400,27 +412,28 @@ func getAverageValueOfK(k mat.Matrix) (value float64) {
 	return
 }
 
-func (m *Model) addSupport(k mat.MutableSymmetric) {
+func (m *Model) addSupport(k *sparse.Matrix) { //mat.MutableSymmetric) {
 	// dof := 3 * len(m.Points)
 	// choose value for support
-	supportValue := getAverageValueOfK(k)
+	supportValue := 1.0 //getAverageValueOfK(k)
 	for n := range m.Supports {
 		for i := 0; i < 3; i++ {
 			if m.Supports[n][i] {
-				switch v := k.(type) {
+				k.SetZeroForRowColumn(n*3+i, supportValue)
+				// switch v := k.(type) {
 				// case *golis.SparseMatrix:
 				// 	v.SetZeroForRowColumn(n*3 + i)
-				case *golis.SparseMatrixSymmetric:
-					v.SetZeroForRowColumn(n*3 + i)
-				default:
-					panic("")
-					// for j := 0; j < dof; j++ {
-					// 	k.Set(j, n*3+i, 0)
-					// 	k.Set(n*3+i, j, 0)
-					// }
-				}
-				// k.Set(n*3+i, n*3+i, supportValue)
-				k.SetSym(n*3+i, n*3+i, supportValue)
+				// case *golis.SparseMatrixSymmetric:
+				// 	v.SetZeroForRowColumn(n*3 + i)
+				// default:
+				// 	panic("")
+				// 	// for j := 0; j < dof; j++ {
+				// 	// 	k.Set(j, n*3+i, 0)
+				// 	// 	k.Set(n*3+i, j, 0)
+				// 	// }
+				// }
+				// // k.Set(n*3+i, n*3+i, supportValue)
+				// k.SetSym(n*3+i, n*3+i, supportValue)
 			}
 		}
 	}
