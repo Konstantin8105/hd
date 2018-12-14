@@ -3,9 +3,11 @@ package hd
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"os"
 	"sort"
+	"time"
 
 	"github.com/Konstantin8105/errors"
 	"github.com/Konstantin8105/golis"
@@ -244,6 +246,11 @@ func (m *Model) runLinearElastic() (err error) {
 	// add support
 	m.addSupport(k)
 
+	// Record matrix
+	if err := ioutil.WriteFile(fmt.Sprintf("./testdata/%v.lu", time.Now().UnixNano()), []byte(fmt.Sprintf("%v", k)), 0644); err != nil {
+		panic(err)
+	}
+
 	// LU decomposition
 	var lu mat.LU
 	lu.Factorize(k)
@@ -454,6 +461,11 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 
 		// add support
 		m.addSupport(k)
+
+		// Record matrix
+		if err := ioutil.WriteFile(fmt.Sprintf("./testdata/%v.modal", time.Now().UnixNano()), []byte(fmt.Sprintf("%v", k)), 0644); err != nil {
+			panic(err)
+		}
 
 		// LU factorization
 		lu.Factorize(k)

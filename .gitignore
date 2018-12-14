@@ -12,3 +12,5 @@
 *.out
 *.txt
 *.pdf
+testdata/*.lu
+testdata/*.modal
