@@ -247,8 +247,20 @@ func (m *Model) runLinearElastic() (err error) {
 	m.addSupport(k)
 
 	// Record matrix
-	if err := ioutil.WriteFile(fmt.Sprintf("./testdata/%v.lu", time.Now().UnixNano()), []byte(fmt.Sprintf("%v", k)), 0644); err != nil {
-		panic(err)
+	{
+		var out string
+		r, c := k.Dims()
+		for i := 0; i < r; i++ {
+			for j := 0; j < c; j++ {
+				if k.At(i, j) == 0.0 {
+					continue
+				}
+				out += fmt.Sprintf("%5d %5d %.10e\n", i, j, k.At(i, j))
+			}
+		}
+		if err := ioutil.WriteFile(fmt.Sprintf("./testdata/%v.lu", time.Now().UnixNano()), []byte(out), 0644); err != nil {
+			panic(err)
+		}
 	}
 
 	// LU decomposition
@@ -463,8 +475,20 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		m.addSupport(k)
 
 		// Record matrix
-		if err := ioutil.WriteFile(fmt.Sprintf("./testdata/%v.modal", time.Now().UnixNano()), []byte(fmt.Sprintf("%v", k)), 0644); err != nil {
-			panic(err)
+		{
+			var out string
+			r, c := k.Dims()
+			for i := 0; i < r; i++ {
+				for j := 0; j < c; j++ {
+					if k.At(i, j) == 0.0 {
+						continue
+					}
+					out += fmt.Sprintf("%5d %5d %.10e\n", i, j, k.At(i, j))
+				}
+			}
+			if err := ioutil.WriteFile(fmt.Sprintf("./testdata/%v.modal", time.Now().UnixNano()), []byte(out), 0644); err != nil {
+				panic(err)
+			}
 		}
 
 		// LU factorization
