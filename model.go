@@ -247,8 +247,6 @@ func (m *Model) runLinearElastic() (err error) {
 	// LU decomposition
 	var lu sparse.LU
 	lu.Factorize(k, ignore...)
-	// TODO : need sparse saving of data
-	// TODO : try https://github.com/james-bowman/sparse
 	// TODO : need concurency solver
 
 	// repair stiffiner matrix
@@ -256,12 +254,8 @@ func (m *Model) runLinearElastic() (err error) {
 
 	// calculate node displacament
 	dof := 3 * len(m.Points)
-	dataDisp := make([]float64, dof)
 
-	// TODO
-	_ = dataDisp
-
-	d := make([]float64, dof) // mat.NewDense(dof, 1, dataDisp)
+	d := make([]float64, dof)
 
 	// templorary data for displacement in global system coordinate
 	data := make([]float64, 6)
@@ -307,21 +301,25 @@ func (m *Model) runLinearElastic() (err error) {
 		}
 
 		// calculate reactions
-		// TODO
-		// for pt := 0; pt < len(m.Points); pt++ {
-		// 	for i := 0; i < 3; i++ {
-		// 		if !m.Supports[pt][i] {
-		// 			// free support
-		// 			continue
-		// 		}
-		// 		// fix support
-		// 		react := -p[3*pt+i]
-		// 		for j := 0; j < dof; j++ {
-		// 			react += k.At(3*pt+i, j) * d[j]
-		// 		}
-		// 		lc.Reactions[pt][i] = react
-		// 	}
-		// }
+		for pt := 0; pt < len(m.Points); pt++ {
+			for i := 0; i < 3; i++ {
+				if !m.Supports[pt][i] {
+					// free support
+					continue
+				}
+				// fix support
+				react := -p[3*pt+i]
+
+				row := 3*pt + i
+				_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
+					if i == row {
+						react += x * d[j]
+					}
+					return true
+				})
+				lc.Reactions[pt][i] = react
+			}
+		}
 	}
 
 	return nil
@@ -346,7 +344,11 @@ func (m *Model) assemblyK() *sparse.Matrix {
 					for r2 := 0; r2 < 3; r2++ {
 						x := m.Beams[i].N[p1]*3 + r1
 						y := m.Beams[i].N[p2]*3 + r2
-						if err := sparse.Entry(T, x, y, kr.At(p1*3+r1, p2*3+r2)); err != nil {
+						val := kr.At(p1*3+r1, p2*3+r2)
+						if val == 0.0 {
+							continue
+						}
+						if err := sparse.Entry(T, x, y, val); err != nil {
 							panic(err)
 						}
 					}
@@ -361,26 +363,69 @@ func (m *Model) assemblyK() *sparse.Matrix {
 		panic(err)
 	}
 
+	// remove zero elements
+	_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
+		return x != 0.0
+	})
+
 	// remove duplicate matrix
 	err = sparse.Dupl(k)
 	if err != nil {
 		panic(err)
 	}
 
+	// singinal check
+	min, max := math.MaxFloat64, 0.0
+	_, err = sparse.Fkeep(k, func(i, j int, x float64) bool {
+		if i == j { // diagonal
+			if math.Abs(x) > max {
+				max = math.Abs(x)
+			}
+			if math.Abs(x) < min {
+				min = math.Abs(x)
+			}
+		}
+		// keep entry
+		return true
+	})
+	if err != nil {
+		panic(err)
+	}
+	if min == 0 {
+		panic("singular: zero entry on diagonal")
+	}
+	if max/min > 1e18 {
+		panic(fmt.Sprintf("singular: max/min diagonal entry: %v", max/min))
+	}
+
+	// zero diagonals
+	r, c := k.Dims()
+	if r != c {
+		panic("is not symmetric")
+	}
+	bz := make([]bool, r)
+	_, err = sparse.Fkeep(k, func(i, j int, x float64) bool {
+		if i == j { // diagonal
+			bz[i] = true
+		}
+		// keep entry
+		return true
+	})
+	for i := range bz {
+		if !bz[i] {
+			panic(fmt.Errorf("singular %d : %v", i, bz))
+		}
+	}
+
 	return k
 }
 
-func (m *Model) assemblyNodeLoad(lc *LoadCase) []float64 { // mat.Matrix {
+func (m *Model) assemblyNodeLoad(lc *LoadCase) []float64 {
 	dof := 3 * len(m.Points)
-	// TODO : clean Dense matrix
-	// data := make([]float64, dof)
-	// p = mat.NewDense(dof, 1, data)
-	p := make([]float64, dof) // golis.NewSparseMatrix(dof, 1)
+	p := make([]float64, dof)
 	// node loads
 	for _, ln := range lc.LoadNodes {
 		for i := 0; i < 3; i++ {
-			// TODO : clean Dense matrix
-			// p.Set(ln.N*3+i, 0, p.At(ln.N*3+i, 0)+ln.Forces[i])
 			p[ln.N*3+i] += ln.Forces[i]
 		}
 	}
@@ -447,7 +492,7 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	}
 
 	// templorary data for calc matrix H
-	hh := make([]float64, dof)
+	// hh := make([]float64, dof)
 
 	// templorary data for mass preparing
 	MS := make([]float64, dof)
@@ -488,7 +533,7 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			}
 
 			// LU decomposition
-			hh, err = lu.Solve(MS)
+			hh, err := lu.Solve(MS)
 			if err != nil {
 				return err
 			}
