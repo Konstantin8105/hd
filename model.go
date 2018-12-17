@@ -242,11 +242,11 @@ func (m *Model) runLinearElastic() (err error) {
 	k := m.assemblyK()
 
 	// add support
-	m.addSupport(k)
+	ignore := m.addSupport()
 
 	// LU decomposition
 	var lu sparse.LU
-	lu.Factorize(k)
+	lu.Factorize(k, ignore...)
 	// TODO : need sparse saving of data
 	// TODO : try https://github.com/james-bowman/sparse
 	// TODO : need concurency solver
@@ -257,6 +257,10 @@ func (m *Model) runLinearElastic() (err error) {
 	// calculate node displacament
 	dof := 3 * len(m.Points)
 	dataDisp := make([]float64, dof)
+
+	// TODO
+	_ = dataDisp
+
 	d := make([]float64, dof) // mat.NewDense(dof, 1, dataDisp)
 
 	// templorary data for displacement in global system coordinate
@@ -301,28 +305,29 @@ func (m *Model) runLinearElastic() (err error) {
 			// calculate beam forces
 			s.Mul(kr, &z)
 		}
+
 		// calculate reactions
-		for pt := 0; pt < len(m.Points); pt++ {
-			for i := 0; i < 3; i++ {
-				if !m.Supports[pt][i] {
-					// free support
-					continue
-				}
-				// fix support
-				react := -p[3*pt+i]
-				for j := 0; j < dof; j++ {
-					react += k.At(3*pt+i, j) * d[j]
-				}
-				lc.Reactions[pt][i] = react
-			}
-		}
+		// TODO
+		// for pt := 0; pt < len(m.Points); pt++ {
+		// 	for i := 0; i < 3; i++ {
+		// 		if !m.Supports[pt][i] {
+		// 			// free support
+		// 			continue
+		// 		}
+		// 		// fix support
+		// 		react := -p[3*pt+i]
+		// 		for j := 0; j < dof; j++ {
+		// 			react += k.At(3*pt+i, j) * d[j]
+		// 		}
+		// 		lc.Reactions[pt][i] = react
+		// 	}
+		// }
 	}
 
 	return nil
 }
 
 func (m *Model) assemblyK() *sparse.Matrix {
-	dof := 3 * len(m.Points)
 	T, err := sparse.NewTriplet()
 	if err != nil {
 		panic(err)
@@ -396,31 +401,16 @@ func getAverageValueOfK(k mat.Matrix) (value float64) {
 	return
 }
 
-func (m *Model) addSupport(k *sparse.Matrix) { //mat.MutableSymmetric) {
-	// dof := 3 * len(m.Points)
+func (m *Model) addSupport() (ignore []int) {
 	// choose value for support
-	supportValue := 1.0 //getAverageValueOfK(k)
 	for n := range m.Supports {
 		for i := 0; i < 3; i++ {
 			if m.Supports[n][i] {
-				k.SetZeroForRowColumn(n*3+i, supportValue)
-				// switch v := k.(type) {
-				// case *golis.SparseMatrix:
-				// 	v.SetZeroForRowColumn(n*3 + i)
-				// case *golis.SparseMatrixSymmetric:
-				// 	v.SetZeroForRowColumn(n*3 + i)
-				// default:
-				// 	panic("")
-				// 	// for j := 0; j < dof; j++ {
-				// 	// 	k.Set(j, n*3+i, 0)
-				// 	// 	k.Set(n*3+i, j, 0)
-				// 	// }
-				// }
-				// // k.Set(n*3+i, n*3+i, supportValue)
-				// k.SetSym(n*3+i, n*3+i, supportValue)
+				ignore = append(ignore, n*3+i)
 			}
 		}
 	}
+	return
 }
 
 // Earth gravity, m/sq.sec.
@@ -444,25 +434,23 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	dof := 3 * len(m.Points)
 
 	// LU decomposition
-	var lu mat.LU
+	var lu sparse.LU
 	{
 		// assembly matrix of stiffiner
 		k := m.assemblyK()
 
 		// add support
-		m.addSupport(k)
+		ignore := m.addSupport()
 
 		// LU factorization
-		lu.Factorize(k)
+		lu.Factorize(k, ignore...)
 	}
 
 	// templorary data for calc matrix H
-	datahh := make([]float64, dof)
-	hh := mat.NewDense(dof, 1, datahh)
+	hh := make([]float64, dof)
 
 	// templorary data for mass preparing
-	dataMS := make([]float64, dof)
-	MS := mat.NewDense(dof, 1, dataMS)
+	MS := make([]float64, dof)
 
 	var e mat.Eigen
 
@@ -485,14 +473,14 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		for col := 0; col < dof; col++ {
 			for i := 0; i < dof; i++ {
 				// initialization by 0.0
-				MS.Set(i, 0, 0.0)
+				MS[i] = 0.0
 			}
 			isZero := true
 			for i := 0; i < dof; i++ {
 				if M.At(i, col) != 0 {
 					isZero = false
 				}
-				MS.Set(i, 0, M.At(i, col))
+				MS[i] = M.At(i, col)
 			}
 
 			if isZero {
@@ -500,13 +488,13 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			}
 
 			// LU decomposition
-			err = lu.Solve(hh, false, MS)
+			hh, err = lu.Solve(MS)
 			if err != nil {
 				return err
 			}
 
 			for i := 0; i < dof; i++ {
-				h.Set(i, col, hh.At(i, 0))
+				h.Set(i, col, hh[i])
 			}
 		}
 
