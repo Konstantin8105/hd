@@ -321,13 +321,8 @@ func (m *Model) runLinearElastic() (err error) {
 	return nil
 }
 
-func (m *Model) assemblyK() *sparse.Matrix { // mat.MutableSymmetric {
+func (m *Model) assemblyK() *sparse.Matrix {
 	dof := 3 * len(m.Points)
-	// TODO : clean Dense matrix
-	// data := make([]float64, dof*dof)
-	// k := mat.NewDense(dof, dof, data)
-	// k := golis.NewSparseMatrix(dof, dof)
-	// k := golis.NewSparseMatrixSymmetric(dof)
 	T, err := sparse.NewTriplet()
 	if err != nil {
 		panic(err)
@@ -346,12 +341,6 @@ func (m *Model) assemblyK() *sparse.Matrix { // mat.MutableSymmetric {
 					for r2 := 0; r2 < 3; r2++ {
 						x := m.Beams[i].N[p1]*3 + r1
 						y := m.Beams[i].N[p2]*3 + r2
-						// TODO : clean Dense matrix
-						// k.Set(x, y, k.At(x, y)+kr.At(p1*3+r1, p2*3+r2))
-						// if x > y {
-						// 	continue
-						// }
-						// k.Add(x, y, kr.At(p1*3+r1, p2*3+r2))
 						if err := sparse.Entry(T, x, y, kr.At(p1*3+r1, p2*3+r2)); err != nil {
 							panic(err)
 						}
@@ -361,22 +350,17 @@ func (m *Model) assemblyK() *sparse.Matrix { // mat.MutableSymmetric {
 		}
 	}
 
+	// from triplet to sparse matrix
 	k, err := sparse.Compress(T)
 	if err != nil {
 		panic(err)
 	}
 
-	// It is happen if we have pin nodes
-	// add 1 for diagonal with zero
-	// value := getAverageValueOfK(k)
-	// for i := 0; i < dof; i++ {
-	// 	isZero := k.At(i, i) == 0.0
-	// 	// TODO : add checking only for pin direction
-	// 	if !isZero {
-	// 		continue
-	// 	}
-	// 	k.SetSym(i, i, value)
-	// }
+	// remove duplicate matrix
+	err = sparse.Dupl(k)
+	if err != nil {
+		panic(err)
+	}
 
 	return k
 }
