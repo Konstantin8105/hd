@@ -14,6 +14,9 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
+// only for debugging: record matrix
+var debugRecording = false
+
 // Model is structural calculation model
 type Model struct {
 	// Points is slice of point coordinate
@@ -246,8 +249,8 @@ func (m *Model) runLinearElastic() (err error) {
 	// add support
 	m.addSupport(k)
 
-	// Record matrix
-	{
+	// only for debug : record matrix
+	if debugRecording {
 		var out string
 		r, c := k.Dims()
 		for i := 0; i < r; i++ {
@@ -474,8 +477,8 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		// add support
 		m.addSupport(k)
 
-		// Record matrix
-		{
+		// only for debug : record matrix
+		if debugRecording {
 			var out string
 			r, c := k.Dims()
 			for i := 0; i < r; i++ {
