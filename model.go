@@ -439,20 +439,6 @@ func (m *Model) assemblyNodeLoad(lc *LoadCase) []float64 {
 	return p
 }
 
-// TODO: need recode part of solving (Ax=b,eigen) for avoid that function
-// For avoid matrix singular value of support is must be:
-// 1) not zero
-// 2) like absolute value of k
-func getAverageValueOfK(k mat.Matrix) (value float64) {
-	c, _ := k.Dims()
-	for i := 0; i < c; i++ {
-		if value < math.Abs(k.At(i, i)) {
-			value = math.Abs(k.At(i, i))
-		}
-	}
-	return
-}
-
 func (m *Model) addSupport() (ignore []int) {
 	// choose value for support
 	for n := range m.Supports {
