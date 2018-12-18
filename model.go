@@ -373,31 +373,6 @@ func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int, err error) {
 		return
 	}
 
-	// singinal check
-	min, max := math.MaxFloat64, 0.0
-	if _, err = sparse.Fkeep(k, func(i, j int, x float64) bool {
-		if i == j { // diagonal
-			if math.Abs(x) > max {
-				max = math.Abs(x)
-			}
-			if math.Abs(x) < min {
-				min = math.Abs(x)
-			}
-		}
-		// keep entry
-		return true
-	}); err != nil {
-		return
-	}
-	if min == 0 {
-		err = fmt.Errorf("singular: zero entry on diagonal")
-		return
-	}
-	if max/min > 1e18 {
-		err = fmt.Errorf("singular: max/min diagonal entry: %v", max/min)
-		return
-	}
-
 	// zero diagonals
 	r, c := k.Dims()
 	if r != c {
