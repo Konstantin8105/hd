@@ -532,48 +532,50 @@ func TestSplit(t *testing.T) {
 		baseModalTruss, baseModalTrussRotate,
 	}
 	for mIndex := range models {
-		m := models[mIndex]()
-		var b bytes.Buffer
-		if err := m.Run(&b); err != nil {
-			t.Fatalf("Error : %v", err)
-		}
-		expectResult := m.LoadCases
-		hz := m.ModalCases[0].Result[0].Hz
+		t.Run(fmt.Sprintf("Model%d", mIndex), func(t *testing.T) {
+			m := models[mIndex]()
+			var b bytes.Buffer
+			if err := m.Run(&b); err != nil {
+				t.Fatalf("Error : %v", err)
+			}
+			expectResult := m.LoadCases
+			hz := m.ModalCases[0].Result[0].Hz
 
-		for i := 1; i < 10; i++ {
-			t.Run(fmt.Sprintf("Model%d Split%d", mIndex, i), func(t *testing.T) {
-				mLocal := models[mIndex]()
+			for i := 1; i < 10; i++ {
+				t.Run(fmt.Sprintf("Split%d", i), func(t *testing.T) {
+					mLocal := models[mIndex]()
 
-				// split each beams
-				var b bytes.Buffer
-				amountBeams := len(mLocal.Beams)
-				for j := 0; j < amountBeams; j++ {
-					if err := mLocal.SplitBeam(j, i); err != nil {
-						t.Fatalf("Cannot split %d: %v", i, err)
+					// split each beams
+					var b bytes.Buffer
+					amountBeams := len(mLocal.Beams)
+					for j := 0; j < amountBeams; j++ {
+						if err := mLocal.SplitBeam(j, i); err != nil {
+							t.Fatalf("Cannot split %d: %v", i, err)
+						}
 					}
-				}
 
-				// calculation
-				if err := mLocal.Run(&b); err != nil {
-					t.Fatalf("Error : %v", err)
-				}
+					// calculation
+					if err := mLocal.Run(&b); err != nil {
+						t.Fatalf("Error : %v", err)
+					}
 
-				// eps
-				eps := 1e-9
+					// eps
+					eps := 1e-9
 
-				if err := compare(expectResult, mLocal.LoadCases, eps); err != nil {
-					t.Log(mLocal.String())
-					t.Errorf("Result is not same: %v", err)
-				}
+					if err := compare(expectResult, mLocal.LoadCases, eps); err != nil {
+						t.Log(mLocal.String())
+						t.Errorf("Result is not same: %v", err)
+					}
 
-				h := mLocal.ModalCases[0].Result[0].Hz
-				diff := math.Abs((hz - h) / h)
-				if diff > eps {
-					t.Logf("Narural frequency: %15.5e != %15.5e", hz, h)
-					t.Errorf("Diff in natural frequency is not ok : %15.5e", diff)
-				}
-			})
-		}
+					h := mLocal.ModalCases[0].Result[0].Hz
+					diff := math.Abs((hz - h) / h)
+					if diff > eps {
+						t.Logf("Narural frequency: %15.5e != %15.5e", hz, h)
+						t.Errorf("Diff in natural frequency is not ok : %15.5e", diff)
+					}
+				})
+			}
+		})
 	}
 }
 
