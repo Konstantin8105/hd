@@ -246,7 +246,10 @@ func (m *Model) runLinearElastic() (err error) {
 
 	// LU decomposition
 	var lu sparse.LU
-	lu.Factorize(k, ignore...)
+	err = lu.Factorize(k, ignore...)
+	if err != nil {
+		return fmt.Errorf("LU error factorization: %v", err)
+	}
 	// TODO : need concurency solver
 
 	// repair stiffiner matrix
@@ -411,6 +414,7 @@ func (m *Model) assemblyK() *sparse.Matrix {
 		// keep entry
 		return true
 	})
+
 	for i := range bz {
 		if !bz[i] {
 			panic(fmt.Errorf("singular %d : %v", i, bz))
@@ -488,7 +492,10 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		ignore := m.addSupport()
 
 		// LU factorization
-		lu.Factorize(k, ignore...)
+		err = lu.Factorize(k, ignore...)
+		if err != nil {
+			return fmt.Errorf("LU error factorization: %v", err)
+		}
 	}
 
 	// templorary data for calc matrix H
