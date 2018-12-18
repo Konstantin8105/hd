@@ -65,6 +65,7 @@ func baseBeam(size int) hd.Model {
 
 type result struct {
 	AmountIntermediantPoints int
+	Displacement             string
 }
 
 // Main points of software:
@@ -105,7 +106,7 @@ next:
 
 	// show all results in stdout
 	for _, r := range rs {
-		fmt.Fprintf(os.Stdout, "%10d\n", r.AmountIntermediantPoints)
+		fmt.Fprintf(os.Stdout, "%10d %30s\n", r.AmountIntermediantPoints, r.Displacement)
 	}
 
 	// calculate next amount separation points
@@ -127,6 +128,8 @@ next:
 	// write result
 	rs = append(rs, result{
 		AmountIntermediantPoints: a,
+		Displacement: fmt.Sprintf("%20.19e",
+			m.LoadCases[0].PointDisplacementGlobal[1][1]),
 	})
 
 	bo, err := json.Marshal(rs)
