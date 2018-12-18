@@ -214,16 +214,14 @@ func (m *Model) Run(out io.Writer) (err error) {
 
 	// calculation by load cases
 	if err := m.runLinearElastic(); err != nil {
-		eCalc.Add(fmt.Errorf("Error in load case :%v", err))
+		_ = eCalc.Add(fmt.Errorf("Error in load case :%v", err))
 	}
 
 	// calculation by modal cases
 	for i := range m.ModalCases {
-		fmt.Fprintf(m.out, "Calculate modal case %d of %d\n",
-			i,
-			len(m.ModalCases))
+		fmt.Fprintf(m.out, "Calculate modal case %d of %d\n", i, len(m.ModalCases))
 		if err := m.runModal(&m.ModalCases[i]); err != nil {
-			eCalc.Add(fmt.Errorf("Error in modal case %d: %v", i, err))
+			_ = eCalc.Add(fmt.Errorf("Error in modal case %d: %v", i, err))
 		}
 	}
 
@@ -239,11 +237,13 @@ func (m *Model) runLinearElastic() (err error) {
 	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
 
 	// assembly matrix of stiffiner
-	k, ignore := m.assemblyK()
+	k, ignore, err := m.assemblyK()
+	if err != nil {
+		return err
+	}
 
 	// add support
-	ignore2 := m.addSupport()
-	ignore = append(ignore, ignore2...)
+	ignore = append(ignore, m.addSupport()...)
 
 	// LU decomposition
 	var lu sparse.LU
@@ -251,20 +251,16 @@ func (m *Model) runLinearElastic() (err error) {
 	if err != nil {
 		return fmt.Errorf("LU error factorization: %v", err)
 	}
-	// TODO : need concurency solver
-
-	// repair stiffiner matrix
-	// k = m.assemblyK()
 
 	// calculate node displacament
 	dof := 3 * len(m.Points)
-
 	d := make([]float64, dof)
 
 	// templorary data for displacement in global system coordinate
 	data := make([]float64, 6)
 	Zo := mat.NewDense(6, 1, data)
 
+	// TODO : need concurency solver
 	for ilc := range m.LoadCases {
 		lc := &m.LoadCases[ilc]
 
@@ -329,10 +325,10 @@ func (m *Model) runLinearElastic() (err error) {
 	return nil
 }
 
-func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int) {
-	T, err := sparse.NewTriplet()
-	if err != nil {
-		panic(err)
+func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int, err error) {
+	var T *sparse.Triplet
+	if T, err = sparse.NewTriplet(); err != nil {
+		return
 	}
 
 	for i := range m.Beams {
@@ -349,12 +345,8 @@ func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int) {
 						x := m.Beams[i].N[p1]*3 + r1
 						y := m.Beams[i].N[p2]*3 + r2
 						val := kr.At(p1*3+r1, p2*3+r2)
-						// relocate zero checking to sparse package
-						// if val == 0.0 {
-						// 	continue
-						// }
-						if err := sparse.Entry(T, x, y, val); err != nil {
-							panic(err)
+						if err = sparse.Entry(T, x, y, val); err != nil {
+							return
 						}
 					}
 				}
@@ -365,23 +357,25 @@ func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int) {
 	// from triplet to sparse matrix
 	k, err = sparse.Compress(T)
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	// remove zero elements
-	_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
+	if _, err = sparse.Fkeep(k, func(i, j int, x float64) bool {
 		return x != 0.0
-	})
+	}); err != nil {
+		return
+	}
 
 	// remove duplicate matrix
 	err = sparse.Dupl(k)
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	// singinal check
 	min, max := math.MaxFloat64, 0.0
-	_, err = sparse.Fkeep(k, func(i, j int, x float64) bool {
+	if _, err = sparse.Fkeep(k, func(i, j int, x float64) bool {
 		if i == j { // diagonal
 			if math.Abs(x) > max {
 				max = math.Abs(x)
@@ -392,39 +386,42 @@ func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int) {
 		}
 		// keep entry
 		return true
-	})
-	if err != nil {
-		panic(err)
+	}); err != nil {
+		return
 	}
 	if min == 0 {
-		panic("singular: zero entry on diagonal")
+		err = fmt.Errorf("singular: zero entry on diagonal")
+		return
 	}
 	if max/min > 1e18 {
-		panic(fmt.Sprintf("singular: max/min diagonal entry: %v", max/min))
+		err = fmt.Errorf("singular: max/min diagonal entry: %v", max/min)
+		return
 	}
 
 	// zero diagonals
 	r, c := k.Dims()
 	if r != c {
-		panic("is not symmetric")
+		err = fmt.Errorf("matrix is not symmetric")
+		return
 	}
 	bz := make([]bool, r)
-	_, err = sparse.Fkeep(k, func(i, j int, x float64) bool {
+	if _, err = sparse.Fkeep(k, func(i, j int, x float64) bool {
 		if i == j { // diagonal
 			bz[i] = true
 		}
 		// keep entry
 		return true
-	})
+	}); err != nil {
+		return
+	}
 
 	for i := range bz {
 		if !bz[i] {
 			ignore = append(ignore, i)
-			// panic(fmt.Errorf("singular %d : %v", i, bz))
 		}
 	}
 
-	return k, ignore
+	return k, ignore, nil
 }
 
 func (m *Model) assemblyNodeLoad(lc *LoadCase) []float64 {
@@ -475,11 +472,13 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	var lu sparse.LU
 	{
 		// assembly matrix of stiffiner
-		k, ignore2 := m.assemblyK()
+		k, ignore, err := m.assemblyK()
+		if err != nil {
+			return err
+		}
 
 		// add support
-		ignore := m.addSupport()
-		ignore = append(ignore, ignore2...)
+		ignore = append(ignore, m.addSupport()...)
 
 		// LU factorization
 		err = lu.Factorize(k, ignore...)
@@ -487,9 +486,6 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			return fmt.Errorf("LU error factorization: %v", err)
 		}
 	}
-
-	// templorary data for calc matrix H
-	// hh := make([]float64, dof)
 
 	// templorary data for mass preparing
 	MS := make([]float64, dof)
