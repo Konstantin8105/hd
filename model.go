@@ -239,10 +239,11 @@ func (m *Model) runLinearElastic() (err error) {
 	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
 
 	// assembly matrix of stiffiner
-	k := m.assemblyK()
+	k, ignore := m.assemblyK()
 
 	// add support
-	ignore := m.addSupport()
+	ignore2 := m.addSupport()
+	ignore = append(ignore, ignore2...)
 
 	// LU decomposition
 	var lu sparse.LU
@@ -253,7 +254,7 @@ func (m *Model) runLinearElastic() (err error) {
 	// TODO : need concurency solver
 
 	// repair stiffiner matrix
-	k = m.assemblyK()
+	// k = m.assemblyK()
 
 	// calculate node displacament
 	dof := 3 * len(m.Points)
@@ -328,7 +329,7 @@ func (m *Model) runLinearElastic() (err error) {
 	return nil
 }
 
-func (m *Model) assemblyK() *sparse.Matrix {
+func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int) {
 	T, err := sparse.NewTriplet()
 	if err != nil {
 		panic(err)
@@ -362,7 +363,7 @@ func (m *Model) assemblyK() *sparse.Matrix {
 	}
 
 	// from triplet to sparse matrix
-	k, err := sparse.Compress(T)
+	k, err = sparse.Compress(T)
 	if err != nil {
 		panic(err)
 	}
@@ -418,11 +419,12 @@ func (m *Model) assemblyK() *sparse.Matrix {
 
 	for i := range bz {
 		if !bz[i] {
-			panic(fmt.Errorf("singular %d : %v", i, bz))
+			ignore = append(ignore, i)
+			// panic(fmt.Errorf("singular %d : %v", i, bz))
 		}
 	}
 
-	return k
+	return k, ignore
 }
 
 func (m *Model) assemblyNodeLoad(lc *LoadCase) []float64 {
@@ -487,10 +489,11 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	var lu sparse.LU
 	{
 		// assembly matrix of stiffiner
-		k := m.assemblyK()
+		k, ignore2 := m.assemblyK()
 
 		// add support
 		ignore := m.addSupport()
+		ignore = append(ignore, ignore2...)
 
 		// LU factorization
 		err = lu.Factorize(k, ignore...)
