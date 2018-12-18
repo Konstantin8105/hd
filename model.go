@@ -348,9 +348,10 @@ func (m *Model) assemblyK() *sparse.Matrix {
 						x := m.Beams[i].N[p1]*3 + r1
 						y := m.Beams[i].N[p2]*3 + r2
 						val := kr.At(p1*3+r1, p2*3+r2)
-						if val == 0.0 {
-							continue
-						}
+						// relocate zero checking to sparse package
+						// if val == 0.0 {
+						// 	continue
+						// }
 						if err := sparse.Entry(T, x, y, val); err != nil {
 							panic(err)
 						}
