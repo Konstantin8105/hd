@@ -947,6 +947,63 @@ func TestModelString(t *testing.T) {
 	}
 }
 
+func TestDirectionLoadNode(t *testing.T) {
+	m := Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{1.0, 0.0},
+		},
+		Beams: []BeamProp{
+			{
+				N: [2]int{0, 1},
+				A: 12e-4,
+				J: 120e-6,
+				E: 2.0e11,
+			},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+		},
+		LoadCases: []LoadCase{
+			{
+				LoadNodes: []LoadNode{
+					{N: 1, Forces: [3]float64{100.0, 0.0, 0.0}},
+				},
+			},
+			{
+				LoadNodes: []LoadNode{
+					{N: 1, Forces: [3]float64{0.0, 100.0, 0.0}},
+				},
+			},
+			{
+				LoadNodes: []LoadNode{
+					{N: 1, Forces: [3]float64{0.0, 0.0, 100.0}},
+				},
+			},
+		},
+	}
+
+	var b bytes.Buffer
+	if err := m.Run(&b); err != nil {
+		t.Fatalf("Cannot calculate : %v", err)
+	}
+	b.Reset()
+
+	if !(m.LoadCases[0].PointDisplacementGlobal[1][0] > 0) {
+		t.Errorf("load in direction X is not ok. See: %v", m.LoadCases[0].PointDisplacementGlobal[1])
+	}
+	if !(m.LoadCases[1].PointDisplacementGlobal[1][1] > 0) {
+		t.Errorf("load in direction Y is not ok. See: %v", m.LoadCases[1].PointDisplacementGlobal[1])
+	}
+	if !(m.LoadCases[2].PointDisplacementGlobal[1][1] > 0) {
+		t.Errorf("load in direction M is not ok. See: %v", m.LoadCases[2].PointDisplacementGlobal[1])
+	}
+	t.Logf("case 0 : %v", m.LoadCases[0].PointDisplacementGlobal)
+	t.Logf("case 1 : %v", m.LoadCases[1].PointDisplacementGlobal)
+	t.Logf("case 2 : %v", m.LoadCases[2].PointDisplacementGlobal)
+}
+
 func BenchmarkRun(b *testing.B) {
 	minimalLoadCases := 20
 	for ic := 1; ic <= 128; ic *= 2 {
