@@ -416,6 +416,77 @@ func baseModalBeam3mass() Model {
 	}
 }
 
+// baseBeamDc return 2 models for compare maximal displacement
+//
+//	model 1:
+//	        |         |
+//	        V         V
+//	0-------0---------0------0
+//
+//	model 2:
+//	        |         |
+//	        V         V
+//	0-------0----0----0------0
+//
+func baseBeamDc() (m1, m2 Model) {
+	return Model{
+			Points: [][2]float64{
+				{0.0, 0.0},
+				{1.0, 0.0},
+				{2.0, 0.0},
+				{3.0, 0.0},
+			},
+			Beams: []BeamProp{
+				{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{2, 3}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			},
+			Supports: [][3]bool{
+				{true, true, true},
+				{false, false, false},
+				{false, false, false},
+				{true, true, true},
+			},
+			LoadCases: []LoadCase{
+				{
+					LoadNodes: []LoadNode{
+						{N: 1, Forces: [3]float64{0.0, 10.0, 0.0}},
+						{N: 2, Forces: [3]float64{0.0, 10.0, 0.0}},
+					},
+				},
+			},
+		}, Model{
+			Points: [][2]float64{
+				{0.0, 0.0},
+				{1.0, 0.0},
+				{1.5, 0.0},
+				{2.0, 0.0},
+				{3.0, 0.0},
+			},
+			Beams: []BeamProp{
+				{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{2, 3}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{3, 4}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			},
+			Supports: [][3]bool{
+				{true, true, true},
+				{false, false, false},
+				{false, false, false},
+				{false, false, false},
+				{true, true, true},
+			},
+			LoadCases: []LoadCase{
+				{
+					LoadNodes: []LoadNode{
+						{N: 1, Forces: [3]float64{0.0, 10.0, 0.0}},
+						{N: 3, Forces: [3]float64{0.0, 10.0, 0.0}},
+					},
+				},
+			},
+		}
+}
+
 func TestJsonModel(t *testing.T) {
 	m := baseBeam()
 	b, err := json.Marshal(m)
@@ -823,6 +894,18 @@ func TestModelString(t *testing.T) {
 	}, {
 		m:        baseModalBeam3mass(),
 		filename: "beam-modal-3mass",
+	}, {
+		m: func() Model {
+			m, _ := baseBeamDc()
+			return m
+		}(),
+		filename: "beam-dc-part1",
+	}, {
+		m: func() Model {
+			_, m := baseBeamDc()
+			return m
+		}(),
+		filename: "beam-dc-part2",
 	}}
 	for _, m := range ms {
 		t.Run(m.filename, func(t *testing.T) {
