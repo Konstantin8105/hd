@@ -1010,22 +1010,22 @@ func TestLoadUniform(t *testing.T) {
 		errs := []error{
 			func() error {
 				var m *Model
-				_, err := m.LoadUniform(0, [2]float64{0, 0})
+				_, err := m.LoadUniform(0, false, [2]float64{0, 0})
 				return err
 			}(),
 			func() error {
 				m := Model{}
-				_, err := m.LoadUniform(0, [2]float64{0, 0})
+				_, err := m.LoadUniform(0, false, [2]float64{0, 0})
 				return err
 			}(),
 			func() error {
 				m := Model{}
-				_, err := m.LoadUniform(-1, [2]float64{0, 0})
+				_, err := m.LoadUniform(-1, false, [2]float64{0, 0})
 				return err
 			}(),
 			func() error {
 				m := Model{}
-				_, err := m.LoadUniform(100, [2]float64{0, 0})
+				_, err := m.LoadUniform(100, false, [2]float64{0, 0})
 				return err
 			}(),
 			func() error {
@@ -1034,7 +1034,7 @@ func TestLoadUniform(t *testing.T) {
 						{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
 					},
 				}
-				_, err := m.LoadUniform(1, [2]float64{0, 0})
+				_, err := m.LoadUniform(1, false, [2]float64{0, 0})
 				return err
 			}(),
 			func() error {
@@ -1043,7 +1043,7 @@ func TestLoadUniform(t *testing.T) {
 						{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
 					},
 				}
-				_, err := m.LoadUniform(0, [2]float64{math.Inf(0), math.NaN()})
+				_, err := m.LoadUniform(0, false, [2]float64{math.Inf(0), math.NaN()})
 				return err
 			}(),
 		}
@@ -1058,132 +1058,138 @@ func TestLoadUniform(t *testing.T) {
 
 	// calculation checking
 	t.Run("calculation checking", func(t *testing.T) {
-		for _, mirror := range []bool{false, true} {
-			for _, d := range []float64{2, -1, 1, -2, 0} {
-				t.Run(fmt.Sprintf("Mirror:%v/%+3.1f", mirror, d), func(t *testing.T) {
-					m := Model{
-						Points: [][2]float64{
-							{0.0, 0.0},
-							{1.0, d},
-							{2.0, 0.0},
-						},
-						Beams: []BeamProp{
-							{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
-							{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
-						},
-						Supports: [][3]bool{
-							{true, true, true},
-							{false, false, false},
-							{true, true, true},
-						},
-						LoadCases: []LoadCase{
-							{LoadNodes: []LoadNode{{N: 1, Forces: [3]float64{100.0, 0.0, 0.0}}}},
-						},
-					}
+		for _, proj := range []bool{false, true} {
+			for _, mirror := range []bool{false, true} {
+				for _, d := range []float64{200, -0.5, 0.5, -200, 0} {
+					size := 10
+					t.Run(fmt.Sprintf("Mirror:%v/Proj:%v/%3.1f/Size:%d", mirror, proj, d, size), func(t *testing.T) {
+						m := Model{
+							Points: [][2]float64{
+								{0.0, 0.0},
+								{1.0, d},
+								{2.0, 0.0},
+							},
+							Beams: []BeamProp{
+								{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+								{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+							},
+							Supports: [][3]bool{
+								{true, true, true},
+								{false, false, false},
+								{false, true, false},
+							},
+							LoadCases: []LoadCase{
+								{LoadNodes: []LoadNode{{N: 1, Forces: [3]float64{100.0, 0.0, 0.0}}}},
+							},
+						}
 
-					if mirror {
-						m.Points[0][0] = 2.0
-						m.Points[2][0] = 0.0
-					}
+						if mirror {
+							m.Points[0][0] = 2.0
+							m.Points[2][0] = 0.0
+						}
 
-					for size := 10; size < 1000; size += 200 {
-						t.Run(fmt.Sprintf("%d", size), func(t *testing.T) {
-							// reset and allocate memory
-							m.LoadCases = make([]LoadCase, 1)
-							// loads
-							ux := -10.0
-							uy := -25.0
-							// uniform load
-							for i := range m.Beams {
-								un, err := m.LoadUniform(i, [2]float64{ux, uy})
-								if err != nil {
-									t.Fatal(err)
-								}
-								m.LoadCases[0].LoadNodes = append(m.LoadCases[0].LoadNodes, un...)
-							}
-							// node load
-							mn := m
-							mn.LoadCases = make([]LoadCase, 1)
-							if err := mn.SplitBeam(0, size); err != nil {
+						if err := m.SplitBeam(0, size); err != nil {
+							t.Fatal(err)
+						}
+						if err := m.SplitBeam(1, size); err != nil {
+							t.Fatal(err)
+						}
+
+						// reset and allocate memory
+						m.LoadCases = make([]LoadCase, 1)
+						// loads
+						ux := -10.0
+						uy := -25.0
+						// uniform load
+						for i := range m.Beams {
+							un, err := m.LoadUniform(i, proj, [2]float64{ux, uy})
+							if err != nil {
 								t.Fatal(err)
 							}
-							if err := mn.SplitBeam(1, size); err != nil {
-								t.Fatal(err)
-							}
-							dx := math.Abs(m.Points[0][0] - m.Points[1][0])
-							dy := math.Abs(m.Points[0][1] - m.Points[1][1])
-							for i := range mn.Points {
-								if i == 0 || i == 3 {
-									mn.LoadCases[0].LoadNodes = append(mn.LoadCases[0].LoadNodes, LoadNode{
-										N: i,
-										Forces: [3]float64{
-											ux * dy / float64(size+1) / 2.0, // X
-											uy * dx / float64(size+1) / 2.0, // Y
-											0.0,                             // M
-										},
-									})
-									continue
-								}
+							m.LoadCases[0].LoadNodes = append(m.LoadCases[0].LoadNodes, un...)
+						}
+						// node load
+						mn := m
+						mn.LoadCases = make([]LoadCase, 1)
+						dx := math.Abs(m.Points[0][0] - m.Points[1][0])
+						dy := math.Abs(m.Points[0][1] - m.Points[1][1])
+						if !proj {
+							// not projection
+							dx = math.Sqrt(dx*dx + dy*dy)
+							dy = dx
+						}
+						for i := range mn.Points {
+							if i == 0 || i == 3 {
 								mn.LoadCases[0].LoadNodes = append(mn.LoadCases[0].LoadNodes, LoadNode{
 									N: i,
 									Forces: [3]float64{
-										ux * dy / float64(size+1), // X
-										uy * dx / float64(size+1), // Y
-										0.0,                       // M
+										ux * dy / float64(size+1) / 2.0, // X
+										uy * dx / float64(size+1) / 2.0, // Y
+										0.0,                             // M
 									},
 								})
+								continue
 							}
+							mn.LoadCases[0].LoadNodes = append(mn.LoadCases[0].LoadNodes, LoadNode{
+								N: i,
+								Forces: [3]float64{
+									ux * dy / float64(size+1), // X
+									uy * dx / float64(size+1), // Y
+									0.0,                       // M
+								},
+							})
+						}
 
-							// calculation
-							var buf bytes.Buffer
-							if err := m.Run(&buf); err != nil {
-								t.Log(buf.String())
-								t.Fatal(err)
-							}
-							buf.Reset()
-							if err := mn.Run(&buf); err != nil {
-								t.Log(buf.String())
-								t.Fatal(err)
-							}
-							buf.Reset()
+						// calculation
+						var buf bytes.Buffer
+						if err := m.Run(&buf); err != nil {
+							t.Fatalf("m model error : %v", err)
+						}
+						buf.Reset()
+						if err := mn.Run(&buf); err != nil {
+							t.Fatalf("mn model error : %v", err)
+						}
+						buf.Reset()
 
-							// comparing displacement
-							var actual float64
-							for i := 0; i < 3; i++ {
-								actual += math.Pow(
-									m.LoadCases[0].PointDisplacementGlobal[1][i]-
-										mn.LoadCases[0].PointDisplacementGlobal[1][i],
-									2)
-							}
-							actual = math.Sqrt(actual)
-							if actual >= 1e-6 {
-								t.Log(actual)
-								t.Log(m.LoadCases[0].PointDisplacementGlobal[1])
-								t.Log(mn.LoadCases[0].PointDisplacementGlobal[1])
-								t.Fatalf("precision of calculation is not ok: %e", actual)
-							}
+						// comparing displacement
+						eps := 0.05 // 5%
+						var actual, sum float64
+						for i := 0; i < 3; i++ {
+							actual += math.Pow(
+								m.LoadCases[0].PointDisplacementGlobal[1][i]-
+									mn.LoadCases[0].PointDisplacementGlobal[1][i],
+								2)
+							sum += math.Pow(m.LoadCases[0].PointDisplacementGlobal[1][i], 2)
+						}
+						actual = math.Sqrt(actual)
+						sum = math.Sqrt(sum)
+						if actual/sum >= eps {
+							t.Log(actual / sum)
+							t.Log(m.LoadCases[0].PointDisplacementGlobal[1])
+							t.Log(mn.LoadCases[0].PointDisplacementGlobal[1])
+							t.Errorf("displacement precision of calculation is not ok: %10.5f >= 0.05", actual/sum)
+						}
 
-							// comparing reactions
-							actual = 0.0
-							sum := 0.0
-							for i := 0; i < 3; i++ {
-								actual += math.Pow(
-									m.LoadCases[0].Reactions[0][i]-
-										mn.LoadCases[0].Reactions[0][i],
-									2)
-								sum += math.Pow(mn.LoadCases[0].Reactions[0][i], 2)
-							}
-							actual = math.Sqrt(actual)
-							sum = math.Sqrt(sum)
-							if actual/sum >= 0.20 { // 20%
-								t.Log(actual / sum)
-								t.Log(m.LoadCases[0].Reactions[0])
-								t.Log(mn.LoadCases[0].Reactions[0])
-								t.Fatalf("precision of calculation is not ok: %e", actual)
-							}
-						})
-					}
-				})
+						// comparing reactions
+						actual = 0.0
+						sum = 0.0
+						for i := 0; i < 3; i++ {
+							actual += math.Pow(
+								m.LoadCases[0].Reactions[0][i]-
+									mn.LoadCases[0].Reactions[0][i],
+								2)
+							sum += math.Pow(mn.LoadCases[0].Reactions[0][i], 2)
+						}
+						actual = math.Sqrt(actual)
+						sum = math.Sqrt(sum)
+						if actual/sum >= eps {
+							t.Log(actual / sum)
+							t.Log(m.LoadCases[0].Reactions[0])
+							t.Log(mn.LoadCases[0].Reactions[0])
+							t.Errorf("reaction     precision of calculation is not ok: %10.5f >= 0.05", actual/sum)
+						}
+					})
+				}
 			}
 		}
 	})

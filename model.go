@@ -178,8 +178,8 @@ type LoadNode struct {
 //	[0] - X , Unit: N
 //	[1] - Y , Unit: N
 //
-//	Example of uniform load on beam with different location:
-//	uf = [3]float64{ 0.0 , -1.0 }
+//	Example of projection uniform load on beam with different location:
+//	uf = [2]float64{ 0.0 , -1.0 }
 //	+--+--+
 //	|  |  |
 //	V  V  V
@@ -191,7 +191,19 @@ type LoadNode struct {
 //	     \           |
 //	      0          0
 //
-func (m *Model) LoadUniform(beamIndex int, uf [2]float64) (ln []LoadNode, err error) {
+//	Example of not-projection uniform load on beam with different location:
+//	uf = [2]float64{ 0.0 , -1.0 }
+//	|\
+//	V \
+//	0  \             0          +-----+-----+
+//	 \ |\            | |        |     |     |
+//	  \V \           | V        V     V     V
+//	   \  |          |          0-----------0
+//	    \ |          | |
+//	     \V          | V
+//	      0          0
+//
+func (m *Model) LoadUniform(beamIndex int, projection bool, uf [2]float64) (ln []LoadNode, err error) {
 	defer func() {
 		if err != nil {
 			err = errors.New("LoadUniform").Add(err)
@@ -251,8 +263,7 @@ func (m *Model) LoadUniform(beamIndex int, uf [2]float64) (ln []LoadNode, err er
 				0.0,                       // Y
 				-(uf[1] * dx * dx) / 12.0, // M
 			},
-		})
-		ln = append(ln, LoadNode{
+		}, LoadNode{
 			N: nodes[1], // end node
 			Forces: [3]float64{
 				0.0,                      // X
@@ -272,8 +283,7 @@ func (m *Model) LoadUniform(beamIndex int, uf [2]float64) (ln []LoadNode, err er
 				0.0,                      // Y
 				(uf[1] * dx * dx) / 12.0, // M
 			},
-		})
-		ln = append(ln, LoadNode{
+		}, LoadNode{
 			N: nodes[1], // end node
 			Forces: [3]float64{
 				0.0,                       // X
@@ -296,8 +306,7 @@ func (m *Model) LoadUniform(beamIndex int, uf [2]float64) (ln []LoadNode, err er
 				0.0,                      // Y
 				(uf[0] * dx * dx) / 12.0, // M
 			},
-		})
-		ln = append(ln, LoadNode{
+		}, LoadNode{
 			N: nodes[1], // end node
 			Forces: [3]float64{
 				0.0,                       // X
@@ -317,8 +326,7 @@ func (m *Model) LoadUniform(beamIndex int, uf [2]float64) (ln []LoadNode, err er
 				0.0,                       // Y
 				-(uf[0] * dx * dx) / 12.0, // M
 			},
-		})
-		ln = append(ln, LoadNode{
+		}, LoadNode{
 			N: nodes[1], // end node
 			Forces: [3]float64{
 				0.0,                      // X
@@ -330,28 +338,34 @@ func (m *Model) LoadUniform(beamIndex int, uf [2]float64) (ln []LoadNode, err er
 
 	// load on node:
 	// P = (q * l) / 2.0
-	dx = math.Abs(dx)
-	dy = math.Abs(dy)
+	if projection {
+		dx = math.Abs(dx)
+		dy = math.Abs(dy)
+	} else {
+		dx = math.Sqrt(dx*dx + dy*dy)
+		dy = dx
+	}
 
 	for i := range nodes {
-		// load by X direction
-		ln = append(ln, LoadNode{
-			N: nodes[i],
-			Forces: [3]float64{
-				(uf[0] * dy) / 2.0, // X
-				0.0,                // Y
-				0.0,                // M
+		ln = append(ln,
+			// load by X direction
+			LoadNode{
+				N: nodes[i],
+				Forces: [3]float64{
+					(uf[0] * dy) / 2.0, // X
+					0.0,                // Y
+					0.0,                // M
+				},
 			},
-		})
-		// load by Y direction
-		ln = append(ln, LoadNode{
-			N: nodes[i],
-			Forces: [3]float64{
-				0.0,                // X
-				(uf[1] * dx) / 2.0, // Y
-				0.0,                // M
-			},
-		})
+			// load by Y direction
+			LoadNode{
+				N: nodes[i],
+				Forces: [3]float64{
+					0.0,                // X
+					(uf[1] * dx) / 2.0, // Y
+					0.0,                // M
+				},
+			})
 	}
 
 	return
@@ -428,12 +442,11 @@ func (m *Model) runLinearElastic() (err error) {
 		return err
 	}
 
-	// add support
-	ignore = append(ignore, m.addSupport()...)
-
 	// LU decomposition
 	var lu sparse.LU
-	err = lu.Factorize(k, ignore...)
+	err = lu.Factorize(k,
+		// add support
+		append(ignore, m.addSupport()...)...)
 	if err != nil {
 		return fmt.Errorf("LU error factorization: %v", err)
 	}
@@ -454,6 +467,21 @@ func (m *Model) runLinearElastic() (err error) {
 
 		// assembly node load
 		p := m.assemblyNodeLoad(lc)
+
+		{
+			// check loads on ignore directions
+			et := errors.New("Warning: List loads on not valid directions")
+			for i := range ignore {
+				if p[i] != 0.0 {
+					_ = et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
+					// ignore load in free direction. usually for pin connection
+					p[i] = 0.0
+				}
+			}
+			if et.IsError() {
+				fmt.Fprintf(m.out, "%v", et)
+			}
+		}
 
 		// solve by LU decomposition
 		d, err = lu.Solve(p)
