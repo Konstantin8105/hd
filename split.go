@@ -7,11 +7,9 @@ import (
 // SplitBeam is split beam on small parts.
 // Rules of splitting:
 //
-// * beamIndex will beam connected to start beam point
-//
-// * all new point add at the end of point list
-//
-// * all new beam add at the end of beam list
+//	* beamIndex will beam connected to start beam point
+//	* all new point add at the end of point list
+//	* all new beam add at the end of beam list
 func (m *Model) SplitBeam(beamIndex, amountIntermediantPoints int) (err error) {
 	if amountIntermediantPoints < 1 {
 		return fmt.Errorf("Not valid value of amount intermediant points : %d",

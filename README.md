@@ -105,3 +105,10 @@ GUI:
 * Visualize in 3D
 * Lifting devices
 ```
+
+#### Coverage
+
+```
+go test -coverprofile=coverage.out -run=TestLoadUniform
+go tool cover -html=coverage.out
+```

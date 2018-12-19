@@ -163,12 +163,198 @@ type LoadNode struct {
 
 	// Forces is node loads on each direction
 	//
-	// [0] - X , Unit: N
+	//	[0] - X , Unit: N. Positive direction from left to right.
+	//	[1] - Y , Unit: N. Positive direction from down to top.
+	//	[2] - M , Unit: N*m. Positive direction is counter-clockwise direction.
 	//
-	// [1] - Y , Unit: N
-	//
-	// [2] - M , Unit: N*m
 	Forces [3]float64
+}
+
+// LoadUniform - convert uniform load on single beam to node load and
+// return slice of node load or error if input data not valid.
+// Do not use for selfweight.
+//
+//	uf is uniform load in global system direction
+//	[0] - X , Unit: N
+//	[1] - Y , Unit: N
+//
+//	Example of uniform load on beam with different location:
+//	uf = [3]float64{ 0.0 , -1.0 }
+//	+--+--+
+//	|  |  |
+//	V  V  V
+//	0                0          +-----+-----+
+//	 \               |          |     |     |
+//	  \              |          V     V     V
+//	   \             |          0-----------0
+//	    \            |
+//	     \           |
+//	      0          0
+//
+func (m *Model) LoadUniform(beamIndex int, uf [2]float64) (ln []LoadNode, err error) {
+	defer func() {
+		if err != nil {
+			err = errors.New("LoadUniform").Add(err)
+		}
+	}()
+
+	// check input data
+	et := errors.New("check input data")
+	if m == nil {
+		_ = et.Add(fmt.Errorf("Model is nil"))
+	} else {
+		if beamIndex >= len(m.Beams) || beamIndex < 0 {
+			_ = et.Add(fmt.Errorf("index of beam is outside of model slice[0...%d]: %d", len(m.Beams), beamIndex))
+		} else {
+			// check point index is exist
+			for i, node := range m.Beams[beamIndex].N {
+				if node >= len(m.Points) || node < 0 {
+					_ = et.Add(fmt.Errorf("index of node %d of beam is outside slice: [0...%d]", i, len(m.Points)))
+				}
+			}
+		}
+		for i := range uf {
+			err := isOk(
+				isNaN(uf[i]),
+				isInf(uf[i]),
+			)
+			if err != nil {
+				_ = et.Add(fmt.Errorf("not valid load %d : %v", i, err))
+			}
+		}
+	}
+
+	if et.IsError() {
+		return nil, et
+	}
+
+	// converting
+
+	// calculate dx, dy is projection length of beam
+	nodes := m.Beams[beamIndex].N
+	dx := m.Points[nodes[0]][0] - m.Points[nodes[1]][0]
+	dy := m.Points[nodes[0]][1] - m.Points[nodes[1]][1]
+
+	// load on node:
+	// M = (q * l * l) / 12.0
+
+	// by X direction
+	switch {
+	case dx > 0:
+		// location of beam node:
+		// start - right
+		// end   - left
+		ln = append(ln, LoadNode{
+			N: nodes[0], // start node
+			Forces: [3]float64{
+				0.0,                       // X
+				0.0,                       // Y
+				-(uf[1] * dx * dx) / 12.0, // M
+			},
+		})
+		ln = append(ln, LoadNode{
+			N: nodes[1], // end node
+			Forces: [3]float64{
+				0.0,                      // X
+				0.0,                      // Y
+				(uf[1] * dx * dx) / 12.0, // M
+			},
+		})
+
+	case dx < 0:
+		// location of beam node:
+		// start - left
+		// end   - right
+		ln = append(ln, LoadNode{
+			N: nodes[0], // start node
+			Forces: [3]float64{
+				0.0,                      // X
+				0.0,                      // Y
+				(uf[1] * dx * dx) / 12.0, // M
+			},
+		})
+		ln = append(ln, LoadNode{
+			N: nodes[1], // end node
+			Forces: [3]float64{
+				0.0,                       // X
+				0.0,                       // Y
+				-(uf[1] * dx * dx) / 12.0, // M
+			},
+		})
+	}
+
+	// by Y direction
+	switch {
+	case dy > 0:
+		// location of beam node:
+		// start - up
+		// end   - down
+		ln = append(ln, LoadNode{
+			N: nodes[0], // start node
+			Forces: [3]float64{
+				0.0,                      // X
+				0.0,                      // Y
+				(uf[0] * dx * dx) / 12.0, // M
+			},
+		})
+		ln = append(ln, LoadNode{
+			N: nodes[1], // end node
+			Forces: [3]float64{
+				0.0,                       // X
+				0.0,                       // Y
+				-(uf[0] * dx * dx) / 12.0, // M
+			},
+		})
+
+	case dy < 0:
+		// location of beam node:
+		// start - down
+		// end   - up
+		ln = append(ln, LoadNode{
+			N: nodes[0], // start node
+			Forces: [3]float64{
+				0.0,                       // X
+				0.0,                       // Y
+				-(uf[0] * dx * dx) / 12.0, // M
+			},
+		})
+		ln = append(ln, LoadNode{
+			N: nodes[1], // end node
+			Forces: [3]float64{
+				0.0,                      // X
+				0.0,                      // Y
+				(uf[0] * dx * dx) / 12.0, // M
+			},
+		})
+	}
+
+	// load on node:
+	// P = (q * l) / 2.0
+	dx = math.Abs(dx)
+	dy = math.Abs(dy)
+
+	for i := range nodes {
+		// load by X direction
+		ln = append(ln, LoadNode{
+			N: nodes[i],
+			Forces: [3]float64{
+				(uf[0] * dy) / 2.0, // X
+				0.0,                // Y
+				0.0,                // M
+			},
+		})
+		// load by Y direction
+		ln = append(ln, LoadNode{
+			N: nodes[i],
+			Forces: [3]float64{
+				0.0,                // X
+				(uf[1] * dx) / 2.0, // Y
+				0.0,                // M
+			},
+		})
+	}
+
+	return
 }
 
 // Run is run calculation of model
