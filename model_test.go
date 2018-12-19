@@ -216,6 +216,15 @@ func baseTruss() Model {
 	}
 }
 
+func TestWrongLoad(t *testing.T) {
+	m := baseTruss()
+	m.LoadCases[0].LoadNodes[0].Forces[2] = 42.0 // not acceptable moment on pin
+	var buf bytes.Buffer
+	if err := m.Run(&buf); err == nil {
+		t.Fatalf("not acceptable moment on pin")
+	}
+}
+
 func baseModalTruss() Model {
 	A := math.Pi * math.Pow(0.050, 2) / 4.0
 	J := math.Pi * math.Pow(0.050, 4) / 64.0
