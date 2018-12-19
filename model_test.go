@@ -1057,11 +1057,11 @@ func TestLoadUniform(t *testing.T) {
 	})
 
 	// calculation checking
-	t.Run("calculation checking", func(t *testing.T) {
+	t.Run("check on beam with part load", func(t *testing.T) {
 		for _, proj := range []bool{false, true} {
 			for _, mirror := range []bool{false, true} {
 				for _, d := range []float64{200, -0.5, 0.5, -200, 0} {
-					size := 10
+					size := 3
 					t.Run(fmt.Sprintf("Mirror:%v/Proj:%v/%3.1f/Size:%d", mirror, proj, d, size), func(t *testing.T) {
 						m := Model{
 							Points: [][2]float64{
@@ -1102,6 +1102,10 @@ func TestLoadUniform(t *testing.T) {
 						uy := -25.0
 						// uniform load
 						for i := range m.Beams {
+							if m.Points[m.Beams[i].N[0]][0] > 1.0 || m.Points[m.Beams[i].N[1]][0] > 1.0 {
+								// not add on right part of beam
+								continue
+							}
 							un, err := m.LoadUniform(i, proj, [2]float64{ux, uy})
 							if err != nil {
 								t.Fatal(err)
@@ -1119,7 +1123,11 @@ func TestLoadUniform(t *testing.T) {
 							dy = dx
 						}
 						for i := range mn.Points {
-							if i == 0 || i == 3 {
+							if m.Points[i][0] > 1.0 {
+								// not add on right part of beam
+								continue
+							}
+							if m.Points[i][0] == 0.0 || m.Points[i][0] == 1.0 {
 								mn.LoadCases[0].LoadNodes = append(mn.LoadCases[0].LoadNodes, LoadNode{
 									N: i,
 									Forces: [3]float64{

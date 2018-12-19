@@ -469,7 +469,7 @@ func (m *Model) runLinearElastic() (err error) {
 		p := m.assemblyNodeLoad(lc)
 
 		{
-			// check loads on ignore directions
+			// check loads on ignore free directions
 			et := errors.New("Warning: List loads on not valid directions")
 			for _, i := range ignore {
 				if p[i] != 0.0 {
