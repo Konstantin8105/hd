@@ -27,18 +27,17 @@ func (m *Model) SplitBeam(beamIndex, amountIntermediantPoints int) (err error) {
 	startPoint := m.Points[m.Beams[beamIndex].N[0]]
 	endPoint := m.Points[m.Beams[beamIndex].N[1]]
 	m.Points = append(m.Points, make([][2]float64, amountIntermediantPoints)...)
-	for i := 0; i < amountIntermediantPoints; i++ {
-		for j := 0; j < 2; j++ {
-			// j = 0 -  X coordinate
-			// j = 1 -  Y coordinate
+	for j := 0; j < 2; j++ {
+		// j = 0 -  X coordinate
+		// j = 1 -  Y coordinate
+		Δ := (endPoint[j] - startPoint[j]) / float64(amountIntermediantPoints+1)
+		for i := 0; i < amountIntermediantPoints; i++ {
 			if startPoint[j] == endPoint[j] {
 				m.Points[lastPointIndex+i][j] = startPoint[j]
-			} else {
-				delta := float64(i+1) * (endPoint[j] - startPoint[j]) /
-					float64(amountIntermediantPoints+1)
-
-				m.Points[lastPointIndex+i][j] = startPoint[j] + delta
+				continue
 			}
+			delta := float64(i+1) * Δ
+			m.Points[lastPointIndex+i][j] = startPoint[j] + delta
 		}
 	}
 

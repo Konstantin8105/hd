@@ -4,37 +4,63 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"os"
 
 	"github.com/Konstantin8105/hd"
 )
 
-func baseBeam() hd.Model {
-	return hd.Model{
-		Points: [][2]float64{
-			{0.0, 0.0},
-			{1.0, 0.0},
-		},
-		Beams: []hd.BeamProp{
-			{
-				N: [2]int{0, 1},
-				A: 12e-4,
-				J: 120e-6,
-				E: 2.0e11,
-			},
-		},
-		Supports: [][3]bool{
-			{true, true, true},
-			{false, false, false},
-		},
-		LoadCases: []hd.LoadCase{
-			{
-				LoadNodes: []hd.LoadNode{
-					{N: 1, Forces: [3]float64{0, 2.3, 0}},
-				},
+func baseBeam(size int) hd.Model {
+	var m hd.Model
+
+	for i := 0; i < size; i++ {
+		x := float64(i)
+		y := math.Sin(float64(i)) * 100.0
+		m.Points = append(m.Points, [2]float64{x, y})
+	}
+
+	m.Points = append(m.Points, [2]float64{0, 100})
+
+	for i := 0; i < size; i++ {
+		if i == 0 {
+			continue
+		}
+		s := i - 1
+		f := i
+		m.Beams = append(m.Beams, hd.BeamProp{
+			N: [2]int{s, f},
+			A: 12e-4,
+			J: 120e-6,
+			E: 2.0e11,
+		})
+		if i < 2 {
+			continue
+		}
+		m.Beams = append(m.Beams, hd.BeamProp{
+			N: [2]int{size, f},
+			A: 12e-4,
+			J: 120e-6,
+			E: 2.0e11,
+		})
+	}
+
+	for i := range m.Points {
+		if i == 0 || i == len(m.Points)-1 {
+			m.Supports = append(m.Supports, [3]bool{true, true, true})
+			continue
+		}
+		m.Supports = append(m.Supports, [3]bool{false, false, false})
+	}
+
+	m.LoadCases = []hd.LoadCase{
+		{
+			LoadNodes: []hd.LoadNode{
+				{N: size - 1, Forces: [3]float64{0, 2.3, 0}},
 			},
 		},
 	}
+
+	return m
 }
 
 type result struct {
@@ -84,18 +110,14 @@ next:
 	}
 
 	// calculate next amount separation points
-	a := 1
+	a := 10
 	for _, r := range rs {
 		if r.AmountIntermediantPoints >= a {
 			a = r.AmountIntermediantPoints * 2
 		}
 	}
 	fmt.Fprintf(os.Stdout, "Calculate with %d intermediant points\n", a)
-	m := baseBeam()
-	err = m.SplitBeam(0, a)
-	if err != nil {
-		panic(err)
-	}
+	m := baseBeam(a)
 
 	// run model calculation
 	err = m.Run(nil)
