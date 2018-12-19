@@ -471,7 +471,7 @@ func (m *Model) runLinearElastic() (err error) {
 		{
 			// check loads on ignore directions
 			et := errors.New("Warning: List loads on not valid directions")
-			for i := range ignore {
+			for _, i := range ignore {
 				if p[i] != 0.0 {
 					_ = et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
 					// ignore load in free direction. usually for pin connection
