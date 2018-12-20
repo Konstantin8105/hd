@@ -172,7 +172,7 @@ type LoadNode struct {
 
 // LoadUniform - convert uniform load on single beam to node load and
 // return slice of node load or error if input data not valid.
-// Do not use for selfweight.
+// Use for selfweight - not-projection load.
 //
 //	uf is uniform load in global system direction
 //	[0] - X , Unit: N
