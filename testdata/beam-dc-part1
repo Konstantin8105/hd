@@ -1,0 +1,36 @@
+
+Point coordinates:
+                                         SUPPORT DIRECTION
+Index            X, m            Y, m    SX    SY    SM (0 - free, 1 - fixed)
+    0         0.00000         0.00000     1     1     1 
+    1         1.00000         0.00000     0     0     0 
+    2         2.00000         0.00000     0     0     0 
+    3         3.00000         0.00000     1     1     1 
+Beam property:
+Index     Start point       End point       Area,sq.m Moment inertia,m4   Elasticity,Pa
+    0               0               1     1.20000e-03     1.20000e-04     2.00000e+11
+    1               1               2     1.20000e-03     1.20000e-04     2.00000e+11
+    2               2               3     1.20000e-03     1.20000e-04     2.00000e+11
+All beams haven`t pins
+
+Load case #  0
+Point           Fx, N           Fy, N          M, N*m
+    1         0.00000        10.00000         0.00000
+    2         0.00000        10.00000         0.00000
+Point displacament in global system coordinate:
+Point           DX, m           DY, m
+    0     0.00000e+00     0.00000e+00
+    1     0.00000e+00     6.94444e-08
+    2     0.00000e+00     6.94444e-08
+    3     0.00000e+00     0.00000e+00
+Local force in beam:
+                                 START OF BEAM                                 END OF BEAM       
+               ------------------------------------          ------------------------------------
+Index           Fx, N           Fy, N          M, N*m           Fx, N           Fy, N          M, N*m
+    0     0.00000e+00    -1.00000e+01    -6.66667e+00     0.00000e+00     1.00000e+01    -3.33333e+00
+    1     0.00000e+00     0.00000e+00     3.33333e+00     0.00000e+00     0.00000e+00    -3.33333e+00
+    2     0.00000e+00     1.00000e+01     3.33333e+00     0.00000e+00    -1.00000e+01     6.66667e+00
+Reaction on support:
+Index           Fx, N           Fy, N          M, N*m
+    0     0.00000e+00    -1.00000e+01    -6.66667e+00
+    3     0.00000e+00    -1.00000e+01     6.66667e+00

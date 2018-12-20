@@ -216,6 +216,15 @@ func baseTruss() Model {
 	}
 }
 
+func TestWrongLoad(t *testing.T) {
+	m := baseTruss()
+	m.LoadCases[0].LoadNodes[0].Forces[2] = 42.0 // not acceptable moment on pin
+	var buf bytes.Buffer
+	if err := m.Run(&buf); err == nil {
+		t.Fatalf("not acceptable moment on pin")
+	}
+}
+
 func baseModalTruss() Model {
 	A := math.Pi * math.Pow(0.050, 2) / 4.0
 	J := math.Pi * math.Pow(0.050, 4) / 64.0
@@ -414,6 +423,77 @@ func baseModalBeam3mass() Model {
 			},
 		},
 	}
+}
+
+// baseBeamDc return 2 models for compare maximal displacement
+//
+//	model 1:
+//	        |         |
+//	        V         V
+//	0-------0---------0------0
+//
+//	model 2:
+//	        |         |
+//	        V         V
+//	0-------0----0----0------0
+//
+func baseBeamDc() (m1, m2 Model) {
+	return Model{
+			Points: [][2]float64{
+				{0.0, 0.0},
+				{1.0, 0.0},
+				{2.0, 0.0},
+				{3.0, 0.0},
+			},
+			Beams: []BeamProp{
+				{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{2, 3}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			},
+			Supports: [][3]bool{
+				{true, true, true},
+				{false, false, false},
+				{false, false, false},
+				{true, true, true},
+			},
+			LoadCases: []LoadCase{
+				{
+					LoadNodes: []LoadNode{
+						{N: 1, Forces: [3]float64{0.0, 10.0, 0.0}},
+						{N: 2, Forces: [3]float64{0.0, 10.0, 0.0}},
+					},
+				},
+			},
+		}, Model{
+			Points: [][2]float64{
+				{0.0, 0.0},
+				{1.0, 0.0},
+				{1.5, 0.0},
+				{2.0, 0.0},
+				{3.0, 0.0},
+			},
+			Beams: []BeamProp{
+				{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{2, 3}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{3, 4}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			},
+			Supports: [][3]bool{
+				{true, true, true},
+				{false, false, false},
+				{false, false, false},
+				{false, false, false},
+				{true, true, true},
+			},
+			LoadCases: []LoadCase{
+				{
+					LoadNodes: []LoadNode{
+						{N: 1, Forces: [3]float64{0.0, 10.0, 0.0}},
+						{N: 3, Forces: [3]float64{0.0, 10.0, 0.0}},
+					},
+				},
+			},
+		}
 }
 
 func TestJsonModel(t *testing.T) {
@@ -823,6 +903,18 @@ func TestModelString(t *testing.T) {
 	}, {
 		m:        baseModalBeam3mass(),
 		filename: "beam-modal-3mass",
+	}, {
+		m: func() Model {
+			m, _ := baseBeamDc()
+			return m
+		}(),
+		filename: "beam-dc-part1",
+	}, {
+		m: func() Model {
+			_, m := baseBeamDc()
+			return m
+		}(),
+		filename: "beam-dc-part2",
 	}}
 	for _, m := range ms {
 		t.Run(m.filename, func(t *testing.T) {
@@ -862,6 +954,262 @@ func TestModelString(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDirectionLoadNode(t *testing.T) {
+	m := Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{1.0, 0.0},
+		},
+		Beams: []BeamProp{
+			{
+				N: [2]int{0, 1},
+				A: 12e-4,
+				J: 120e-6,
+				E: 2.0e11,
+			},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+		},
+		LoadCases: []LoadCase{
+			{
+				LoadNodes: []LoadNode{
+					{N: 1, Forces: [3]float64{100.0, 0.0, 0.0}},
+				},
+			},
+			{
+				LoadNodes: []LoadNode{
+					{N: 1, Forces: [3]float64{0.0, 100.0, 0.0}},
+				},
+			},
+			{
+				LoadNodes: []LoadNode{
+					{N: 1, Forces: [3]float64{0.0, 0.0, 100.0}},
+				},
+			},
+		},
+	}
+
+	var b bytes.Buffer
+	if err := m.Run(&b); err != nil {
+		t.Fatalf("Cannot calculate : %v", err)
+	}
+	b.Reset()
+
+	if !(m.LoadCases[0].PointDisplacementGlobal[1][0] > 0) {
+		t.Errorf("load in direction X is not ok. See: %v", m.LoadCases[0].PointDisplacementGlobal[1])
+	}
+	if !(m.LoadCases[1].PointDisplacementGlobal[1][1] > 0) {
+		t.Errorf("load in direction Y is not ok. See: %v", m.LoadCases[1].PointDisplacementGlobal[1])
+	}
+	if !(m.LoadCases[2].PointDisplacementGlobal[1][1] > 0) {
+		t.Errorf("load in direction M is not ok. See: %v", m.LoadCases[2].PointDisplacementGlobal[1])
+	}
+	t.Logf("case 0 : %v", m.LoadCases[0].PointDisplacementGlobal)
+	t.Logf("case 1 : %v", m.LoadCases[1].PointDisplacementGlobal)
+	t.Logf("case 2 : %v", m.LoadCases[2].PointDisplacementGlobal)
+}
+
+func TestLoadUniform(t *testing.T) {
+	t.Run("error checking", func(t *testing.T) {
+		// error checking
+		errs := []error{
+			func() error {
+				var m *Model
+				_, err := m.LoadUniform(0, false, [2]float64{0, 0})
+				return err
+			}(),
+			func() error {
+				m := Model{}
+				_, err := m.LoadUniform(0, false, [2]float64{0, 0})
+				return err
+			}(),
+			func() error {
+				m := Model{}
+				_, err := m.LoadUniform(-1, false, [2]float64{0, 0})
+				return err
+			}(),
+			func() error {
+				m := Model{}
+				_, err := m.LoadUniform(100, false, [2]float64{0, 0})
+				return err
+			}(),
+			func() error {
+				m := Model{
+					Beams: []BeamProp{
+						{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+					},
+				}
+				_, err := m.LoadUniform(1, false, [2]float64{0, 0})
+				return err
+			}(),
+			func() error {
+				m := Model{
+					Beams: []BeamProp{
+						{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+					},
+				}
+				_, err := m.LoadUniform(0, false, [2]float64{math.Inf(0), math.NaN()})
+				return err
+			}(),
+		}
+
+		for i := range errs {
+			if errs[i] == nil {
+				t.Errorf("case %d is not correct", i)
+			}
+			t.Log(errs[i])
+		}
+	})
+
+	// calculation checking
+	t.Run("check on beam with part load", func(t *testing.T) {
+		for _, proj := range []bool{false, true} {
+			for _, mirror := range []bool{false, true} {
+				for _, d := range []float64{200, -0.5, 0.5, -200, 0} {
+					size := 3
+					t.Run(fmt.Sprintf("Mirror:%v/Proj:%v/%3.1f/Size:%d", mirror, proj, d, size), func(t *testing.T) {
+						m := Model{
+							Points: [][2]float64{
+								{0.0, 0.0},
+								{1.0, d},
+								{2.0, 0.0},
+							},
+							Beams: []BeamProp{
+								{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+								{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+							},
+							Supports: [][3]bool{
+								{true, true, true},
+								{false, false, false},
+								{false, true, false},
+							},
+							LoadCases: []LoadCase{
+								{LoadNodes: []LoadNode{{N: 1, Forces: [3]float64{100.0, 0.0, 0.0}}}},
+							},
+						}
+
+						if mirror {
+							m.Points[0][0] = 2.0
+							m.Points[2][0] = 0.0
+						}
+
+						if err := m.SplitBeam(0, size); err != nil {
+							t.Fatal(err)
+						}
+						if err := m.SplitBeam(1, size); err != nil {
+							t.Fatal(err)
+						}
+
+						// reset and allocate memory
+						m.LoadCases = make([]LoadCase, 1)
+						// loads
+						ux := -10.0
+						uy := -25.0
+						// uniform load
+						for i := range m.Beams {
+							if m.Points[m.Beams[i].N[0]][0] > 1.0 || m.Points[m.Beams[i].N[1]][0] > 1.0 {
+								// not add on right part of beam
+								continue
+							}
+							un, err := m.LoadUniform(i, proj, [2]float64{ux, uy})
+							if err != nil {
+								t.Fatal(err)
+							}
+							m.LoadCases[0].LoadNodes = append(m.LoadCases[0].LoadNodes, un...)
+						}
+						// node load
+						mn := m
+						mn.LoadCases = make([]LoadCase, 1)
+						dx := math.Abs(m.Points[0][0] - m.Points[1][0])
+						dy := math.Abs(m.Points[0][1] - m.Points[1][1])
+						if !proj {
+							// not projection
+							dx = math.Sqrt(dx*dx + dy*dy)
+							dy = dx
+						}
+						for i := range mn.Points {
+							if m.Points[i][0] > 1.0 {
+								// not add on right part of beam
+								continue
+							}
+							if m.Points[i][0] == 0.0 || m.Points[i][0] == 1.0 {
+								mn.LoadCases[0].LoadNodes = append(mn.LoadCases[0].LoadNodes, LoadNode{
+									N: i,
+									Forces: [3]float64{
+										ux * dy / float64(size+1) / 2.0, // X
+										uy * dx / float64(size+1) / 2.0, // Y
+										0.0,                             // M
+									},
+								})
+								continue
+							}
+							mn.LoadCases[0].LoadNodes = append(mn.LoadCases[0].LoadNodes, LoadNode{
+								N: i,
+								Forces: [3]float64{
+									ux * dy / float64(size+1), // X
+									uy * dx / float64(size+1), // Y
+									0.0,                       // M
+								},
+							})
+						}
+
+						// calculation
+						var buf bytes.Buffer
+						if err := m.Run(&buf); err != nil {
+							t.Fatalf("m model error : %v", err)
+						}
+						buf.Reset()
+						if err := mn.Run(&buf); err != nil {
+							t.Fatalf("mn model error : %v", err)
+						}
+						buf.Reset()
+
+						// comparing displacement
+						eps := 0.05 // 5%
+						var actual, sum float64
+						for i := 0; i < 3; i++ {
+							actual += math.Pow(
+								m.LoadCases[0].PointDisplacementGlobal[1][i]-
+									mn.LoadCases[0].PointDisplacementGlobal[1][i],
+								2)
+							sum += math.Pow(m.LoadCases[0].PointDisplacementGlobal[1][i], 2)
+						}
+						actual = math.Sqrt(actual)
+						sum = math.Sqrt(sum)
+						if actual/sum >= eps {
+							t.Log(actual / sum)
+							t.Log(m.LoadCases[0].PointDisplacementGlobal[1])
+							t.Log(mn.LoadCases[0].PointDisplacementGlobal[1])
+							t.Errorf("displacement precision of calculation is not ok: %10.5f >= 0.05", actual/sum)
+						}
+
+						// comparing reactions
+						actual = 0.0
+						sum = 0.0
+						for i := 0; i < 3; i++ {
+							actual += math.Pow(
+								m.LoadCases[0].Reactions[0][i]-
+									mn.LoadCases[0].Reactions[0][i],
+								2)
+							sum += math.Pow(mn.LoadCases[0].Reactions[0][i], 2)
+						}
+						actual = math.Sqrt(actual)
+						sum = math.Sqrt(sum)
+						if actual/sum >= eps {
+							t.Log(actual / sum)
+							t.Log(m.LoadCases[0].Reactions[0])
+							t.Log(mn.LoadCases[0].Reactions[0])
+							t.Errorf("reaction     precision of calculation is not ok: %10.5f >= 0.05", actual/sum)
+						}
+					})
+				}
+			}
+		}
+	})
 }
 
 func BenchmarkRun(b *testing.B) {
