@@ -14,3 +14,4 @@
 *.pdf
 testdata/*.lu
 testdata/*.modal
+testdata/*.mass

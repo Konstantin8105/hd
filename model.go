@@ -504,6 +504,23 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			M.Set(index, index, M.At(index, index)+mm.Mass/Gravity)
 		}
 
+		// only for debug : record matrix
+		if debugRecording {
+			var out string
+			r, c := M.Dims()
+			for i := 0; i < r; i++ {
+				for j := 0; j < c; j++ {
+					if M.At(i, j) == 0.0 {
+						continue
+					}
+					out += fmt.Sprintf("%5d %5d %.10e\n", i, j, M.At(i, j))
+				}
+			}
+			if err := ioutil.WriteFile(fmt.Sprintf("./testdata/%v.mass", time.Now().UnixNano()), []byte(out), 0644); err != nil {
+				panic(err)
+			}
+		}
+
 		dataH := make([]float64, dof*dof)
 		h := mat.NewDense(dof, dof, dataH)
 
