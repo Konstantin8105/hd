@@ -477,23 +477,6 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		// add support
 		m.addSupport(k)
 
-		// only for debug : record matrix
-		if debugRecording {
-			var out string
-			r, c := k.Dims()
-			for i := 0; i < r; i++ {
-				for j := 0; j < c; j++ {
-					if k.At(i, j) == 0.0 {
-						continue
-					}
-					out += fmt.Sprintf("%5d %5d %.10e\n", i, j, k.At(i, j))
-				}
-			}
-			if err := ioutil.WriteFile(fmt.Sprintf("./testdata/%v.modal", time.Now().UnixNano()), []byte(out), 0644); err != nil {
-				panic(err)
-			}
-		}
-
 		// LU factorization
 		lu.Factorize(k)
 	}
@@ -549,6 +532,23 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 
 			for i := 0; i < dof; i++ {
 				h.Set(i, col, hh.At(i, 0))
+			}
+		}
+
+		// only for debug : record matrix
+		if debugRecording {
+			var out string
+			r, c := h.Dims()
+			for i := 0; i < r; i++ {
+				for j := 0; j < c; j++ {
+					if h.At(i, j) == 0.0 {
+						continue
+					}
+					out += fmt.Sprintf("%5d %5d %.10e\n", i, j, h.At(i, j))
+				}
+			}
+			if err := ioutil.WriteFile(fmt.Sprintf("./testdata/%v.modal", time.Now().UnixNano()), []byte(out), 0644); err != nil {
+				panic(err)
 			}
 		}
 
