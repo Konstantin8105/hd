@@ -1,3 +1,4 @@
+// +build ignore
 package main
 
 import (
@@ -47,7 +48,7 @@ type result struct {
 // * create graph precision by amount of separation points
 func main() {
 
-	resultFile := "results.json"
+	resultFile := "beam.json"
 
 	//
 	// Only for begin create resultFile

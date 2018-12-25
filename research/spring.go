@@ -1,3 +1,4 @@
+// +build ignore
 package main
 
 import (
@@ -10,7 +11,7 @@ import (
 	"github.com/Konstantin8105/hd"
 )
 
-func baseBeam(size int) hd.Model {
+func baseSpring(size int) hd.Model {
 	var m hd.Model
 
 	for i := 0; i < size; i++ {
@@ -73,7 +74,7 @@ type result struct {
 // * create graph precision by amount of separation points
 func main() {
 
-	resultFile := "results.json"
+	resultFile := "spring.json"
 
 	//
 	// Only for begin create resultFile
@@ -117,7 +118,7 @@ next:
 		}
 	}
 	fmt.Fprintf(os.Stdout, "Calculate with %d intermediant points\n", a)
-	m := baseBeam(a)
+	m := baseSpring(a)
 
 	// run model calculation
 	err = m.Run(nil)
