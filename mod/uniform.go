@@ -70,7 +70,7 @@ func LoadUniform(m *hd.Model, beamIndex int, projection bool, uf [2]float64) (ln
 				_ = et.Add(fmt.Errorf("load not valid load %d : NaN", i))
 			}
 			if math.IsInf(uf[i], 0) {
-				_ = et.Add(fmt.Errorf("load not valid load %d : NaN", i))
+				_ = et.Add(fmt.Errorf("load not valid load %d : infinite", i))
 			}
 		}
 	}
