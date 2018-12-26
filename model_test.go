@@ -337,3 +337,63 @@ func TestDirectionLoadNode(t *testing.T) {
 	t.Logf("case 1 : %v", m.LoadCases[1].PointDisplacementGlobal)
 	t.Logf("case 2 : %v", m.LoadCases[2].PointDisplacementGlobal)
 }
+
+func ExampleMethod() {
+
+	m := hd.Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{1.0, 0.0},
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+		},
+		Pins: [][6]bool{
+			{false, false, false, false, false, true},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+		},
+		LoadCases: []hd.LoadCase{
+			{
+				LoadNodes: []hd.LoadNode{
+					{N: 1, Forces: [3]float64{0, 2.3, 0}},
+					{N: 1, Forces: [3]float64{10, 0, 0}},
+				},
+			},
+			{ // test for 2 cases with different positions
+				LoadNodes: []hd.LoadNode{
+					{N: 1, Forces: [3]float64{10, 0, 0}},
+					{N: 1, Forces: [3]float64{0, 2.3, 0}},
+				},
+			},
+		},
+		ModalCases: []hd.ModalCase{
+			{
+				ModalMasses: []hd.ModalMass{{N: 1, Mass: 10000}},
+			},
+		},
+	}
+
+	var b bytes.Buffer
+	if err := m.Run(&b); err != nil {
+		panic(fmt.Errorf("Cannot calculate : %v", err))
+	}
+	b.WriteString(fmt.Sprintf("%s", m.String()))
+
+	expect, err := ioutil.ReadFile("./example/testdata/model.String")
+	if err != nil {
+		panic(fmt.Errorf("Cannot read file : %v", err))
+	}
+
+	if bytes.Equal(expect, b.Bytes()) {
+		fmt.Fprintf(os.Stdout, "same")
+	} else {
+		fmt.Fprintln(os.Stdout, b.String())
+		fmt.Fprintf(os.Stdout, "not same")
+	}
+
+	// Output:
+	// same
+}
