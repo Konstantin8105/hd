@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"runtime/debug"
 	"testing"
 
 	"github.com/Konstantin8105/cs"
@@ -58,7 +59,7 @@ func TestModelFail(t *testing.T) {
 			Beams: []hd.BeamProp{
 				{N: [2]int{-1, 1}, A: -12e-4, J: -120e-6, E: -2.0e11},
 				{N: [2]int{1, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
-				{N: [2]int{1, 20}, A: 12e-4, J: 120e-6, E: math.Inf(-1)},
+				{N: [2]int{1, 20}, A: 12e-4, J: math.NaN(), E: math.Inf(-1)},
 			},
 			Supports: [][3]bool{
 				{true, true, true},
@@ -199,6 +200,33 @@ func TestModelFail(t *testing.T) {
 				{ModalMasses: []hd.ModalMass{{N: 1, Mass: 1}}},
 			},
 		},
+		// error - rigit
+		{
+			Points: [][2]float64{
+				{0, 0},
+				{0, math.SmallestNonzeroFloat64},
+				{1, math.SmallestNonzeroFloat64},
+			},
+			Beams: []hd.BeamProp{
+				{N: [2]int{0, 1}, A: 1e200, J: 1e200, E: 1e200},
+				{N: [2]int{1, 2}, A: 1e200, J: 1e200, E: 1e200},
+			},
+			Supports: [][3]bool{
+				{true, true, true},
+				{false, false, false},
+				{false, false, false},
+			},
+			LoadCases: []hd.LoadCase{
+				{
+					LoadNodes: []hd.LoadNode{
+						{N: 2, Forces: [3]float64{1e20, 1e20, 0}},
+					},
+				},
+			},
+			ModalCases: []hd.ModalCase{
+				{ModalMasses: []hd.ModalMass{{N: 1, Mass: 1e20}}},
+			},
+		},
 	}
 	for i := range ms {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
@@ -207,6 +235,9 @@ func TestModelFail(t *testing.T) {
 				if err == nil {
 					if r := recover(); r == nil {
 						t.Errorf("panic is not happen and no error")
+					} else {
+						t.Log(r)
+						debug.PrintStack()
 					}
 				}
 			}()
