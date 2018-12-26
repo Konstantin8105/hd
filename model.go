@@ -203,6 +203,7 @@ type LoadNode struct {
 //	     \V          | V
 //	      0          0
 //
+// TODO (KI) : add specific for pin ends, because that function specific only for rigit ends.
 func (m *Model) LoadUniform(beamIndex int, projection bool, uf [2]float64) (ln []LoadNode, err error) {
 	defer func() {
 		if err != nil {
