@@ -172,11 +172,46 @@ func TestModelFail(t *testing.T) {
 				{ModalMasses: []hd.ModalMass{{N: 1, Mass: 1e300}}},
 			},
 		},
+		// error - too small load
+		{
+			Points: [][2]float64{
+				{0, 0},
+				{0, 1},
+				{1, 1},
+			},
+			Beams: []hd.BeamProp{
+				{N: [2]int{0, 1}, A: 12e-30, J: math.SmallestNonzeroFloat64, E: math.SmallestNonzeroFloat64},
+				{N: [2]int{1, 2}, A: 12e-30, J: 120e-30, E: 2.0e30},
+			},
+			Supports: [][3]bool{
+				{true, true, true},
+				{false, false, false},
+				{false, false, false},
+			},
+			LoadCases: []hd.LoadCase{
+				{
+					LoadNodes: []hd.LoadNode{
+						{N: 2, Forces: [3]float64{0, 1, 0}},
+					},
+				},
+			},
+			ModalCases: []hd.ModalCase{
+				{ModalMasses: []hd.ModalMass{{N: 1, Mass: 1}}},
+			},
+		},
 	}
 	for i := range ms {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {
+			var err error
+			defer func() {
+				if err == nil {
+					if r := recover(); r == nil {
+						t.Errorf("panic is not happen and no error")
+					}
+				}
+			}()
 			var b bytes.Buffer
-			err := ms[i].Run(&b)
+			err = ms[i].Run(&b)
 			if err == nil {
 				t.Fatalf("Error : %v", err)
 			}
