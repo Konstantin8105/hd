@@ -1063,6 +1063,7 @@ func TestLoadUniform(t *testing.T) {
 							t.Log(mn.LoadCases[0].PointDisplacementGlobal[1])
 							t.Errorf("displacement precision of calculation is not ok: %10.5f >= 0.05", actual/sum)
 						}
+						t.Logf("displacament precition : %14f <= %14f", actual/sum, eps)
 
 						// comparing reactions
 						actual = 0.0
@@ -1082,6 +1083,7 @@ func TestLoadUniform(t *testing.T) {
 							t.Log(mn.LoadCases[0].Reactions[0])
 							t.Errorf("reaction     precision of calculation is not ok: %10.5f >= 0.05", actual/sum)
 						}
+						t.Logf("reaction     precition : %14f <= %14f", actual/sum, eps)
 					})
 				}
 			}
