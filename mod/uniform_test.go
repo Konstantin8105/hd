@@ -93,10 +93,10 @@ func TestLoadUniform(t *testing.T) {
 							m.Points[2][0] = 0.0
 						}
 
-						if err := m.SplitBeam(0, size); err != nil {
+						if err := SplitBeam(&m, 0, size); err != nil {
 							t.Fatal(err)
 						}
-						if err := m.SplitBeam(1, size); err != nil {
+						if err := SplitBeam(&m, 1, size); err != nil {
 							t.Fatal(err)
 						}
 
