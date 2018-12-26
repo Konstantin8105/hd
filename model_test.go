@@ -117,6 +117,61 @@ func TestModelFail(t *testing.T) {
 				{ModalMasses: []hd.ModalMass{{N: 1, Mass: 100}}},
 			},
 		},
+		// error - too big model
+		{
+			Points: [][2]float64{
+				{0, 0},
+				{-1e300, 1e300},
+				{1e300, 1e300},
+			},
+			Beams: []hd.BeamProp{
+				{N: [2]int{0, 1}, A: 12e-300, J: 120e-300, E: 2.0e300},
+				{N: [2]int{1, 2}, A: 12e+300, J: 120e+300, E: 2.0e300},
+			},
+			Supports: [][3]bool{
+				{true, true, true},
+				{false, false, false},
+				{false, false, false},
+			},
+			LoadCases: []hd.LoadCase{
+				{
+					LoadNodes: []hd.LoadNode{
+						{N: 1, Forces: [3]float64{0, 2.3, 0}},
+					},
+				},
+			},
+			ModalCases: []hd.ModalCase{
+				{ModalMasses: []hd.ModalMass{{N: 1, Mass: 100}}},
+			},
+		},
+		// error - too big load
+		{
+			Points: [][2]float64{
+				{0, 0},
+				{0, 1},
+				{1, 1},
+			},
+			Beams: []hd.BeamProp{
+				{N: [2]int{0, 1}, A: 12e-30, J: 120e-30, E: 2.0e30},
+				{N: [2]int{1, 2}, A: 12e-30, J: 120e-30, E: 2.0e30},
+			},
+			Supports: [][3]bool{
+				{true, true, true},
+				{false, false, false},
+				{false, false, false},
+			},
+			LoadCases: []hd.LoadCase{
+				{
+					LoadNodes: []hd.LoadNode{
+						{N: 2, Forces: [3]float64{1e300, 1e308, 1e300}},
+						{N: 2, Forces: [3]float64{1e300, 1e308, 1e300}},
+					},
+				},
+			},
+			ModalCases: []hd.ModalCase{
+				{ModalMasses: []hd.ModalMass{{N: 1, Mass: 1e300}}},
+			},
+		},
 	}
 	for i := range ms {
 		t.Run(fmt.Sprintf("%d", i), func(t *testing.T) {

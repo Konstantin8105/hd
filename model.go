@@ -265,7 +265,10 @@ func (m *Model) runLinearElastic() (err error) {
 		fmt.Fprintf(m.out, "Calculate load case %d of %d\n", ilc, len(m.LoadCases))
 
 		// assembly node load
-		p := m.assemblyNodeLoad(lc)
+		p, err := m.assemblyNodeLoad(lc)
+		if err != nil {
+			return fmt.Errorf("Assembly node load: %v", err)
+		}
 
 		{
 			// check loads on ignore free directions
@@ -411,16 +414,21 @@ func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int, err error) {
 	return k, ignore, nil
 }
 
-func (m *Model) assemblyNodeLoad(lc *LoadCase) []float64 {
+func (m *Model) assemblyNodeLoad(lc *LoadCase) (p []float64, err error) {
 	dof := 3 * len(m.Points)
-	p := make([]float64, dof)
+	p = make([]float64, dof)
 	// node loads
 	for _, ln := range lc.LoadNodes {
 		for i := 0; i < 3; i++ {
 			p[ln.N*3+i] += ln.Forces[i]
 		}
 	}
-	return p
+	for i := range p {
+		if math.IsNaN(p[i]) || math.IsInf(p[i], 0) {
+			return nil, fmt.Errorf("not valid node load %e", p[i])
+		}
+	}
+	return p, nil
 }
 
 func (m *Model) addSupport() (ignore []int) {
