@@ -183,25 +183,25 @@ type LoadNode struct {
 //	+--+--+
 //	|  |  |
 //	V  V  V
-//	0                0          +-----+-----+
+//	•                •          +-----+-----+
 //	 \               |          |     |     |
 //	  \              |          V     V     V
-//	   \             |          0-----------0
+//	   \             |          •-----------•
 //	    \            |
 //	     \           |
-//	      0          0
+//	      •          •
 //
 //	Example of not-projection uniform load on beam with different location:
 //	uf = [2]float64{ 0.0 , -1.0 }
 //	|\
 //	V \
-//	0  \             0          +-----+-----+
+//	•  \             •          +-----+-----+
 //	 \ |\            | |        |     |     |
 //	  \V \           | V        V     V     V
-//	   \  |          |          0-----------0
+//	   \  |          |          •-----------•
 //	    \ |          | |
 //	     \V          | V
-//	      0          0
+//	      •          •
 //
 // TODO (KI) : add specific for pin ends, because that function specific only for rigit ends.
 func (m *Model) LoadUniform(beamIndex int, projection bool, uf [2]float64) (ln []LoadNode, err error) {
