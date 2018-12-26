@@ -131,6 +131,7 @@ type ModalCase struct {
 	Result []ModalResult
 }
 
+// ModalResult is result of modal calculation
 type ModalResult struct {
 	// Natural frequency
 	Hz float64
@@ -443,7 +444,7 @@ func (m *Model) addSupport() (ignore []int) {
 	return
 }
 
-// Earth gravity, m/sq.sec.
+// Gravity is Earth gravity constant, m/sq.sec.
 const Gravity float64 = 9.80665
 
 func (m *Model) runModal(mc *ModalCase) (err error) {

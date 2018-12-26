@@ -11,34 +11,34 @@ func (m *Model) checkInputData() error {
 	et := errors.Tree{Name: "checkInputData"}
 	// points
 	if err := m.checkPoints(); err != nil {
-		et.Add(err)
+		_ = et.Add(err)
 	}
 	// beams
 	if err := m.checkBeams(); err != nil {
-		et.Add(err)
+		_ = et.Add(err)
 	}
 	// supports
 	if err := m.checkSupports(); err != nil {
-		et.Add(err)
+		_ = et.Add(err)
 	}
 	// pins
 	if err := m.checkPins(); err != nil {
-		et.Add(err)
+		_ = et.Add(err)
 	}
 	// load cases
 	// no test cases
 
 	// load
 	if err := m.checkLoad(); err != nil {
-		et.Add(err)
+		_ = et.Add(err)
 	}
 	// modal cases
 	if err := m.checkModalCases(); err != nil {
-		et.Add(err)
+		_ = et.Add(err)
 	}
 	// modal
 	if err := m.checkModal(); err != nil {
-		et.Add(err)
+		_ = et.Add(err)
 	}
 	// error handling
 	if et.IsError() {
@@ -87,6 +87,7 @@ func isNotZero(f float64) errorFunc {
 	}
 }
 
+// ErrorPoint error in point data
 type ErrorPoint struct {
 	PointIndex int
 	CoordIndex int
@@ -118,7 +119,7 @@ func (m *Model) checkPoints() error {
 				isInf(m.Points[i][j]),
 			)
 			if err != nil {
-				et.Add(ErrorPoint{
+				_ = et.Add(ErrorPoint{
 					PointIndex: i,
 					CoordIndex: j,
 					Err:        err,
@@ -132,6 +133,7 @@ func (m *Model) checkPoints() error {
 	return nil
 }
 
+// ErrorBeam error in beam data
 type ErrorBeam struct {
 	BeamIndex int
 	Detail    string
@@ -154,7 +156,7 @@ func (m *Model) checkBeams() error {
 				isTrue(b.N[j] >= len(m.Points)),
 			)
 			if err != nil {
-				et.Add(ErrorBeam{
+				_ = et.Add(ErrorBeam{
 					BeamIndex: i,
 					Detail:    fmt.Sprintf("Point %d", j),
 					Err:       fmt.Errorf("outside index of point : %d", b.N[j]),
@@ -163,7 +165,7 @@ func (m *Model) checkBeams() error {
 		}
 
 		if m.distance(b.N[0], b.N[1]) <= 0 {
-			et.Add(ErrorBeam{
+			_ = et.Add(ErrorBeam{
 				BeamIndex: i,
 				Detail:    "distance between points",
 				Err:       fmt.Errorf("is less or equal zero"),
@@ -187,7 +189,7 @@ func (m *Model) checkBeams() error {
 				isNotZero(value.v),
 			)
 			if err != nil {
-				et.Add(ErrorBeam{
+				_ = et.Add(ErrorBeam{
 					BeamIndex: i,
 					Detail:    value.name,
 					Err:       err,
@@ -208,6 +210,7 @@ func (m *Model) checkSupports() (err error) {
 	return nil
 }
 
+// ErrorPin error in pin data
 type ErrorPin struct {
 	Beam int
 	Err  error
@@ -222,7 +225,7 @@ func (e ErrorPin) Error() string {
 func (m *Model) checkPins() (err error) {
 	et := errors.Tree{Name: "checkPins"}
 	if len(m.Beams) != len(m.Pins) {
-		et.Add(fmt.Errorf("Amount of pins is not same beams, %d != %d",
+		_ = et.Add(fmt.Errorf("Amount of pins is not same beams, %d != %d",
 			len(m.Beams), len(m.Pins)))
 	}
 	for beam := range m.Pins {
@@ -235,7 +238,7 @@ func (m *Model) checkPins() (err error) {
 			}
 		}
 		if pins > maxPins {
-			et.Add(ErrorPin{
+			_ = et.Add(ErrorPin{
 				Beam: beam,
 				Err: fmt.Errorf("Amount of pins of point is %d more %d",
 					pins, maxPins),
@@ -243,7 +246,7 @@ func (m *Model) checkPins() (err error) {
 		}
 		// both X is free
 		if m.Pins[beam][0] && m.Pins[beam][3] {
-			et.Add(ErrorPin{
+			_ = et.Add(ErrorPin{
 				Beam: beam,
 				Err:  fmt.Errorf("Not acceptable X direction is free"),
 			})
@@ -255,6 +258,7 @@ func (m *Model) checkPins() (err error) {
 	return nil
 }
 
+// ErrorLoad error in load data
 type ErrorLoad struct {
 	LoadCase int
 	LoadPos  int
@@ -278,7 +282,7 @@ func (m *Model) checkLoad() (err error) {
 				isTrue(ld.N >= len(m.Points)),
 			)
 			if err != nil {
-				et.Add(ErrorLoad{
+				_ = et.Add(ErrorLoad{
 					LoadCase: i,
 					LoadPos:  j,
 					Err:      fmt.Errorf("outside index of point : %d", ld.N),
@@ -290,7 +294,7 @@ func (m *Model) checkLoad() (err error) {
 					isInf(ld.Forces[k]),
 				)
 				if err != nil {
-					et.Add(ErrorLoad{
+					_ = et.Add(ErrorLoad{
 						LoadCase: i,
 						LoadPos:  j,
 						Err:      err,
@@ -313,7 +317,7 @@ func (m *Model) checkModalCases() (err error) {
 			isTrue(len(m.ModalCases[i].ModalMasses) == 0),
 		)
 		if err != nil {
-			et.Add(ErrorModal{
+			_ = et.Add(ErrorModal{
 				ModalCase: i,
 				ModalPos:  0,
 				Err:       fmt.Errorf("Modal case haven`t masses"),
@@ -327,6 +331,7 @@ func (m *Model) checkModalCases() (err error) {
 	return nil
 }
 
+// ErrorModal error in modal case data
 type ErrorModal struct {
 	ModalCase int
 	ModalPos  int
@@ -350,7 +355,7 @@ func (m *Model) checkModal() (err error) {
 				isTrue(ld.N >= len(m.Points)),
 			)
 			if err != nil {
-				et.Add(ErrorModal{
+				_ = et.Add(ErrorModal{
 					ModalCase: i,
 					ModalPos:  j,
 					Err:       fmt.Errorf("outside index of point : %d", ld.N),
@@ -363,7 +368,7 @@ func (m *Model) checkModal() (err error) {
 				isNotZero(ld.Mass),
 			)
 			if err != nil {
-				et.Add(ErrorModal{
+				_ = et.Add(ErrorModal{
 					ModalCase: i,
 					ModalPos:  j,
 					Err:       err,
@@ -372,7 +377,7 @@ func (m *Model) checkModal() (err error) {
 			for s := 0; s < len(m.Supports); s++ {
 				if m.Supports[s][0] || m.Supports[s][1] || m.Supports[s][2] {
 					if ld.N == s {
-						et.Add(ErrorModal{
+						_ = et.Add(ErrorModal{
 							ModalCase: i,
 							ModalPos:  j,
 							Err:       fmt.Errorf("Modal mass on support"),

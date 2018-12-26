@@ -257,8 +257,9 @@ func TestCodeStyle(t *testing.T) {
 
 func TestWriter(t *testing.T) {
 	m := example.Truss()
-	tf, err := ioutil.TempFile("", "testWriter")
-	if err != nil {
+	var tf *os.File
+	var err error
+	if tf, err = ioutil.TempFile("", "testWriter"); err != nil {
 		t.Fatalf("Cannot create temp file: %v", err)
 	}
 	old := os.Stdout
@@ -266,10 +267,10 @@ func TestWriter(t *testing.T) {
 	defer func() {
 		os.Stdout = old
 	}()
-	if err := m.Run(nil); err != nil {
+	if err = m.Run(nil); err != nil {
 		t.Fatalf("Cannot calculate : %v", err)
 	}
-	if err := tf.Close(); err != nil {
+	if err = tf.Close(); err != nil {
 		t.Fatalf("Cannot close file : %v", err)
 	}
 	b, err := ioutil.ReadFile(tf.Name())
@@ -338,7 +339,7 @@ func TestDirectionLoadNode(t *testing.T) {
 	t.Logf("case 2 : %v", m.LoadCases[2].PointDisplacementGlobal)
 }
 
-func ExampleMethod() {
+func Example() {
 
 	m := hd.Model{
 		Points: [][2]float64{
@@ -380,7 +381,7 @@ func ExampleMethod() {
 	if err := m.Run(&b); err != nil {
 		panic(fmt.Errorf("Cannot calculate : %v", err))
 	}
-	b.WriteString(fmt.Sprintf("%s", m.String()))
+	b.WriteString(m.String())
 
 	expect, err := ioutil.ReadFile("./example/testdata/model.String")
 	if err != nil {
