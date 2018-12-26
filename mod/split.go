@@ -1,7 +1,9 @@
-package hd
+package mod
 
 import (
 	"fmt"
+
+	"github.com/Konstantin8105/hd"
 )
 
 // SplitBeam is split beam on small parts.
@@ -10,7 +12,7 @@ import (
 //	* beamIndex will beam connected to start beam point
 //	* all new point add at the end of point list
 //	* all new beam add at the end of beam list
-func (m *Model) SplitBeam(beamIndex, amountIntermediantPoints int) (err error) {
+func SplitBeam(m *hd.Model, beamIndex, amountIntermediantPoints int) (err error) {
 	if amountIntermediantPoints < 1 {
 		return fmt.Errorf("Not valid value of amount intermediant points : %d",
 			amountIntermediantPoints)
@@ -41,7 +43,7 @@ func (m *Model) SplitBeam(beamIndex, amountIntermediantPoints int) (err error) {
 
 	// create a new beams
 	lastBeamIndex := len(m.Beams)
-	m.Beams = append(m.Beams, make([]BeamProp, amountIntermediantPoints)...)
+	m.Beams = append(m.Beams, make([]hd.BeamProp, amountIntermediantPoints)...)
 	for i := 0; i < amountIntermediantPoints; i++ {
 		m.Beams[i+lastBeamIndex] = m.Beams[beamIndex]
 		m.Beams[i+lastBeamIndex].N[0] = lastPointIndex + i

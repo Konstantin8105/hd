@@ -13,11 +13,8 @@ func (m Model) distance(st, en int) (res float64) {
 			res = math.NaN()
 		}
 	}()
-	var sum float64
-	for i := 0; i < len(m.Points[st]); i++ {
-		sum += math.Pow(m.Points[st][i]-m.Points[en][i], 2.0)
-	}
-	return math.Sqrt(sum)
+	return math.Hypot(m.Points[st][0]-m.Points[en][0],
+		m.Points[st][1]-m.Points[en][1])
 }
 
 // matrix of stiffiner for beam 2d
