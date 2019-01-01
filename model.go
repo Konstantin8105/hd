@@ -157,7 +157,8 @@ type BucklingCalculation struct {
 	// Input data.
 	Amount uint
 
-	// BucklingResults is results of linear buckling calculation
+	// BucklingResults is results of linear buckling calculation.
+	// Len of slice is less or equal value `Amount`.
 	// Return data.
 	BucklingResults []BucklingResult
 }
@@ -371,7 +372,8 @@ func (m *Model) runLoadCases() (err error) {
 		}
 
 		if lc.Linear.Amount > 0 {
-			fmt.Fprintf(m.out, "Calculate linear buckling for load case %d of %d\n", ilc, len(m.LoadCases))
+			fmt.Fprintf(m.out, "Calculate linear buckling for load case %d of %d\n",
+				ilc, len(m.LoadCases))
 			// TODO
 			panic("add implementation")
 		}
