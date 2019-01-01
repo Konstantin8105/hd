@@ -47,6 +47,47 @@ func ConsoleBeam() hd.Model {
 	}
 }
 
+// BucklingBeam - example of `fd` Model
+//
+//	||
+//	||====================  ⟽
+//	||
+//
+func BucklingBeam() hd.Model {
+	return hd.Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{0.5, 0.0},
+			{1.0, 0.0},
+			{1.5, 0.0},
+			{2.0, 0.0},
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{2, 3}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{3, 4}, A: 12e-4, J: 120e-6, E: 2.0e11},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+		},
+		LoadCases: []hd.LoadCase{
+			{
+				LoadNodes: []hd.LoadNode{
+					{N: 1, Forces: [3]float64{-1.0, 0, 0}},
+				},
+				Linear: hd.BucklingCalculation{
+					Amount: 10,
+				},
+			},
+		},
+	}
+}
+
 // GBeam - example of `fd` Model
 //
 //	            🡱🡲

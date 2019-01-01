@@ -43,6 +43,9 @@ func TestModelString(t *testing.T) {
 		m:        example.ModalBeam3mass(),
 		filename: "beam-modal-3mass",
 	}, {
+		m:        example.BucklingBeam(),
+		filename: "beam-buckling",
+	}, {
 		m: func() hd.Model {
 			m, _ := example.BeamDc()
 			return m

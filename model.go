@@ -123,16 +123,7 @@ type LoadCase struct {
 
 	// LinearBucklingCalculation is calculate linear buckling
 	// factors.
-	LinearBucklingCalculation struct {
-		// Amount is maximal amount of linear bucling factors.
-		// If value is zero, then not calculate.
-		// Input data.
-		Amount uint
-
-		// BucklingResults is results of linear buckling calculation
-		// Return data.
-		BucklingResults []BucklingResult
-	}
+	Linear BucklingCalculation
 }
 
 // ModalCase is modal calculation case
@@ -160,9 +151,21 @@ type ModalResult struct {
 	ModalDisplacement [][3]float64
 }
 
+type BucklingCalculation struct {
+	// Amount is maximal amount of linear bucling factors.
+	// If value is zero, then not calculate.
+	// Input data.
+	Amount uint
+
+	// BucklingResults is results of linear buckling calculation
+	// Return data.
+	BucklingResults []BucklingResult
+}
+
 // BucklingResult is result of buckling calculation
 type BucklingResult struct {
 	// Buckling factor
+	// Return data.
 	Factor float64
 
 	// Point displacement in global system coordinate.
@@ -367,7 +370,7 @@ func (m *Model) runLoadCases() (err error) {
 			}
 		}
 
-		if lc.LinearBucklingCalculation.Amount > 0 {
+		if lc.Linear.Amount > 0 {
 			fmt.Fprintf(m.out, "Calculate linear buckling for load case %d of %d\n", ilc, len(m.LoadCases))
 			// TODO
 			panic("add implementation")
@@ -725,6 +728,11 @@ func (m Model) String() (out string) {
 					}
 				}
 				out += fmt.Sprintf("\n")
+			}
+			// results of linear buckling
+			if lc.Linear.Amount > 0 {
+				// TODO
+				panic("add implementation")
 			}
 		}
 		if len(l.Reactions) > 0 {
