@@ -120,6 +120,19 @@ type LoadCase struct {
 	// [2] - M
 	// Unit: N and N*m
 	Reactions [][3]float64
+
+	// LinearBucklingCalculation is calculate linear buckling
+	// factors.
+	LinearBucklingCalculation struct {
+		// Amount is maximal amount of linear bucling factors.
+		// If value is zero, then not calculate.
+		// Input data.
+		Amount uint
+
+		// BucklingResults is results of linear buckling calculation
+		// Return data.
+		BucklingResults []BucklingResult
+	}
 }
 
 // ModalCase is modal calculation case
@@ -145,6 +158,23 @@ type ModalResult struct {
 	// [2] - M direction
 	// Unit: Dimensionless
 	ModalDisplacement [][3]float64
+}
+
+// BucklingResult is result of buckling calculation
+type BucklingResult struct {
+	// Buckling factor
+	Factor float64
+
+	// Point displacement in global system coordinate.
+	// Return data.
+	//
+	// first index is point index
+	//
+	// [0] - X
+	// [1] - Y
+	// [2] - M
+	// Unit: relative
+	PointDisplacementGlobal [][3]float64
 }
 
 // ModalMass is mass of point
@@ -213,7 +243,7 @@ func (m *Model) Run(out io.Writer) (err error) {
 	eCalc.Name = "Calculation errors"
 
 	// calculation by load cases
-	if err := m.runLinearElastic(); err != nil {
+	if err := m.runLoadCases(); err != nil {
 		_ = eCalc.Add(fmt.Errorf("Error in load case :%v", err))
 	}
 
@@ -233,7 +263,7 @@ func (m *Model) Run(out io.Writer) (err error) {
 	return nil
 }
 
-func (m *Model) runLinearElastic() (err error) {
+func (m *Model) runLoadCases() (err error) {
 	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
 
 	// assembly matrix of stiffiner
@@ -335,6 +365,12 @@ func (m *Model) runLinearElastic() (err error) {
 				})
 				lc.Reactions[pt][i] = react
 			}
+		}
+
+		if lc.LinearBucklingCalculation.Amount > 0 {
+			fmt.Fprintf(m.out, "Calculate linear buckling for load case %d of %d\n", ilc, len(m.LoadCases))
+			// TODO
+			panic("add implementation")
 		}
 	}
 
