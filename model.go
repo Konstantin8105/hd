@@ -730,7 +730,7 @@ func (m Model) String() (out string) {
 				out += fmt.Sprintf("\n")
 			}
 			// results of linear buckling
-			if lc.Linear.Amount > 0 {
+			if l.Linear.Amount > 0 {
 				// TODO
 				panic("add implementation")
 			}
