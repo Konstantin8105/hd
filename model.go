@@ -212,6 +212,7 @@ func (m *Model) Run(out io.Writer) (err error) {
 		m.LoadCases[ind].PointDisplacementGlobal = nil
 		m.LoadCases[ind].BeamForces = nil
 		m.LoadCases[ind].Reactions = nil
+		m.LoadCases[ind].Linear.BucklingResults = nil
 	}
 	for ind := 0; ind < len(m.ModalCases); ind++ {
 		m.ModalCases[ind].Result = nil
