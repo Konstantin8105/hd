@@ -12,6 +12,6 @@
 *.out
 *.txt
 *.pdf
-testdata/*.lu
-testdata/*.modal
-testdata/*.mass
+example/testdata/*.lu
+example/testdata/*.modal
+example/testdata/*.mass
