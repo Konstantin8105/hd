@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/Konstantin8105/errors"
-	"github.com/Konstantin8105/golis"
+	"github.com/Konstantin8105/sparse"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -136,6 +136,7 @@ type ModalCase struct {
 	Result []ModalResult
 }
 
+// ModalResult is result of modal calculation
 type ModalResult struct {
 	// Natural frequency
 	Hz float64
@@ -168,11 +169,10 @@ type LoadNode struct {
 
 	// Forces is node loads on each direction
 	//
-	// [0] - X , Unit: N
+	//	[0] - X , Unit: N. Positive direction from left to right.
+	//	[1] - Y , Unit: N. Positive direction from down to top.
+	//	[2] - M , Unit: N*m. Positive direction is counter-clockwise direction.
 	//
-	// [1] - Y , Unit: N
-	//
-	// [2] - M , Unit: N*m
 	Forces [3]float64
 }
 
@@ -219,16 +219,14 @@ func (m *Model) Run(out io.Writer) (err error) {
 
 	// calculation by load cases
 	if err := m.runLinearElastic(); err != nil {
-		eCalc.Add(fmt.Errorf("Error in load case :%v", err))
+		_ = eCalc.Add(fmt.Errorf("Error in load case :%v", err))
 	}
 
 	// calculation by modal cases
 	for i := range m.ModalCases {
-		fmt.Fprintf(m.out, "Calculate modal case %d of %d\n",
-			i,
-			len(m.ModalCases))
+		fmt.Fprintf(m.out, "Calculate modal case %d of %d\n", i, len(m.ModalCases))
 		if err := m.runModal(&m.ModalCases[i]); err != nil {
-			eCalc.Add(fmt.Errorf("Error in modal case %d: %v", i, err))
+			_ = eCalc.Add(fmt.Errorf("Error in modal case %d: %v", i, err))
 		}
 	}
 
@@ -244,10 +242,10 @@ func (m *Model) runLinearElastic() (err error) {
 	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
 
 	// assembly matrix of stiffiner
-	k := m.assemblyK()
-
-	// add support
-	m.addSupport(k)
+	k, ignore, err := m.assemblyK()
+	if err != nil {
+		return err
+	}
 
 	// only for debug : record matrix
 	if debugRecording {
@@ -267,34 +265,50 @@ func (m *Model) runLinearElastic() (err error) {
 	}
 
 	// LU decomposition
-	var lu mat.LU
-	lu.Factorize(k)
-	// TODO : need sparse saving of data
-	// TODO : try https://github.com/james-bowman/sparse
-	// TODO : need concurency solver
-
-	// repair stiffiner matrix
-	k = m.assemblyK()
+	var lu sparse.LU
+	err = lu.Factorize(k,
+		// add support
+		append(ignore, m.addSupport()...)...)
+	if err != nil {
+		return fmt.Errorf("LU error factorization: %v", err)
+	}
 
 	// calculate node displacament
 	dof := 3 * len(m.Points)
-	dataDisp := make([]float64, dof)
-	d := mat.NewDense(dof, 1, dataDisp)
+	d := make([]float64, dof)
 
 	// templorary data for displacement in global system coordinate
 	data := make([]float64, 6)
 	Zo := mat.NewDense(6, 1, data)
 
+	// TODO : need concurency solver
 	for ilc := range m.LoadCases {
 		lc := &m.LoadCases[ilc]
 
 		fmt.Fprintf(m.out, "Calculate load case %d of %d\n", ilc, len(m.LoadCases))
 
 		// assembly node load
-		p := m.assemblyNodeLoad(lc)
+		p, err := m.assemblyNodeLoad(lc)
+		if err != nil {
+			return fmt.Errorf("Assembly node load: %v", err)
+		}
+
+		{
+			// check loads on ignore free directions
+			// ignore load in free direction. usually for pin connection
+			et := errors.New("Warning: List loads on not valid directions")
+			for _, i := range ignore {
+				if p[i] != 0.0 {
+					_ = et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
+				}
+			}
+			if et.IsError() {
+				return et
+			}
+		}
 
 		// solve by LU decomposition
-		err = lu.Solve(d, false, p)
+		d, err = lu.Solve(p)
 		if err != nil {
 			return fmt.Errorf("Linear Elastic calculation error: %v", err)
 		}
@@ -303,7 +317,7 @@ func (m *Model) runLinearElastic() (err error) {
 		lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
 		for p := 0; p < len(m.Points); p++ {
 			for i := 0; i < 3; i++ {
-				lc.PointDisplacementGlobal[p][i] = d.At(3*p+i, 0)
+				lc.PointDisplacementGlobal[p][i] = d[3*p+i]
 			}
 		}
 
@@ -312,7 +326,7 @@ func (m *Model) runLinearElastic() (err error) {
 		for bi, b := range m.Beams {
 			for i := 0; i < 3; i++ {
 				for j := 0; j < 2; j++ {
-					Zo.Set(j*3+i, 0, d.At(b.N[j]*3+i, 0))
+					Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
 				}
 			}
 			tr := m.getCoordTransStiffBeam2d(bi)
@@ -323,6 +337,7 @@ func (m *Model) runLinearElastic() (err error) {
 			// calculate beam forces
 			s.Mul(kr, &z)
 		}
+
 		// calculate reactions
 		for pt := 0; pt < len(m.Points); pt++ {
 			for i := 0; i < 3; i++ {
@@ -331,10 +346,15 @@ func (m *Model) runLinearElastic() (err error) {
 					continue
 				}
 				// fix support
-				react := -p.At(3*pt+i, 0)
-				for j := 0; j < dof; j++ {
-					react += k.At(3*pt+i, j) * d.At(j, 0)
-				}
+				react := -p[3*pt+i]
+
+				row := 3*pt + i
+				_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
+					if i == row {
+						react += x * d[j]
+					}
+					return true
+				})
 				lc.Reactions[pt][i] = react
 			}
 		}
@@ -343,13 +363,11 @@ func (m *Model) runLinearElastic() (err error) {
 	return nil
 }
 
-func (m *Model) assemblyK() mat.MutableSymmetric {
-	dof := 3 * len(m.Points)
-	// TODO : clean Dense matrix
-	// data := make([]float64, dof*dof)
-	// k := mat.NewDense(dof, dof, data)
-	// k := golis.NewSparseMatrix(dof, dof)
-	k := golis.NewSparseMatrixSymmetric(dof)
+func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int, err error) {
+	var T *sparse.Triplet
+	if T, err = sparse.NewTriplet(); err != nil {
+		return
+	}
 
 	for i := range m.Beams {
 		kr := m.getStiffBeam2d(i)
@@ -364,91 +382,91 @@ func (m *Model) assemblyK() mat.MutableSymmetric {
 					for r2 := 0; r2 < 3; r2++ {
 						x := m.Beams[i].N[p1]*3 + r1
 						y := m.Beams[i].N[p2]*3 + r2
-						// TODO : clean Dense matrix
-						// k.Set(x, y, k.At(x, y)+kr.At(p1*3+r1, p2*3+r2))
-						if x > y {
-							continue
+						val := kr.At(p1*3+r1, p2*3+r2)
+						if err = sparse.Entry(T, x, y, val); err != nil {
+							return
 						}
-						k.Add(x, y, kr.At(p1*3+r1, p2*3+r2))
 					}
 				}
 			}
 		}
 	}
 
-	// It is happen if we have pin nodes
-	// add 1 for diagonal with zero
-	value := getAverageValueOfK(k)
-	for i := 0; i < dof; i++ {
-		isZero := k.At(i, i) == 0.0
-		// TODO : add checking only for pin direction
-		if !isZero {
-			continue
-		}
-		k.SetSym(i, i, value)
+	// from triplet to sparse matrix
+	k, err = sparse.Compress(T)
+	if err != nil {
+		return
 	}
 
-	return k
+	// remove zero elements
+	if _, err = sparse.Fkeep(k, func(i, j int, x float64) bool {
+		return x != 0.0
+	}); err != nil {
+		return
+	}
+
+	// remove duplicate matrix
+	err = sparse.Dupl(k)
+	if err != nil {
+		return
+	}
+
+	// zero diagonals
+	r, c := k.Dims()
+	if r != c {
+		err = fmt.Errorf("matrix is not symmetric")
+		return
+	}
+	bz := make([]bool, r)
+	if _, err = sparse.Fkeep(k, func(i, j int, x float64) bool {
+		if i == j { // diagonal
+			bz[i] = true
+		}
+		// keep entry
+		return true
+	}); err != nil {
+		return
+	}
+
+	for i := range bz {
+		if !bz[i] {
+			ignore = append(ignore, i)
+		}
+	}
+
+	return k, ignore, nil
 }
 
-func (m *Model) assemblyNodeLoad(lc *LoadCase) mat.Matrix {
+func (m *Model) assemblyNodeLoad(lc *LoadCase) (p []float64, err error) {
 	dof := 3 * len(m.Points)
-	// TODO : clean Dense matrix
-	// data := make([]float64, dof)
-	// p = mat.NewDense(dof, 1, data)
-	p := golis.NewSparseMatrix(dof, 1)
+	p = make([]float64, dof)
 	// node loads
 	for _, ln := range lc.LoadNodes {
 		for i := 0; i < 3; i++ {
-			// TODO : clean Dense matrix
-			// p.Set(ln.N*3+i, 0, p.At(ln.N*3+i, 0)+ln.Forces[i])
-			p.Add(ln.N*3+i, 0, ln.Forces[i])
+			p[ln.N*3+i] += ln.Forces[i]
 		}
 	}
-	return p
+	for i := range p {
+		if math.IsNaN(p[i]) || math.IsInf(p[i], 0) {
+			return nil, fmt.Errorf("not valid node load %e", p[i])
+		}
+	}
+	return p, nil
 }
 
-// TODO: need recode part of solving (Ax=b,eigen) for avoid that function
-// For avoid matrix singular value of support is must be:
-// 1) not zero
-// 2) like absolute value of k
-func getAverageValueOfK(k mat.Matrix) (value float64) {
-	c, _ := k.Dims()
-	for i := 0; i < c; i++ {
-		if value < math.Abs(k.At(i, i)) {
-			value = math.Abs(k.At(i, i))
+func (m *Model) addSupport() (ignore []int) {
+	// choose value for support
+	for n := range m.Supports {
+		for i := 0; i < 3; i++ {
+			if m.Supports[n][i] {
+				ignore = append(ignore, n*3+i)
+			}
 		}
 	}
 	return
 }
 
-func (m *Model) addSupport(k mat.MutableSymmetric) {
-	// dof := 3 * len(m.Points)
-	// choose value for support
-	supportValue := getAverageValueOfK(k)
-	for n := range m.Supports {
-		for i := 0; i < 3; i++ {
-			if m.Supports[n][i] {
-				switch v := k.(type) {
-				// case *golis.SparseMatrix:
-				// 	v.SetZeroForRowColumn(n*3 + i)
-				case *golis.SparseMatrixSymmetric:
-					v.SetZeroForRowColumn(n*3 + i)
-				default:
-					panic("")
-					// for j := 0; j < dof; j++ {
-					// 	k.Set(j, n*3+i, 0)
-					// 	k.Set(n*3+i, j, 0)
-					// }
-				}
-				// k.Set(n*3+i, n*3+i, supportValue)
-				k.SetSym(n*3+i, n*3+i, supportValue)
-			}
-		}
-	}
-}
-
-// Earth gravity, m/sq.sec.
+// Gravity is Earth gravity constant, m/sq.sec.
 const Gravity float64 = 9.80665
 
 func (m *Model) runModal(mc *ModalCase) (err error) {
@@ -469,25 +487,26 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	dof := 3 * len(m.Points)
 
 	// LU decomposition
-	var lu mat.LU
+	var lu sparse.LU
 	{
 		// assembly matrix of stiffiner
-		k := m.assemblyK()
+		k, ignore, err := m.assemblyK()
+		if err != nil {
+			return err
+		}
 
 		// add support
-		m.addSupport(k)
+		ignore = append(ignore, m.addSupport()...)
 
 		// LU factorization
-		lu.Factorize(k)
+		err = lu.Factorize(k, ignore...)
+		if err != nil {
+			return fmt.Errorf("LU error factorization: %v", err)
+		}
 	}
 
-	// templorary data for calc matrix H
-	datahh := make([]float64, dof)
-	hh := mat.NewDense(dof, 1, datahh)
-
 	// templorary data for mass preparing
-	dataMS := make([]float64, dof)
-	MS := mat.NewDense(dof, 1, dataMS)
+	MS := make([]float64, dof)
 
 	var e mat.Eigen
 
@@ -527,14 +546,14 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 		for col := 0; col < dof; col++ {
 			for i := 0; i < dof; i++ {
 				// initialization by 0.0
-				MS.Set(i, 0, 0.0)
+				MS[i] = 0.0
 			}
 			isZero := true
 			for i := 0; i < dof; i++ {
 				if M.At(i, col) != 0 {
 					isZero = false
 				}
-				MS.Set(i, 0, M.At(i, col))
+				MS[i] = M.At(i, col)
 			}
 
 			if isZero {
@@ -542,13 +561,13 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			}
 
 			// LU decomposition
-			err = lu.Solve(hh, false, MS)
+			hh, err := lu.Solve(MS)
 			if err != nil {
 				return err
 			}
 
 			for i := 0; i < dof; i++ {
-				h.Set(i, col, hh.At(i, 0))
+				h.Set(i, col, hh[i])
 			}
 		}
 
