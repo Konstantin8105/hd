@@ -120,6 +120,10 @@ type LoadCase struct {
 	// [2] - M
 	// Unit: N and N*m
 	Reactions [][3]float64
+
+	// LinearBucklingCalculation is calculate linear buckling
+	// factors.
+	Linear BucklingCalculation
 }
 
 // ModalCase is modal calculation case
@@ -131,6 +135,7 @@ type ModalCase struct {
 	Result []ModalResult
 }
 
+// ModalResult is result of modal calculation
 type ModalResult struct {
 	// Natural frequency
 	Hz float64
@@ -144,6 +149,36 @@ type ModalResult struct {
 	// [2] - M direction
 	// Unit: Dimensionless
 	ModalDisplacement [][3]float64
+}
+
+type BucklingCalculation struct {
+	// Amount is maximal amount of linear bucling factors.
+	// If value is zero, then not calculate.
+	// Input data.
+	Amount uint
+
+	// BucklingResults is results of linear buckling calculation.
+	// Len of slice is less or equal value `Amount`.
+	// Return data.
+	BucklingResults []BucklingResult
+}
+
+// BucklingResult is result of buckling calculation
+type BucklingResult struct {
+	// Buckling factor
+	// Return data.
+	Factor float64
+
+	// Point displacement in global system coordinate.
+	// Return data.
+	//
+	// first index is point index
+	//
+	// [0] - X
+	// [1] - Y
+	// [2] - M
+	// Unit: relative
+	PointDisplacementGlobal [][3]float64
 }
 
 // ModalMass is mass of point
@@ -170,207 +205,6 @@ type LoadNode struct {
 	Forces [3]float64
 }
 
-// LoadUniform - convert uniform load on single beam to node load and
-// return slice of node load or error if input data not valid.
-// Use for selfweight - not-projection load.
-//
-//	uf is uniform load in global system direction
-//	[0] - X , Unit: N
-//	[1] - Y , Unit: N
-//
-//	Example of projection uniform load on beam with different location:
-//	uf = [2]float64{ 0.0 , -1.0 }
-//	+--+--+
-//	|  |  |
-//	V  V  V
-//	0                0          +-----+-----+
-//	 \               |          |     |     |
-//	  \              |          V     V     V
-//	   \             |          0-----------0
-//	    \            |
-//	     \           |
-//	      0          0
-//
-//	Example of not-projection uniform load on beam with different location:
-//	uf = [2]float64{ 0.0 , -1.0 }
-//	|\
-//	V \
-//	0  \             0          +-----+-----+
-//	 \ |\            | |        |     |     |
-//	  \V \           | V        V     V     V
-//	   \  |          |          0-----------0
-//	    \ |          | |
-//	     \V          | V
-//	      0          0
-//
-func (m *Model) LoadUniform(beamIndex int, projection bool, uf [2]float64) (ln []LoadNode, err error) {
-	defer func() {
-		if err != nil {
-			err = errors.New("LoadUniform").Add(err)
-		}
-	}()
-
-	// check input data
-	et := errors.New("check input data")
-	if m == nil {
-		_ = et.Add(fmt.Errorf("Model is nil"))
-	} else {
-		if beamIndex >= len(m.Beams) || beamIndex < 0 {
-			_ = et.Add(fmt.Errorf("index of beam is outside of model slice[0...%d]: %d", len(m.Beams), beamIndex))
-		} else {
-			// check point index is exist
-			for i, node := range m.Beams[beamIndex].N {
-				if node >= len(m.Points) || node < 0 {
-					_ = et.Add(fmt.Errorf("index of node %d of beam is outside slice: [0...%d]", i, len(m.Points)))
-				}
-			}
-		}
-		for i := range uf {
-			err := isOk(
-				isNaN(uf[i]),
-				isInf(uf[i]),
-			)
-			if err != nil {
-				_ = et.Add(fmt.Errorf("not valid load %d : %v", i, err))
-			}
-		}
-	}
-
-	if et.IsError() {
-		return nil, et
-	}
-
-	// converting
-
-	// calculate dx, dy is projection length of beam
-	nodes := m.Beams[beamIndex].N
-	dx := m.Points[nodes[0]][0] - m.Points[nodes[1]][0]
-	dy := m.Points[nodes[0]][1] - m.Points[nodes[1]][1]
-
-	// load on node:
-	// M = (q * l * l) / 12.0
-
-	// by X direction
-	switch {
-	case dx > 0:
-		// location of beam node:
-		// start - right
-		// end   - left
-		ln = append(ln, LoadNode{
-			N: nodes[0], // start node
-			Forces: [3]float64{
-				0.0,                       // X
-				0.0,                       // Y
-				-(uf[1] * dx * dx) / 12.0, // M
-			},
-		}, LoadNode{
-			N: nodes[1], // end node
-			Forces: [3]float64{
-				0.0,                      // X
-				0.0,                      // Y
-				(uf[1] * dx * dx) / 12.0, // M
-			},
-		})
-
-	case dx < 0:
-		// location of beam node:
-		// start - left
-		// end   - right
-		ln = append(ln, LoadNode{
-			N: nodes[0], // start node
-			Forces: [3]float64{
-				0.0,                      // X
-				0.0,                      // Y
-				(uf[1] * dx * dx) / 12.0, // M
-			},
-		}, LoadNode{
-			N: nodes[1], // end node
-			Forces: [3]float64{
-				0.0,                       // X
-				0.0,                       // Y
-				-(uf[1] * dx * dx) / 12.0, // M
-			},
-		})
-	}
-
-	// by Y direction
-	switch {
-	case dy > 0:
-		// location of beam node:
-		// start - up
-		// end   - down
-		ln = append(ln, LoadNode{
-			N: nodes[0], // start node
-			Forces: [3]float64{
-				0.0,                      // X
-				0.0,                      // Y
-				(uf[0] * dx * dx) / 12.0, // M
-			},
-		}, LoadNode{
-			N: nodes[1], // end node
-			Forces: [3]float64{
-				0.0,                       // X
-				0.0,                       // Y
-				-(uf[0] * dx * dx) / 12.0, // M
-			},
-		})
-
-	case dy < 0:
-		// location of beam node:
-		// start - down
-		// end   - up
-		ln = append(ln, LoadNode{
-			N: nodes[0], // start node
-			Forces: [3]float64{
-				0.0,                       // X
-				0.0,                       // Y
-				-(uf[0] * dx * dx) / 12.0, // M
-			},
-		}, LoadNode{
-			N: nodes[1], // end node
-			Forces: [3]float64{
-				0.0,                      // X
-				0.0,                      // Y
-				(uf[0] * dx * dx) / 12.0, // M
-			},
-		})
-	}
-
-	// load on node:
-	// P = (q * l) / 2.0
-	if projection {
-		dx = math.Abs(dx)
-		dy = math.Abs(dy)
-	} else {
-		dx = math.Sqrt(dx*dx + dy*dy)
-		dy = dx
-	}
-
-	for i := range nodes {
-		ln = append(ln,
-			// load by X direction
-			LoadNode{
-				N: nodes[i],
-				Forces: [3]float64{
-					(uf[0] * dy) / 2.0, // X
-					0.0,                // Y
-					0.0,                // M
-				},
-			},
-			// load by Y direction
-			LoadNode{
-				N: nodes[i],
-				Forces: [3]float64{
-					0.0,                // X
-					(uf[1] * dx) / 2.0, // Y
-					0.0,                // M
-				},
-			})
-	}
-
-	return
-}
-
 // Run is run calculation of model
 func (m *Model) Run(out io.Writer) (err error) {
 	// remove result data
@@ -378,6 +212,7 @@ func (m *Model) Run(out io.Writer) (err error) {
 		m.LoadCases[ind].PointDisplacementGlobal = nil
 		m.LoadCases[ind].BeamForces = nil
 		m.LoadCases[ind].Reactions = nil
+		m.LoadCases[ind].Linear.BucklingResults = nil
 	}
 	for ind := 0; ind < len(m.ModalCases); ind++ {
 		m.ModalCases[ind].Result = nil
@@ -413,7 +248,7 @@ func (m *Model) Run(out io.Writer) (err error) {
 	eCalc.Name = "Calculation errors"
 
 	// calculation by load cases
-	if err := m.runLinearElastic(); err != nil {
+	if err := m.runLoadCases(); err != nil {
 		_ = eCalc.Add(fmt.Errorf("Error in load case :%v", err))
 	}
 
@@ -433,7 +268,7 @@ func (m *Model) Run(out io.Writer) (err error) {
 	return nil
 }
 
-func (m *Model) runLinearElastic() (err error) {
+func (m *Model) runLoadCases() (err error) {
 	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
 
 	// assembly matrix of stiffiner
@@ -466,7 +301,10 @@ func (m *Model) runLinearElastic() (err error) {
 		fmt.Fprintf(m.out, "Calculate load case %d of %d\n", ilc, len(m.LoadCases))
 
 		// assembly node load
-		p := m.assemblyNodeLoad(lc)
+		p, err := m.assemblyNodeLoad(lc)
+		if err != nil {
+			return fmt.Errorf("Assembly node load: %v", err)
+		}
 
 		{
 			// check loads on ignore free directions
@@ -532,6 +370,13 @@ func (m *Model) runLinearElastic() (err error) {
 				})
 				lc.Reactions[pt][i] = react
 			}
+		}
+
+		if lc.Linear.Amount > 0 {
+			fmt.Fprintf(m.out, "Calculate linear buckling for load case %d of %d\n",
+				ilc, len(m.LoadCases))
+			// TODO
+			panic("add implementation")
 		}
 	}
 
@@ -612,16 +457,21 @@ func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int, err error) {
 	return k, ignore, nil
 }
 
-func (m *Model) assemblyNodeLoad(lc *LoadCase) []float64 {
+func (m *Model) assemblyNodeLoad(lc *LoadCase) (p []float64, err error) {
 	dof := 3 * len(m.Points)
-	p := make([]float64, dof)
+	p = make([]float64, dof)
 	// node loads
 	for _, ln := range lc.LoadNodes {
 		for i := 0; i < 3; i++ {
 			p[ln.N*3+i] += ln.Forces[i]
 		}
 	}
-	return p
+	for i := range p {
+		if math.IsNaN(p[i]) || math.IsInf(p[i], 0) {
+			return nil, fmt.Errorf("not valid node load %e", p[i])
+		}
+	}
+	return p, nil
 }
 
 func (m *Model) addSupport() (ignore []int) {
@@ -636,7 +486,7 @@ func (m *Model) addSupport() (ignore []int) {
 	return
 }
 
-// Earth gravity, m/sq.sec.
+// Gravity is Earth gravity constant, m/sq.sec.
 const Gravity float64 = 9.80665
 
 func (m *Model) runModal(mc *ModalCase) (err error) {
@@ -881,6 +731,11 @@ func (m Model) String() (out string) {
 					}
 				}
 				out += fmt.Sprintf("\n")
+			}
+			// results of linear buckling
+			if l.Linear.Amount > 0 {
+				// TODO
+				panic("add implementation")
 			}
 		}
 		if len(l.Reactions) > 0 {

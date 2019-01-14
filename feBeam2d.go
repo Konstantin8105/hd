@@ -3,6 +3,7 @@ package hd
 import (
 	"math"
 
+	"github.com/Konstantin8105/pow"
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -13,11 +14,8 @@ func (m Model) distance(st, en int) (res float64) {
 			res = math.NaN()
 		}
 	}()
-	var sum float64
-	for i := 0; i < len(m.Points[st]); i++ {
-		sum += math.Pow(m.Points[st][i]-m.Points[en][i], 2.0)
-	}
-	return math.Sqrt(sum)
+	return math.Hypot(m.Points[st][0]-m.Points[en][0],
+		m.Points[st][1]-m.Points[en][1])
 }
 
 // matrix of stiffiner for beam 2d
@@ -33,13 +31,13 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 	kr.Set(3, 0, -EFL)
 	kr.Set(3, 3, +EFL)
 
-	EJL3 := 12.0 * m.Beams[pos].E * m.Beams[pos].J / math.Pow(length, 3.0)
+	EJL3 := 12.0 * m.Beams[pos].E * m.Beams[pos].J / pow.E3(length)
 	kr.Set(1, 1, +EJL3)
 	kr.Set(4, 4, +EJL3)
 	kr.Set(1, 4, -EJL3)
 	kr.Set(4, 1, -EJL3)
 
-	EJL2 := 6.0 * m.Beams[pos].E * m.Beams[pos].J / (length * length)
+	EJL2 := 6.0 * m.Beams[pos].E * m.Beams[pos].J / pow.E2(length)
 	kr.Set(1, 2, +EJL2)
 	kr.Set(2, 1, +EJL2)
 	kr.Set(1, 5, +EJL2)
