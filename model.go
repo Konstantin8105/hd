@@ -152,7 +152,7 @@ type ModalResult struct {
 }
 
 type BucklingCalculation struct {
-	// Amount is maximal amount of linear bucling factors.
+	// Amount is maximal amount of linear buckling factors.
 	// If value is zero, then not calculate.
 	// Input data.
 	Amount uint
