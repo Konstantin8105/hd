@@ -40,6 +40,10 @@ func (m *Model) checkInputData() error {
 	if err := m.checkModal(); err != nil {
 		_ = et.Add(err)
 	}
+
+	// TODO: add checking for calculate one structure on model.
+	//       graph moving by beams with mark.
+
 	// error handling
 	if et.IsError() {
 		return et
