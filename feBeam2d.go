@@ -172,9 +172,12 @@ func (m Model) getCoordTransStiffBeam2d(pos int) *mat.Dense {
 }
 
 // matrix of geometric stiffner for beam 2d
-func (m Model) getGeometricBeam2d(pos int) *mat.Dense {
+func (m Model) getGeometricBeam2d(pos int, axialForce float64) *mat.Dense {
 	data := make([]float64, 36)
 	kr := mat.NewDense(6, 6, data)
+	defer func() {
+		kr.Scale(axialForce, kr)
+	}()
 
 	length := m.distance(m.Beams[pos].N[0], m.Beams[pos].N[1])
 
