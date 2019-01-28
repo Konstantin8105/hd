@@ -16,8 +16,9 @@ import (
 type Model struct {
 	// Points is slice of point coordinate
 	//
-	// [0] - X coordinate
-	// [1] - Y coordinate
+	//	[0] - X coordinate
+	//	[1] - Y coordinate
+	//
 	Points [][2]float64
 
 	// Beams is slice of point index and beam property
@@ -29,12 +30,12 @@ type Model struct {
 	//
 	// first index is point index
 	//
-	// [0] - X on start point
-	// [1] - Y on start point
-	// [2] - M on start point
-	// [3] - X on end point
-	// [4] - Y on end point
-	// [5] - M on end point
+	//	[0] - X on start point
+	//	[1] - Y on start point
+	//	[2] - M on start point
+	//	[3] - X on end point
+	//	[4] - Y on end point
+	//	[5] - M on end point
 	//
 	// if `true` then free degree of freedom
 	Pins [][6]bool
@@ -44,9 +45,10 @@ type Model struct {
 	//
 	// first index is point index
 	//
-	// [0] - X
-	// [1] - Y
-	// [2] - M
+	//	[0] - X
+	//	[1] - Y
+	//	[2] - M
+	//
 	Supports [][3]bool
 
 	// LoadCases is slice of load cases
@@ -66,8 +68,9 @@ type Model struct {
 type BeamProp struct {
 	// Start and end point index
 	//
-	// [0] - start of beam
-	// [1] - end of beam
+	//	[0] - start of beam
+	//	[1] - end of beam
+	//
 	N [2]int
 
 	// A cross-section area
@@ -93,9 +96,10 @@ type LoadCase struct {
 	//
 	// first index is point index
 	//
-	// [0] - X
-	// [1] - Y
-	// [2] - M
+	//	[0] - X
+	//	[1] - Y
+	//	[2] - M
+	//
 	// Unit: meter and rad.
 	PointDisplacementGlobal [][3]float64
 
@@ -104,12 +108,13 @@ type LoadCase struct {
 	//
 	// first index is beam index
 	//
-	// [0] - Fx on start point
-	// [1] - Fy on start point
-	// [2] - M  on start point
-	// [3] - Fx on end point
-	// [4] - Fy on end point
-	// [5] - M  on end point
+	//	[0] - Fx on start point
+	//	[1] - Fy on start point
+	//	[2] - M  on start point
+	//	[3] - Fx on end point
+	//	[4] - Fy on end point
+	//	[5] - M  on end point
+	//
 	// Unit: N and N*m
 	BeamForces [][6]float64
 
@@ -118,9 +123,10 @@ type LoadCase struct {
 	//
 	// first index is point index
 	//
-	// [0] - Fx
-	// [1] - Fy
-	// [2] - M
+	//	[0] - Fx
+	//	[1] - Fy
+	//	[2] - M
+	//
 	// Unit: N and N*m
 	Reactions [][3]float64
 
@@ -151,9 +157,10 @@ type ModalResult struct {
 	//
 	// first index is point index
 	//
-	// [0] - X direction
-	// [1] - Y direction
-	// [2] - M direction
+	//	[0] - X direction
+	//	[1] - Y direction
+	//	[2] - M direction
+	//
 	// Unit: Dimensionless
 	ModalDisplacement [][3]float64
 }
@@ -169,9 +176,10 @@ type BucklingResult struct {
 	//
 	// first index is point index
 	//
-	// [0] - X
-	// [1] - Y
-	// [2] - M
+	//	[0] - X
+	//	[1] - Y
+	//	[2] - M
+	//
 	// Unit: relative
 	PointDisplacementGlobal [][3]float64
 }
