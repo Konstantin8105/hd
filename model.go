@@ -124,15 +124,13 @@ type LoadCase struct {
 	// Unit: N and N*m
 	Reactions [][3]float64
 
+	// Amount of calculated forms.
+	// If Amount is zero or less zero, then no calculate.
 	// LinearBuckling is linear buckling calculation
-	LinearBuckling struct {
-		// Amount of calculated forms.
-		// If Amount is zero or less zero, then no calculate.
-		Amount int
+	AmountLinearBuckling int
 
-		// Result of linear buckling calculation
-		Result []BucklingResult
-	}
+	// Result of linear buckling calculation
+	LinearBucklingResult []BucklingResult
 }
 
 // ModalCase is modal calculation case
@@ -209,7 +207,7 @@ func (m *Model) Run(out io.Writer) (err error) {
 		m.LoadCases[ind].PointDisplacementGlobal = nil
 		m.LoadCases[ind].BeamForces = nil
 		m.LoadCases[ind].Reactions = nil
-		m.LoadCases[ind].LinearBuckling.Result = nil
+		m.LoadCases[ind].LinearBucklingResult = nil
 	}
 	for ind := 0; ind < len(m.ModalCases); ind++ {
 		m.ModalCases[ind].Result = nil
@@ -279,11 +277,16 @@ func (m *Model) Run(out io.Writer) (err error) {
 	eCalc.Name = "Calculation errors"
 
 	// calculation by load cases
-	if err := m.runLoadCases(); err != nil {
-		_ = eCalc.Add(fmt.Errorf("Error in load case :%v", err))
+	// TODO : need concurency solver
+	for i := range m.LoadCases {
+		fmt.Fprintf(m.out, "Calculate static case %d of %d\n", i, len(m.LoadCases))
+		if err := m.runStatic(&m.LoadCases[i]); err != nil {
+			_ = eCalc.Add(fmt.Errorf("Error in static case %d: %v", i, err))
+		}
 	}
 
 	// calculation by modal cases
+	// TODO : need concurency solver
 	for i := range m.ModalCases {
 		fmt.Fprintf(m.out, "Calculate modal case %d of %d\n", i, len(m.ModalCases))
 		if err := m.runModal(&m.ModalCases[i]); err != nil {
@@ -299,8 +302,7 @@ func (m *Model) Run(out io.Writer) (err error) {
 	return nil
 }
 
-func (m *Model) runLoadCases() (err error) {
-	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
+func (m *Model) runStatic(lc *LoadCase) (err error) {
 
 	// calculate node displacament
 	dof := 3 * len(m.Points)
@@ -310,84 +312,82 @@ func (m *Model) runLoadCases() (err error) {
 	data := make([]float64, 6)
 	Zo := mat.NewDense(6, 1, data)
 
-	// TODO : need concurency solver
-	for ilc := range m.LoadCases {
-		lc := &m.LoadCases[ilc]
+	// assembly node load
+	p, err := m.assemblyNodeLoad(lc)
+	if err != nil {
+		return fmt.Errorf("Assembly node load: %v", err)
+	}
 
-		fmt.Fprintf(m.out, "Calculate load case %d of %d\n", ilc, len(m.LoadCases))
-
-		// assembly node load
-		p, err := m.assemblyNodeLoad(lc)
-		if err != nil {
-			return fmt.Errorf("Assembly node load: %v", err)
+	{
+		// check loads on ignore free directions
+		// ignore load in free direction. usually for pin connection
+		et := errors.New("Warning: List loads on not valid directions")
+		for _, i := range m.ignore {
+			if p[i] != 0.0 {
+				// TODO: add typing error
+				_ = et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
+			}
 		}
+		if et.IsError() {
+			return et
+		}
+	}
 
-		{
-			// check loads on ignore free directions
-			// ignore load in free direction. usually for pin connection
-			et := errors.New("Warning: List loads on not valid directions")
-			for _, i := range m.ignore {
-				if p[i] != 0.0 {
-					// TODO: add typing error
-					_ = et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
+	// solve by LU decomposition
+	d, err = (*m.lu).Solve(p)
+	if err != nil {
+		return fmt.Errorf("Linear Elastic calculation error: %v", err)
+	}
+
+	// create result information
+	lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
+	for p := 0; p < len(m.Points); p++ {
+		for i := 0; i < 3; i++ {
+			lc.PointDisplacementGlobal[p][i] = d[3*p+i]
+		}
+	}
+
+	lc.BeamForces = make([][6]float64, len(m.Beams))
+	lc.Reactions = make([][3]float64, len(m.Points))
+	for bi, b := range m.Beams {
+		for i := 0; i < 3; i++ {
+			for j := 0; j < 2; j++ {
+				Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
+			}
+		}
+		tr := m.getCoordTransStiffBeam2d(bi)
+		var z mat.Dense
+		z.Mul(tr, Zo)
+		kr := m.getStiffBeam2d(bi)
+		s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
+		// calculate beam forces
+		s.Mul(kr, &z)
+	}
+
+	// calculate reactions
+	for pt := 0; pt < len(m.Points); pt++ {
+		for i := 0; i < 3; i++ {
+			if !m.Supports[pt][i] {
+				// free support
+				continue
+			}
+			// fix support
+			react := -p[3*pt+i]
+
+			row := 3*pt + i
+			_, _ = sparse.Fkeep(m.k, func(i, j int, x float64) bool {
+				if i == row {
+					react += x * d[j]
 				}
-			}
-			if et.IsError() {
-				return et
-			}
+				return true
+			})
+			lc.Reactions[pt][i] = react
 		}
+	}
 
-		// solve by LU decomposition
-		d, err = (*m.lu).Solve(p)
-		if err != nil {
-			return fmt.Errorf("Linear Elastic calculation error: %v", err)
-		}
-
-		// create result information
-		lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
-		for p := 0; p < len(m.Points); p++ {
-			for i := 0; i < 3; i++ {
-				lc.PointDisplacementGlobal[p][i] = d[3*p+i]
-			}
-		}
-
-		lc.BeamForces = make([][6]float64, len(m.Beams))
-		lc.Reactions = make([][3]float64, len(m.Points))
-		for bi, b := range m.Beams {
-			for i := 0; i < 3; i++ {
-				for j := 0; j < 2; j++ {
-					Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
-				}
-			}
-			tr := m.getCoordTransStiffBeam2d(bi)
-			var z mat.Dense
-			z.Mul(tr, Zo)
-			kr := m.getStiffBeam2d(bi)
-			s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
-			// calculate beam forces
-			s.Mul(kr, &z)
-		}
-
-		// calculate reactions
-		for pt := 0; pt < len(m.Points); pt++ {
-			for i := 0; i < 3; i++ {
-				if !m.Supports[pt][i] {
-					// free support
-					continue
-				}
-				// fix support
-				react := -p[3*pt+i]
-
-				row := 3*pt + i
-				_, _ = sparse.Fkeep(m.k, func(i, j int, x float64) bool {
-					if i == row {
-						react += x * d[j]
-					}
-					return true
-				})
-				lc.Reactions[pt][i] = react
-			}
-		}
+	if lc.AmountLinearBuckling > 0 {
+		// TODO: add implementation
+		panic("add implementation")
 	}
 
 	return nil

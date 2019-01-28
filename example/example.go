@@ -80,9 +80,7 @@ func BucklingBeam() hd.Model {
 				LoadNodes: []hd.LoadNode{
 					{N: 1, Forces: [3]float64{-1.0, 0, 0}},
 				},
-				Linear: hd.BucklingCalculation{
-					Amount: 10,
-				},
+				AmountLinearBuckling: 10,
 			},
 		},
 	}
