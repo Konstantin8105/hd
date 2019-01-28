@@ -55,8 +55,11 @@ type Model struct {
 	// ModalCases is slice of modal cases
 	ModalCases []ModalCase
 
-	// output file
-	out io.Writer
+	// internal variables
+	out    io.Writer      // output file
+	k      *sparse.Matrix // matrix of linear stiffiner model
+	lu     *sparse.LU     // LU decomposition of linear stiffiner model
+	ignore []int          // ignored freedom
 }
 
 // BeamProp is beam property
@@ -121,9 +124,15 @@ type LoadCase struct {
 	// Unit: N and N*m
 	Reactions [][3]float64
 
-	// LinearBucklingCalculation is calculate linear buckling
-	// factors.
-	Linear BucklingCalculation
+	// LinearBuckling is linear buckling calculation
+	LinearBuckling struct {
+		// Amount of calculated forms.
+		// If Amount is zero or less zero, then no calculate.
+		Amount int
+
+		// Result of linear buckling calculation
+		Result []BucklingResult
+	}
 }
 
 // ModalCase is modal calculation case
@@ -149,18 +158,6 @@ type ModalResult struct {
 	// [2] - M direction
 	// Unit: Dimensionless
 	ModalDisplacement [][3]float64
-}
-
-type BucklingCalculation struct {
-	// Amount is maximal amount of linear bucling factors.
-	// If value is zero, then not calculate.
-	// Input data.
-	Amount uint
-
-	// BucklingResults is results of linear buckling calculation.
-	// Len of slice is less or equal value `Amount`.
-	// Return data.
-	BucklingResults []BucklingResult
 }
 
 // BucklingResult is result of buckling calculation
@@ -212,11 +209,22 @@ func (m *Model) Run(out io.Writer) (err error) {
 		m.LoadCases[ind].PointDisplacementGlobal = nil
 		m.LoadCases[ind].BeamForces = nil
 		m.LoadCases[ind].Reactions = nil
-		m.LoadCases[ind].Linear.BucklingResults = nil
+		m.LoadCases[ind].LinearBuckling.Result = nil
 	}
 	for ind := 0; ind < len(m.ModalCases); ind++ {
 		m.ModalCases[ind].Result = nil
 	}
+	m.out = nil
+	m.k = nil
+	m.lu = nil
+	m.ignore = nil
+	defer func() {
+		// remove internal data
+		m.out = nil
+		m.k = nil
+		m.lu = nil
+		m.ignore = nil
+	}()
 
 	// by default output in standart stdio
 	if out == nil {
@@ -242,6 +250,29 @@ func (m *Model) Run(out io.Writer) (err error) {
 	err = m.checkInputData()
 	if err != nil {
 		return
+	}
+
+	// calculation of linear stiffiner model
+	{
+		// assembly matrix of stiffiner
+		k, ignore, err := m.assemblyK()
+		if err != nil {
+			return err
+		}
+
+		// LU decomposition
+		var lu sparse.LU
+		err = lu.Factorize(k,
+			// add support
+			append(ignore, m.addSupport()...)...)
+		if err != nil {
+			return fmt.Errorf("LU error factorization: %v", err)
+		}
+
+		// store data
+		m.k = k
+		m.lu = &lu
+		m.ignore = ignore
 	}
 
 	var eCalc errors.Tree
@@ -271,21 +302,6 @@ func (m *Model) Run(out io.Writer) (err error) {
 func (m *Model) runLoadCases() (err error) {
 	fmt.Fprintf(m.out, "Linear Elastic Analysis\n")
 
-	// assembly matrix of stiffiner
-	k, ignore, err := m.assemblyK()
-	if err != nil {
-		return err
-	}
-
-	// LU decomposition
-	var lu sparse.LU
-	err = lu.Factorize(k,
-		// add support
-		append(ignore, m.addSupport()...)...)
-	if err != nil {
-		return fmt.Errorf("LU error factorization: %v", err)
-	}
-
 	// calculate node displacament
 	dof := 3 * len(m.Points)
 	d := make([]float64, dof)
@@ -310,8 +326,9 @@ func (m *Model) runLoadCases() (err error) {
 			// check loads on ignore free directions
 			// ignore load in free direction. usually for pin connection
 			et := errors.New("Warning: List loads on not valid directions")
-			for _, i := range ignore {
+			for _, i := range m.ignore {
 				if p[i] != 0.0 {
+					// TODO: add typing error
 					_ = et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
 				}
 			}
@@ -321,7 +338,7 @@ func (m *Model) runLoadCases() (err error) {
 		}
 
 		// solve by LU decomposition
-		d, err = lu.Solve(p)
+		d, err = (*m.lu).Solve(p)
 		if err != nil {
 			return fmt.Errorf("Linear Elastic calculation error: %v", err)
 		}
@@ -362,7 +379,7 @@ func (m *Model) runLoadCases() (err error) {
 				react := -p[3*pt+i]
 
 				row := 3*pt + i
-				_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
+				_, _ = sparse.Fkeep(m.k, func(i, j int, x float64) bool {
 					if i == row {
 						react += x * d[j]
 					}
@@ -370,13 +387,6 @@ func (m *Model) runLoadCases() (err error) {
 				})
 				lc.Reactions[pt][i] = react
 			}
-		}
-
-		if lc.Linear.Amount > 0 {
-			fmt.Fprintf(m.out, "Calculate linear buckling for load case %d of %d\n",
-				ilc, len(m.LoadCases))
-			// TODO
-			panic("add implementation")
 		}
 	}
 
@@ -506,25 +516,6 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 	// memory initialization
 	dof := 3 * len(m.Points)
 
-	// LU decomposition
-	var lu sparse.LU
-	{
-		// assembly matrix of stiffiner
-		k, ignore, err := m.assemblyK()
-		if err != nil {
-			return err
-		}
-
-		// add support
-		ignore = append(ignore, m.addSupport()...)
-
-		// LU factorization
-		err = lu.Factorize(k, ignore...)
-		if err != nil {
-			return fmt.Errorf("LU error factorization: %v", err)
-		}
-	}
-
 	// templorary data for mass preparing
 	MS := make([]float64, dof)
 
@@ -564,7 +555,7 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			}
 
 			// LU decomposition
-			hh, err := lu.Solve(MS)
+			hh, err := (*m.lu).Solve(MS)
 			if err != nil {
 				return err
 			}
@@ -731,11 +722,6 @@ func (m Model) String() (out string) {
 					}
 				}
 				out += fmt.Sprintf("\n")
-			}
-			// results of linear buckling
-			if l.Linear.Amount > 0 {
-				// TODO
-				panic("add implementation")
 			}
 		}
 		if len(l.Reactions) > 0 {
