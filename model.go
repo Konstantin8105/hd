@@ -395,7 +395,7 @@ func (m *Model) runStatic(lc *LoadCase) (err error) {
 
 	if lc.AmountLinearBuckling > 0 {
 		// TODO: add implementation
-		panic("add implementation")
+		panic(fmt.Errorf("add implementation: %v", lc.AmountLinearBuckling))
 	}
 
 	return nil
