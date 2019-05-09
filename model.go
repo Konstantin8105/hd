@@ -393,6 +393,7 @@ func (m *Model) runStatic(lc *LoadCase) (err error) {
 		}
 	}
 
+	// TODO : add test is only positive value, cannot be -5... for example
 	if lc.AmountLinearBuckling > 0 {
 		// TODO: add implementation
 		// assembly matrix of stiffiner

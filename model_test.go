@@ -83,6 +83,7 @@ func TestModelFail(t *testing.T) {
 						{N: -1, Forces: [3]float64{0, 2.3, 0}},
 						{N: 5, Forces: [3]float64{math.Inf(1), 0, math.NaN()}},
 					},
+					AmountLinearBuckling: -100,
 				},
 			},
 			ModalCases: []hd.ModalCase{
@@ -363,12 +364,14 @@ func Example() {
 					{N: 1, Forces: [3]float64{0, 2.3, 0}},
 					{N: 1, Forces: [3]float64{10, 0, 0}},
 				},
+				AmountLinearBuckling: 1,
 			},
 			{ // test for 2 cases with different positions
 				LoadNodes: []hd.LoadNode{
 					{N: 1, Forces: [3]float64{10, 0, 0}},
 					{N: 1, Forces: [3]float64{0, 2.3, 0}},
 				},
+				AmountLinearBuckling: 2,
 			},
 		},
 		ModalCases: []hd.ModalCase{
