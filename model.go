@@ -458,14 +458,14 @@ func (m *Model) runStatic(lc *LoadCase) (err error) {
 
 		var e mat.Eigen
 
-		ok := e.Factorize(h, true, true)
+		ok := e.Factorize(h, mat.EigenBoth)
 		if !ok {
 			return fmt.Errorf("Eigen factorization is not ok")
 		}
 
 		// create result report
 		v := e.Values(nil)
-		eVector := e.Vectors()
+		eVector := e.VectorsTo(nil)
 		for i := 0; i < len(v); i++ {
 			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
 				continue
@@ -475,24 +475,12 @@ func (m *Model) runStatic(lc *LoadCase) (err error) {
 				v[i] = complex(math.Abs(real(v[i])), 0)
 			}
 
-			var mr ModalResult
-			mr.Hz = 1. / real(v[i]) //(math.Sqrt(real(v[i])) * 2.0 * math.Pi)
-			// TODO: G-beam test have 2 frequency on 2 different direction. I think, that checking must be removed.
-			// var isFound bool
-			// for j := range mc.Result {
-			// if math.Abs((mc.Result[j].Hz-mr.Hz)/mr.Hz) < 1e-10 {
-			// isFound = true
-			// }
-			// }
-			// if isFound {
-			// continue
-			// }
-
-			mr.ModalDisplacement = make([][3]float64, len(m.Points))
+			fmt.Fprintf(os.Stdout, "f = %v\n", 1./real(v[i]))
 			for p := 0; p < len(m.Points); p++ {
-				mr.ModalDisplacement[p][0] = eVector.At(3*p+0, i)
-				mr.ModalDisplacement[p][1] = eVector.At(3*p+1, i)
-				mr.ModalDisplacement[p][2] = eVector.At(3*p+2, i)
+				fmt.Fprintln(os.Stdout,
+					eVector.At(3*p+0, i),
+					eVector.At(3*p+1, i),
+					eVector.At(3*p+2, i))
 			}
 
 			// TODO: store the result
@@ -678,14 +666,14 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			}
 		}
 
-		ok := e.Factorize(h, true, true)
+		ok := e.Factorize(h, mat.EigenBoth)
 		if !ok {
 			return fmt.Errorf("Eigen factorization is not ok")
 		}
 
 		// create result report
 		v := e.Values(nil)
-		eVector := e.Vectors()
+		eVector := e.VectorsTo(nil)
 		for i := 0; i < len(v); i++ {
 			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
 				continue
@@ -710,9 +698,9 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 
 			mr.ModalDisplacement = make([][3]float64, len(m.Points))
 			for p := 0; p < len(m.Points); p++ {
-				mr.ModalDisplacement[p][0] = eVector.At(3*p+0, i)
-				mr.ModalDisplacement[p][1] = eVector.At(3*p+1, i)
-				mr.ModalDisplacement[p][2] = eVector.At(3*p+2, i)
+				mr.ModalDisplacement[p][0] = real(eVector.At(3*p+0, i))
+				mr.ModalDisplacement[p][1] = real(eVector.At(3*p+1, i))
+				mr.ModalDisplacement[p][2] = real(eVector.At(3*p+2, i))
 			}
 			mc.Result = append(mc.Result, mr)
 		}
@@ -873,6 +861,8 @@ func (m Model) String() (out string) {
 			}
 		}
 	}
+
+	// TODO: add printing of linear buckling result
 
 	return
 }
