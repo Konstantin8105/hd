@@ -69,18 +69,18 @@ func BucklingBeam() hd.Model {
 			{N: [2]int{3, 4}, A: 12e-4, J: 120e-6, E: 2.0e11},
 		},
 		Supports: [][3]bool{
-			{true, true, true},
+			{true, true, false},
 			{false, false, false},
 			{false, false, false},
 			{false, false, false},
-			{false, false, false},
+			{false, true, false},
 		},
 		LoadCases: []hd.LoadCase{
 			{
 				LoadNodes: []hd.LoadNode{
-					{N: 1, Forces: [3]float64{-1.0, 0, 0}},
+					{N: 4, Forces: [3]float64{-1.0, 0, 0}},
 				},
-				AmountLinearBuckling: 10,
+				AmountLinearBuckling: 2,
 			},
 		},
 	}
