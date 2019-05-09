@@ -495,8 +495,8 @@ func (m *Model) runStatic(lc *LoadCase) (err error) {
 				mr.ModalDisplacement[p][2] = eVector.At(3*p+2, i)
 			}
 
-			fmt.Println(mr)
-			// mc.Result = append(mc.Result, mr)
+			// TODO: store the result
+			// TODO: add sort results
 		}
 
 	}
