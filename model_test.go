@@ -13,6 +13,7 @@ import (
 	"github.com/Konstantin8105/cs"
 	"github.com/Konstantin8105/hd"
 	"github.com/Konstantin8105/hd/example"
+	"github.com/pmezard/go-difflib/difflib"
 )
 
 func TestWrongLoad(t *testing.T) {
@@ -392,6 +393,18 @@ func Example() {
 		fmt.Fprintf(os.Stdout, "same")
 	} else {
 		fmt.Fprintln(os.Stdout, b.String())
+
+		// show a diff between files
+		diff := difflib.UnifiedDiff{
+			A:        difflib.SplitLines(string(expect)),
+			B:        difflib.SplitLines(string(b.Bytes())),
+			FromFile: "Original",
+			ToFile:   "Current",
+			Context:  30000,
+		}
+		text, _ := difflib.GetUnifiedDiffString(diff)
+		fmt.Fprintf(os.Stdout, text)
+
 		fmt.Fprintf(os.Stdout, "not same")
 	}
 

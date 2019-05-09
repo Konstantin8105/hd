@@ -248,5 +248,6 @@ func (m Model) getGeometricBeam2d(pos int, axialForce float64) *mat.Dense {
 		return kr
 	}
 
+	// TODO: add implementation
 	panic("add implementation")
 }

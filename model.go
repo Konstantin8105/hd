@@ -261,7 +261,7 @@ func (m *Model) Run(out io.Writer) (err error) {
 	// calculation of linear stiffiner model
 	{
 		// assembly matrix of stiffiner
-		k, ignore, err := m.assemblyK()
+		k, ignore, err := m.assemblyK(m.getStiffBeam2d)
 		if err != nil {
 			return err
 		}
@@ -401,14 +401,16 @@ func (m *Model) runStatic(lc *LoadCase) (err error) {
 	return nil
 }
 
-func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int, err error) {
+func (m *Model) assemblyK(elementMatrix func(int) *mat.Dense) (
+	k *sparse.Matrix, ignore []int, err error) {
+
 	var T *sparse.Triplet
 	if T, err = sparse.NewTriplet(); err != nil {
 		return
 	}
 
 	for i := range m.Beams {
-		kr := m.getStiffBeam2d(i)
+		kr := elementMatrix(i) // m.getStiffBeam2d(i)
 		tr := m.getCoordTransStiffBeam2d(i)
 
 		kr.Mul(tr.T(), kr)

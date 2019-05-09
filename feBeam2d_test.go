@@ -118,7 +118,7 @@ func TestGeometricBeam2d(t *testing.T) {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			et := errors.New("comparing")
 
-			actual := tcs[i].m.getGeometricBeam2d(0)
+			actual := tcs[i].m.getGeometricBeam2d(0, 1)
 			r, c := actual.Dims()
 			if r != 6 || c != 6 {
 				t.Fatalf("size of matrix is not ok. case %d", i)
