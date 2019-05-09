@@ -1,0 +1,26 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# CSparse temp files
+CSparse/Demo/cs_demo1
+CSparse/Demo/cs_demo2
+CSparse/Demo/cs_demo3
+CSparse/Lib/*.o
+CSparse/Lib/*.a
+
+# testdata application
+testdata/csparse_test
+testdata/*.go
+
+# profiling files
+*.prof
