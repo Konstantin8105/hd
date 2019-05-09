@@ -362,13 +362,13 @@ func Example() {
 			{
 				LoadNodes: []hd.LoadNode{
 					{N: 1, Forces: [3]float64{0, 2.3, 0}},
-					{N: 1, Forces: [3]float64{10, 0, 0}},
+					{N: 1, Forces: [3]float64{-10, 0, 0}},
 				},
 				AmountLinearBuckling: 1,
 			},
 			{ // test for 2 cases with different positions
 				LoadNodes: []hd.LoadNode{
-					{N: 1, Forces: [3]float64{10, 0, 0}},
+					{N: 1, Forces: [3]float64{-10, 0, 0}},
 					{N: 1, Forces: [3]float64{0, 2.3, 0}},
 				},
 				AmountLinearBuckling: 2,

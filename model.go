@@ -476,13 +476,15 @@ func (m *Model) runStatic(lc *LoadCase) (err error) {
 				v[i] = complex(math.Abs(real(v[i])), 0)
 			}
 
-			fmt.Fprintf(os.Stdout, "f = %v\n", 1./real(v[i]))
-			for p := 0; p < len(m.Points); p++ {
-				fmt.Fprintln(os.Stdout,
-					eVector.At(3*p+0, i),
-					eVector.At(3*p+1, i),
-					eVector.At(3*p+2, i))
-			}
+			_ = v[i]
+			_ = eVector
+			//	fmt.Fprintf(os.Stdout, "f = %v\n", 1./real(v[i]))
+			//	for p := 0; p < len(m.Points); p++ {
+			//		fmt.Fprintln(os.Stdout,
+			//			eVector.At(3*p+0, i),
+			//			eVector.At(3*p+1, i),
+			//			eVector.At(3*p+2, i))
+			//	}
 
 			// TODO: store the result
 			// TODO: add sort results
