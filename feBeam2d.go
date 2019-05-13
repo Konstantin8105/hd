@@ -248,5 +248,15 @@ func (m Model) getGeometricBeam2d(pos int, axialForce float64) *mat.Dense {
 		return kr
 	}
 
+	// pins on the start and end of beam
+	if m.Pins[pos][2] && m.Pins[pos][5] {
+		kr.Set(2, 2, +1.0/length)
+		kr.Set(5, 5, +1.0/length)
+		kr.Set(2, 5, -1.0/length)
+		kr.Set(5, 2, -1.0/length)
+
+		return kr
+	}
+
 	panic("add implementation")
 }
