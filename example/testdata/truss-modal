@@ -16,7 +16,15 @@ Index       X       Y       M       X       Y       M
     0   false   false    true   false   false   false
     1   false   false   false    true   false    true
 
-Modal case #  0
+
+
+Calculate modal case
+Modal Analysis by X
+Modal Analysis by Y
+
+
+
+Modal case:
 Point         Mass, N
     1       980.66500
 Natural frequency :        28.45178 Hz
@@ -29,3 +37,6 @@ Point               X               Y               M
     0     0.00000e+00     0.00000e+00     0.00000e+00
     1     1.00000e+00     0.00000e+00     0.00000e+00
     2     0.00000e+00     0.00000e+00     0.00000e+00
+
+
+

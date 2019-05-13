@@ -20,15 +20,19 @@ Pins of beam in local system coordinate:
            START OF BEAM           END OF BEAM       
            ------------------      ------------------
 Index       X       Y       M       X       Y       M
-    0   false    true    true   false    true    true
-    1   false    true    true   false    true    true
-    2   false    true    true   false    true    true
-    3   false    true    true   false    true    true
-    4   false    true    true   false    true    true
-    5   false    true    true   false    true    true
-    6   false    true    true   false    true    true
+    0   false   false    true   false   false    true
+    1   false   false    true   false   false    true
+    2   false   false    true   false   false    true
+    3   false   false    true   false   false    true
+    4   false   false    true   false   false    true
+    5   false   false    true   false   false    true
+    6   false   false    true   false   false    true
 
-Load case #  0
+Linear Elastic Analysis
+
+
+
+Load case:
 Point           Fx, N           Fy, N          M, N*m
     1    -70000.00000         0.00000         0.00000
     3     42000.00000         0.00000         0.00000
@@ -56,7 +60,15 @@ Index           Fx, N           Fy, N          M, N*m
     2     0.00000e+00    -4.45001e+04     0.00000e+00
     4     0.00000e+00    -5.12499e+04     0.00000e+00
 
-Modal case #  0
+
+
+Calculate modal case
+Modal Analysis by X
+Modal Analysis by Y
+
+
+
+Modal case:
 Point         Mass, N
     1     10000.00000
 Natural frequency :        18.42543 Hz
@@ -73,3 +85,6 @@ Point               X               Y               M
     2     0.00000e+00     0.00000e+00     0.00000e+00
     3     0.00000e+00     0.00000e+00     0.00000e+00
     4     0.00000e+00     0.00000e+00     0.00000e+00
+
+
+

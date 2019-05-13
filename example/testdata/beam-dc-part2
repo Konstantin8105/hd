@@ -15,7 +15,11 @@ Index     Start point       End point       Area,sq.m Moment inertia,m4   Elasti
     3               3               4     1.20000e-03     1.20000e-04     2.00000e+11
 All beams haven`t pins
 
-Load case #  0
+Linear Elastic Analysis
+
+
+
+Load case:
 Point           Fx, N           Fy, N          M, N*m
     1         0.00000        10.00000         0.00000
     3         0.00000        10.00000         0.00000
@@ -38,3 +42,8 @@ Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
     0     0.00000e+00    -1.00000e+01    -6.66667e+00
     4     0.00000e+00    -1.00000e+01     6.66667e+00
+
+
+
+
+

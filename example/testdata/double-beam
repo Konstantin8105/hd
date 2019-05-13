@@ -12,7 +12,11 @@ Index     Start point       End point       Area,sq.m Moment inertia,m4   Elasti
     1               2               3     1.20000e-03     1.20000e-04     2.00000e+11
 All beams haven`t pins
 
-Load case #  0
+Linear Elastic Analysis
+
+
+
+Load case:
 Point           Fx, N           Fy, N          M, N*m
     1         0.00000         2.30000         0.00000
     1        10.00000         0.00000         0.00000
@@ -35,7 +39,15 @@ Index           Fx, N           Fy, N          M, N*m
     0    -1.00000e+01    -2.30000e+00    -2.30000e+00
     2    -1.00000e+01    -2.30000e+00    -4.60000e+00
 
-Modal case #  0
+
+
+Calculate modal case
+Modal Analysis by X
+Modal Analysis by Y
+
+
+
+Modal case:
 Point         Mass, N
     1     10000.00000
     3     10000.00000
@@ -63,3 +75,6 @@ Point               X               Y               M
     1     1.00000e+00     0.00000e+00     0.00000e+00
     2     0.00000e+00     0.00000e+00     0.00000e+00
     3     0.00000e+00     0.00000e+00     0.00000e+00
+
+
+

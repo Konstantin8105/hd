@@ -69,11 +69,11 @@ func TestModelString(t *testing.T) {
 			if err := hd.Run(&b, &model, lcs, mcs); err != nil {
 				t.Errorf("Cannot calculate : %v", err)
 			}
-			b.Reset()
 
 			// compare files
 			// TODO : String() for local case and modal in not added
-			actual := []byte(model.String())
+			actual := []byte(b.String())
+			b.Reset()
 
 			if os.Getenv("UPDATE") != "" {
 				err := ioutil.WriteFile("./testdata/"+m.filename, actual, 0644)

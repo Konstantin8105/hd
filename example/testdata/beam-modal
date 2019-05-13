@@ -11,7 +11,15 @@ Index     Start point       End point       Area,sq.m Moment inertia,m4   Elasti
     1               1               2     1.96350e-03     3.06796e-07     2.00000e+11
 All beams haven`t pins
 
-Modal case #  0
+
+
+Calculate modal case
+Modal Analysis by X
+Modal Analysis by Y
+
+
+
+Modal case:
 Point         Mass, N
     1       980.66500
 Natural frequency :        28.45178 Hz
@@ -24,3 +32,6 @@ Point               X               Y               M
     0     0.00000e+00     0.00000e+00     0.00000e+00
     1     7.07107e-01     0.00000e+00     0.00000e+00
     2     7.07107e-01     0.00000e+00     0.00000e+00
+
+
+
