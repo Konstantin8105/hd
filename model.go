@@ -50,19 +50,6 @@ type Model struct {
 	//	[2] - M
 	//
 	Supports [][3]bool
-
-	// TODO: remove
-	//	// LoadCases is slice of load cases
-	//	LoadCases []LoadCase
-	//
-	//	// ModalCases is slice of modal cases
-	//	ModalCases []ModalCase
-	//
-	//	// internal variables
-	//	out    io.Writer      // output file
-	//	k      *sparse.Matrix // matrix of linear stiffiner model
-	//	lu     *sparse.LU     // LU decomposition of linear stiffiner model
-	//	ignore []int          // ignored freedom
 }
 
 // BeamProp is beam property
@@ -131,6 +118,7 @@ type LoadCase struct {
 	// Unit: N and N*m
 	Reactions [][3]float64
 
+	// TODO : replace to specific struct
 	// Amount of calculated forms.
 	// If Amount is zero or less zero, then no calculate.
 	// LinearBuckling is linear buckling calculation
@@ -140,6 +128,69 @@ type LoadCase struct {
 	LinearBucklingResult []BucklingResult
 }
 
+func (lc LoadCase) String() (out string) {
+	out += fmt.Sprintf("\nLoad case:\n")
+	out += fmt.Sprintf("%5s %15s %15s %15s\n",
+		"Point", "Fx, N", "Fy, N", "M, N*m")
+	for _, ln := range lc.LoadNodes {
+		out += fmt.Sprintf("%5d %15.5f %15.5f %15.5f\n",
+			ln.N, ln.Forces[0], ln.Forces[1], ln.Forces[2])
+	}
+	if len(lc.PointDisplacementGlobal) > 0 {
+		out += fmt.Sprintf("Point displacament in global system coordinate:\n")
+		out += fmt.Sprintf("%5s %15s %15s\n", "Point", "DX, m", "DY, m")
+		for i := 0; i < len(lc.PointDisplacementGlobal); i++ {
+			out += fmt.Sprintf("%5d %15.5e %15.5e\n",
+				i, lc.PointDisplacementGlobal[i][0], lc.PointDisplacementGlobal[i][1])
+		}
+	}
+	// results
+	if len(lc.BeamForces) > 0 {
+		out += fmt.Sprintf("Local force in beam:\n")
+		out += fmt.Sprintf("%5s %45s %45s\n",
+			"", "START OF BEAM     ", "END OF BEAM       ")
+		out += fmt.Sprintf("%5s %45s %45s\n",
+			"",
+			"------------------------------------",
+			"------------------------------------")
+		out += fmt.Sprintf("%5s %15s %15s %15s %15s %15s %15s\n",
+			"Index", "Fx, N", "Fy, N", "M, N*m", "Fx, N", "Fy, N", "M, N*m")
+		for i := 0; i < len(lc.BeamForces); i++ {
+			out += fmt.Sprintf("%5d ", i)
+			for j := 0; j < 6; j++ {
+				out += fmt.Sprintf("%15.5e", lc.BeamForces[i][j])
+				if j < 5 {
+					out += " "
+				}
+			}
+			out += fmt.Sprintf("\n")
+		}
+	}
+	if len(lc.Reactions) > 0 {
+		out += fmt.Sprintf("Reaction on support:\n")
+		out += fmt.Sprintf("%5s %15s %15s %15s\n",
+			"Index", "Fx, N", "Fy, N", "M, N*m")
+		for i := 0; i < len(lc.Reactions); i++ {
+			if lc.Reactions[i][0] == 0 &&
+				lc.Reactions[i][1] == 0 &&
+				lc.Reactions[i][2] == 0 {
+				continue
+			}
+			out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
+				i, lc.Reactions[i][0], lc.Reactions[i][1], lc.Reactions[i][2])
+		}
+	}
+	return
+}
+
+// reset - set nil to old results
+func (lc *LoadCase) reset() {
+	lc.PointDisplacementGlobal = nil
+	lc.BeamForces = nil
+	lc.Reactions = nil
+	lc.LinearBucklingResult = nil
+}
+
 // ModalCase is modal calculation case
 type ModalCase struct {
 	// ModalMasses is modal masses
@@ -147,6 +198,28 @@ type ModalCase struct {
 
 	// Result of modal calculation
 	Result []ModalResult
+}
+
+func (m ModalCase) String() (out string) {
+	out += fmt.Sprintf("\nModal case:\n")
+	out += fmt.Sprintf("%5s %15s\n",
+		"Point", "Mass, N")
+	for _, mn := range m.ModalMasses {
+		out += fmt.Sprintf("%5d %15.5f\n", mn.N, mn.Mass)
+	}
+	for _, mr := range m.Result {
+		out += fmt.Sprintf("Natural frequency : %15.5f Hz\n", mr.Hz)
+		out += fmt.Sprintf("%5s %15s %15s %15s\n",
+			"Point", "X", "Y", "M")
+		for i := 0; i < len(mr.ModalDisplacement); i++ {
+			out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
+				i,
+				mr.ModalDisplacement[i][0],
+				mr.ModalDisplacement[i][1],
+				mr.ModalDisplacement[i][2])
+		}
+	}
+	return
 }
 
 // ModalResult is result of modal calculation
@@ -210,6 +283,12 @@ type LoadNode struct {
 }
 
 // calculation of linear stiffiner model
+// TODO: more comfortable comments
+//	// internal variables
+//	out    io.Writer      // output file
+//	k      *sparse.Matrix // matrix of linear stiffiner model
+//	lu     *sparse.LU     // LU decomposition of linear stiffiner model
+//	ignore []int          // ignored freedom
 func getK(m *Model) (k *sparse.Matrix, lu sparse.LU, ignore []int, err error) {
 	// assembly matrix of stiffiner
 	k, ignore, err = m.assemblyK(m.getStiffBeam2d)
@@ -260,19 +339,20 @@ func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
 
 // TODO: add comments
 func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
-	// remove result data
-	lc.PointDisplacementGlobal = nil
-	lc.BeamForces = nil
-	lc.Reactions = nil
-	lc.LinearBucklingResult = nil
-
-	// TODO : add error defer
-
 	// TODO : add comment
 	out, err = prepare(out, m)
 	if err != nil {
 		return
 	}
+
+	fmt.Fprintf(out, "Linear Elastic Analysis\n")
+
+	// remove result data
+	lc.reset()
+
+	// TODO : add error defer
+
+	// TODO : add panic free defer
 
 	// calculate node displacament
 	dof := 3 * len(m.Points)
@@ -291,13 +371,14 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 	// TODO: add comment
 	k, lu, ignore, err := getK(m)
 	if err != nil {
+		// TODO: not valid error string
 		return fmt.Errorf("Assembly node load: %v", err)
 	}
 
 	{
 		// check loads on ignore free directions
 		// ignore load in free direction. usually for pin connection
-		et := errors.New("Warning: List loads on not valid directions")
+		var et errors.Tree
 		for _, i := range ignore {
 			if p[i] != 0.0 {
 				// TODO: add typing error
@@ -305,6 +386,7 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 			}
 		}
 		if et.IsError() {
+			et.Name = "Warning: List loads on not valid directions"
 			return et
 		}
 	}
@@ -573,16 +655,20 @@ func (m *Model) addSupport() (ignore []int) {
 const Gravity float64 = 9.80665
 
 func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
-	// TODO: comment
-	mc.Result = nil
-
-	// TODO : add error defer
-
 	// TODO : add comment
 	out, err = prepare(out, m)
 	if err != nil {
 		return
 	}
+
+	fmt.Fprintf(out, "Calculate modal case\n")
+
+	// TODO: comment
+	mc.Result = nil
+
+	// TODO : add error defer
+
+	// TODO : add panic free defer
 
 	// TODO: add comment
 	_, lu, _, err := getK(m)
@@ -774,82 +860,6 @@ func (m Model) String() (out string) {
 	if !pinHeader {
 		out += fmt.Sprintf("All beams haven`t pins\n")
 	}
-	// loads
-	//	for lc := 0; lc < len(m.LoadCases); lc++ {
-	//		out += fmt.Sprintf("\nLoad case #%3d\n", lc)
-	//		out += fmt.Sprintf("%5s %15s %15s %15s\n",
-	//			"Point", "Fx, N", "Fy, N", "M, N*m")
-	//		for _, ln := range m.LoadCases[lc].LoadNodes {
-	//			out += fmt.Sprintf("%5d %15.5f %15.5f %15.5f\n",
-	//				ln.N, ln.Forces[0], ln.Forces[1], ln.Forces[2])
-	//		}
-	//		l := m.LoadCases[lc]
-	//		if len(l.PointDisplacementGlobal) > 0 {
-	//			out += fmt.Sprintf("Point displacament in global system coordinate:\n")
-	//			out += fmt.Sprintf("%5s %15s %15s\n", "Point", "DX, m", "DY, m")
-	//			for i := 0; i < len(l.PointDisplacementGlobal); i++ {
-	//				out += fmt.Sprintf("%5d %15.5e %15.5e\n",
-	//					i, l.PointDisplacementGlobal[i][0], l.PointDisplacementGlobal[i][1])
-	//			}
-	//		}
-	//		// results
-	//		if len(l.BeamForces) > 0 {
-	//			out += fmt.Sprintf("Local force in beam:\n")
-	//			out += fmt.Sprintf("%5s %45s %45s\n",
-	//				"", "START OF BEAM     ", "END OF BEAM       ")
-	//			out += fmt.Sprintf("%5s %45s %45s\n",
-	//				"",
-	//				"------------------------------------",
-	//				"------------------------------------")
-	//			out += fmt.Sprintf("%5s %15s %15s %15s %15s %15s %15s\n",
-	//				"Index", "Fx, N", "Fy, N", "M, N*m", "Fx, N", "Fy, N", "M, N*m")
-	//			for i := 0; i < len(l.BeamForces); i++ {
-	//				out += fmt.Sprintf("%5d ", i)
-	//				for j := 0; j < 6; j++ {
-	//					out += fmt.Sprintf("%15.5e", l.BeamForces[i][j])
-	//					if j < 5 {
-	//						out += " "
-	//					}
-	//				}
-	//				out += fmt.Sprintf("\n")
-	//			}
-	//		}
-	//		if len(l.Reactions) > 0 {
-	//			out += fmt.Sprintf("Reaction on support:\n")
-	//			out += fmt.Sprintf("%5s %15s %15s %15s\n",
-	//				"Index", "Fx, N", "Fy, N", "M, N*m")
-	//			for i := 0; i < len(l.Reactions); i++ {
-	//				if l.Reactions[i][0] == 0 &&
-	//					l.Reactions[i][1] == 0 &&
-	//					l.Reactions[i][2] == 0 {
-	//					continue
-	//				}
-	//				out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
-	//					i, l.Reactions[i][0], l.Reactions[i][1], l.Reactions[i][2])
-	//			}
-	//		}
-	//	}
-	//	// modal cases
-	//	for mc := 0; mc < len(m.ModalCases); mc++ {
-	//		out += fmt.Sprintf("\nModal case #%3d\n", mc)
-	//		out += fmt.Sprintf("%5s %15s\n",
-	//			"Point", "Mass, N")
-	//		for _, mn := range m.ModalCases[mc].ModalMasses {
-	//			out += fmt.Sprintf("%5d %15.5f\n", mn.N, mn.Mass)
-	//		}
-	//		for _, mr := range m.ModalCases[mc].Result {
-	//			out += fmt.Sprintf("Natural frequency : %15.5f Hz\n", mr.Hz)
-	//			out += fmt.Sprintf("%5s %15s %15s %15s\n",
-	//				"Point", "X", "Y", "M")
-	//			for i := 0; i < len(mr.ModalDisplacement); i++ {
-	//				out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
-	//					i,
-	//					mr.ModalDisplacement[i][0],
-	//					mr.ModalDisplacement[i][1],
-	//					mr.ModalDisplacement[i][2])
-	//			}
-	//		}
-	//	}
 
 	// TODO: add printing of linear buckling result
 
@@ -857,15 +867,27 @@ func (m Model) String() (out string) {
 }
 
 func Run(out io.Writer, m *Model, lcs []LoadCase, mcs []ModalCase) (err error) {
+	// by default output in standart stdio
+	if out == nil {
+		out = os.Stdout
+	}
+
+	fmt.Fprintf(out, "%s\n", *m)
 	for i := range lcs {
 		if err = LinearStatic(out, m, &(lcs[i])); err != nil {
 			return
 		}
+		fmt.Fprintf(out, "\n\n")
+		fmt.Fprintf(out, "%s\n", lcs[i])
 	}
+	fmt.Fprintf(out, "\n\n")
 	for i := range mcs {
 		if err = Modal(out, m, &(mcs[i])); err != nil {
 			return
 		}
+		fmt.Fprintf(out, "\n\n")
+		fmt.Fprintf(out, "%s\n", mcs[i])
 	}
+	fmt.Fprintf(out, "\n\n")
 	return
 }

@@ -400,7 +400,6 @@ func Example() {
 	if err := hd.Run(&b, &m, lcs, mcs); err != nil {
 		panic(fmt.Errorf("Cannot calculate : %v", err))
 	}
-	b.WriteString(m.String())
 
 	expect, err := ioutil.ReadFile("./example/testdata/model.String")
 	if err != nil {
