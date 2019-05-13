@@ -11,6 +11,7 @@ import (
 func TestGeometricBeam2d(t *testing.T) {
 	tcs := []struct {
 		m      Model
+		lc     LoadCase
 		matrix [6][6]float64
 	}{
 		{
@@ -25,9 +26,9 @@ func TestGeometricBeam2d(t *testing.T) {
 				Pins: [][6]bool{
 					{false, false, false, false, false, false},
 				},
-				LoadCases: []LoadCase{
-					{BeamForces: [][6]float64{{0, 0, 0, -1, 0, 0}}},
-				},
+			},
+			lc: LoadCase{
+				BeamForces: [][6]float64{{0, 0, 0, -1, 0, 0}},
 			},
 			matrix: [6][6]float64{
 				{+0.0},
@@ -50,9 +51,9 @@ func TestGeometricBeam2d(t *testing.T) {
 				Pins: [][6]bool{
 					{false, false, false, false, false, false},
 				},
-				LoadCases: []LoadCase{
-					{BeamForces: [][6]float64{{1, 0, 0, 0, 0, 0}}},
-				},
+			},
+			lc: LoadCase{
+				BeamForces: [][6]float64{{1, 0, 0, 0, 0, 0}},
 			},
 			matrix: [6][6]float64{
 				{+0.0},
@@ -75,9 +76,9 @@ func TestGeometricBeam2d(t *testing.T) {
 				Pins: [][6]bool{
 					{false, false, true, false, false, false},
 				},
-				LoadCases: []LoadCase{
-					{BeamForces: [][6]float64{{1, 0, 0, -1, 0, 0}}},
-				},
+			},
+			lc: LoadCase{
+				BeamForces: [][6]float64{{1, 0, 0, -1, 0, 0}},
 			},
 			matrix: [6][6]float64{
 				{+0.0},
@@ -100,9 +101,9 @@ func TestGeometricBeam2d(t *testing.T) {
 				Pins: [][6]bool{
 					{false, false, false, false, false, true},
 				},
-				LoadCases: []LoadCase{
-					{BeamForces: [][6]float64{{1, 0, 0, -1, 0, 0}}},
-				},
+			},
+			lc: LoadCase{
+				BeamForces: [][6]float64{{1, 0, 0, -1, 0, 0}},
 			},
 			matrix: [6][6]float64{
 				{+0.0},
@@ -130,7 +131,7 @@ func TestGeometricBeam2d(t *testing.T) {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			et := errors.New("comparing")
 
-			actual := tcs[i].m.getGeometricBeam2d(0, &(tcs[i].m.LoadCases[0]))
+			actual := tcs[i].m.getGeometricBeam2d(0, &(tcs[i].lc))
 			r, c := actual.Dims()
 			if r != 6 || c != 6 {
 				t.Fatalf("size of matrix is not ok. case %d", i)

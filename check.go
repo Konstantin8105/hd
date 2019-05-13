@@ -28,18 +28,19 @@ func (m *Model) checkInputData() error {
 	// load cases
 	// no test cases
 
-	// load
-	if err := m.checkLoad(); err != nil {
-		_ = et.Add(err)
-	}
-	// modal cases
-	if err := m.checkModalCases(); err != nil {
-		_ = et.Add(err)
-	}
-	// modal
-	if err := m.checkModal(); err != nil {
-		_ = et.Add(err)
-	}
+	// TODO: add checker
+	//	// load
+	//	if err := m.checkLoad(); err != nil {
+	//		_ = et.Add(err)
+	//	}
+	//	// modal cases
+	//	if err := m.checkModalCases(); err != nil {
+	//		_ = et.Add(err)
+	//	}
+	//	// modal
+	//	if err := m.checkModal(); err != nil {
+	//		_ = et.Add(err)
+	//	}
 
 	// TODO: add checking for calculate one structure on model.
 	//       graph moving by beams with mark.
@@ -263,136 +264,136 @@ func (m *Model) checkPins() (err error) {
 }
 
 // ErrorLoad error in load data
-type ErrorLoad struct {
-	LoadCase int
-	LoadPos  int
-	Err      error
-}
-
-func (e ErrorLoad) Error() string {
-	return fmt.Sprintf("Error in load case %d, load position %d : %v",
-		e.LoadCase,
-		e.LoadPos,
-		e.Err)
-}
-
-func (m *Model) checkLoad() (err error) {
-	et := errors.Tree{Name: "checkLoad"}
-	for i := range m.LoadCases {
-		for j := range m.LoadCases[i].LoadNodes {
-			ld := m.LoadCases[i].LoadNodes[j]
-			err := isOk(
-				isTrue(ld.N < 0),
-				isTrue(ld.N >= len(m.Points)),
-			)
-			if err != nil {
-				_ = et.Add(ErrorLoad{
-					LoadCase: i,
-					LoadPos:  j,
-					Err:      fmt.Errorf("outside index of point : %d", ld.N),
-				})
-			}
-			for k := 0; k < 3; k++ {
-				err := isOk(
-					isNaN(ld.Forces[k]),
-					isInf(ld.Forces[k]),
-				)
-				if err != nil {
-					_ = et.Add(ErrorLoad{
-						LoadCase: i,
-						LoadPos:  j,
-						Err:      err,
-					})
-				}
-			}
-		}
-	}
-	if et.IsError() {
-		return et
-	}
-	return nil
-}
-
-func (m *Model) checkModalCases() (err error) {
-	et := errors.Tree{Name: "checkModalCases"}
-	// empty modal mass is not acceptable
-	for i := range m.ModalCases {
-		err := isOk(
-			isTrue(len(m.ModalCases[i].ModalMasses) == 0),
-		)
-		if err != nil {
-			_ = et.Add(ErrorModal{
-				ModalCase: i,
-				ModalPos:  0,
-				Err:       fmt.Errorf("Modal case haven`t masses"),
-			})
-		}
-	}
-	if et.IsError() {
-		return et
-	}
-
-	return nil
-}
-
-// ErrorModal error in modal case data
-type ErrorModal struct {
-	ModalCase int
-	ModalPos  int
-	Err       error
-}
-
-func (e ErrorModal) Error() string {
-	return fmt.Sprintf("Error in modal case %d, mass position %d : %v",
-		e.ModalCase,
-		e.ModalPos,
-		e.Err)
-}
-
-func (m *Model) checkModal() (err error) {
-	et := errors.Tree{Name: "checkModal"}
-	for i := range m.ModalCases {
-		for j := range m.ModalCases[i].ModalMasses {
-			ld := m.ModalCases[i].ModalMasses[j]
-			err := isOk(
-				isTrue(ld.N < 0),
-				isTrue(ld.N >= len(m.Points)),
-			)
-			if err != nil {
-				_ = et.Add(ErrorModal{
-					ModalCase: i,
-					ModalPos:  j,
-					Err:       fmt.Errorf("outside index of point : %d", ld.N),
-				})
-			}
-			err = isOk(
-				isNaN(ld.Mass),
-				isInf(ld.Mass),
-				isPositive(ld.Mass),
-				isNotZero(ld.Mass),
-			)
-			if err != nil {
-				_ = et.Add(ErrorModal{
-					ModalCase: i,
-					ModalPos:  j,
-					Err:       err,
-				})
-			}
-			for s := 0; s < len(m.Supports); s++ {
-				if m.Supports[s][0] || m.Supports[s][1] || m.Supports[s][2] {
-					if ld.N == s {
-						_ = et.Add(ErrorModal{
-							ModalCase: i,
-							ModalPos:  j,
-							Err:       fmt.Errorf("Modal mass on support"),
-						})
-					}
-				}
-			}
-		}
-	}
-	if et.IsError() {
-		return et
-	}
-	return nil
-}
+//type ErrorLoad struct {
+//	LoadCase int
+//	LoadPos  int
+//	Err      error
+//}
+//
+//func (e ErrorLoad) Error() string {
+//	return fmt.Sprintf("Error in load case %d, load position %d : %v",
+//		e.LoadCase,
+//		e.LoadPos,
+//		e.Err)
+//}
+//
+//func (m *Model) checkLoad() (err error) {
+//	et := errors.Tree{Name: "checkLoad"}
+//	for i := range m.LoadCases {
+//		for j := range m.LoadCases[i].LoadNodes {
+//			ld := m.LoadCases[i].LoadNodes[j]
+//			err := isOk(
+//				isTrue(ld.N < 0),
+//				isTrue(ld.N >= len(m.Points)),
+//			)
+//			if err != nil {
+//				_ = et.Add(ErrorLoad{
+//					LoadCase: i,
+//					LoadPos:  j,
+//					Err:      fmt.Errorf("outside index of point : %d", ld.N),
+//				})
+//			}
+//			for k := 0; k < 3; k++ {
+//				err := isOk(
+//					isNaN(ld.Forces[k]),
+//					isInf(ld.Forces[k]),
+//				)
+//				if err != nil {
+//					_ = et.Add(ErrorLoad{
+//						LoadCase: i,
+//						LoadPos:  j,
+//						Err:      err,
+//					})
+//				}
+//			}
+//		}
+//	}
+//	if et.IsError() {
+//		return et
+//	}
+//	return nil
+//}
+//
+//func (m *Model) checkModalCases() (err error) {
+//	et := errors.Tree{Name: "checkModalCases"}
+//	// empty modal mass is not acceptable
+//	for i := range m.ModalCases {
+//		err := isOk(
+//			isTrue(len(m.ModalCases[i].ModalMasses) == 0),
+//		)
+//		if err != nil {
+//			_ = et.Add(ErrorModal{
+//				ModalCase: i,
+//				ModalPos:  0,
+//				Err:       fmt.Errorf("Modal case haven`t masses"),
+//			})
+//		}
+//	}
+//	if et.IsError() {
+//		return et
+//	}
+//
+//	return nil
+//}
+//
+//// ErrorModal error in modal case data
+//type ErrorModal struct {
+//	ModalCase int
+//	ModalPos  int
+//	Err       error
+//}
+//
+//func (e ErrorModal) Error() string {
+//	return fmt.Sprintf("Error in modal case %d, mass position %d : %v",
+//		e.ModalCase,
+//		e.ModalPos,
+//		e.Err)
+//}
+//
+//func (m *Model) checkModal() (err error) {
+//	et := errors.Tree{Name: "checkModal"}
+//	for i := range m.ModalCases {
+//		for j := range m.ModalCases[i].ModalMasses {
+//			ld := m.ModalCases[i].ModalMasses[j]
+//			err := isOk(
+//				isTrue(ld.N < 0),
+//				isTrue(ld.N >= len(m.Points)),
+//			)
+//			if err != nil {
+//				_ = et.Add(ErrorModal{
+//					ModalCase: i,
+//					ModalPos:  j,
+//					Err:       fmt.Errorf("outside index of point : %d", ld.N),
+//				})
+//			}
+//			err = isOk(
+//				isNaN(ld.Mass),
+//				isInf(ld.Mass),
+//				isPositive(ld.Mass),
+//				isNotZero(ld.Mass),
+//			)
+//			if err != nil {
+//				_ = et.Add(ErrorModal{
+//					ModalCase: i,
+//					ModalPos:  j,
+//					Err:       err,
+//				})
+//			}
+//			for s := 0; s < len(m.Supports); s++ {
+//				if m.Supports[s][0] || m.Supports[s][1] || m.Supports[s][2] {
+//					if ld.N == s {
+//						_ = et.Add(ErrorModal{
+//							ModalCase: i,
+//							ModalPos:  j,
+//							Err:       fmt.Errorf("Modal mass on support"),
+//						})
+//					}
+//				}
+//			}
+//		}
+//	}
+//	if et.IsError() {
+//		return et
+//	}
+//	return nil
+//}
