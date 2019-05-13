@@ -1,6 +1,5 @@
-Linear Elastic Analysis
-Calculate load case 0 of 2
-Calculate load case 1 of 2
+Calculate static case 0 of 2
+Calculate static case 1 of 2
 Calculate modal case 0 of 1
 Modal Analysis by X
 Modal Analysis by Y
@@ -22,36 +21,36 @@ Index       X       Y       M       X       Y       M
 Load case #  0
 Point           Fx, N           Fy, N          M, N*m
     1         0.00000         2.30000         0.00000
-    1        10.00000         0.00000         0.00000
+    1       -10.00000         0.00000         0.00000
 Point displacament in global system coordinate:
 Point           DX, m           DY, m
     0     0.00000e+00     0.00000e+00
-    1     4.16667e-08     3.19444e-08
+    1    -4.16667e-08     3.19444e-08
 Local force in beam:
                                  START OF BEAM                                 END OF BEAM       
                ------------------------------------          ------------------------------------
 Index           Fx, N           Fy, N          M, N*m           Fx, N           Fy, N          M, N*m
-    0    -1.00000e+01    -2.30000e+00    -2.30000e+00     1.00000e+01     2.30000e+00     0.00000e+00
+    0     1.00000e+01    -2.30000e+00    -2.30000e+00    -1.00000e+01     2.30000e+00     0.00000e+00
 Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
-    0    -1.00000e+01    -2.30000e+00    -2.30000e+00
+    0     1.00000e+01    -2.30000e+00    -2.30000e+00
 
 Load case #  1
 Point           Fx, N           Fy, N          M, N*m
-    1        10.00000         0.00000         0.00000
+    1       -10.00000         0.00000         0.00000
     1         0.00000         2.30000         0.00000
 Point displacament in global system coordinate:
 Point           DX, m           DY, m
     0     0.00000e+00     0.00000e+00
-    1     4.16667e-08     3.19444e-08
+    1    -4.16667e-08     3.19444e-08
 Local force in beam:
                                  START OF BEAM                                 END OF BEAM       
                ------------------------------------          ------------------------------------
 Index           Fx, N           Fy, N          M, N*m           Fx, N           Fy, N          M, N*m
-    0    -1.00000e+01    -2.30000e+00    -2.30000e+00     1.00000e+01     2.30000e+00     0.00000e+00
+    0     1.00000e+01    -2.30000e+00    -2.30000e+00    -1.00000e+01     2.30000e+00     0.00000e+00
 Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
-    0    -1.00000e+01    -2.30000e+00    -2.30000e+00
+    0     1.00000e+01    -2.30000e+00    -2.30000e+00
 
 Modal case #  0
 Point         Mass, N

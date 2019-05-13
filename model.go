@@ -261,7 +261,7 @@ func (m *Model) Run(out io.Writer) (err error) {
 	// calculation of linear stiffiner model
 	{
 		// assembly matrix of stiffiner
-		k, ignore, err := m.assemblyK()
+		k, ignore, err := m.assemblyK(m.getStiffBeam2d)
 		if err != nil {
 			return err
 		}
@@ -393,22 +393,118 @@ func (m *Model) runStatic(lc *LoadCase) (err error) {
 		}
 	}
 
+	// TODO : add test is only positive value, cannot be -5... for example
 	if lc.AmountLinearBuckling > 0 {
 		// TODO: add implementation
-		panic("add implementation")
+		// assembly matrix of stiffiner
+		g, _, err := m.assemblyK(func(pos int) *mat.Dense {
+			return m.getGeometricBeam2d(pos, lc)
+		})
+		if err != nil {
+			return err
+		}
+
+		// memory initialization
+		dof := 3 * len(m.Points)
+
+		// templorary data for mass preparing
+		MS := make([]float64, dof)
+
+		dataM := make([]float64, dof*dof)
+		M := mat.NewDense(dof, dof, dataM)
+
+		if _, err = sparse.Fkeep(g, func(i, j int, x float64) bool {
+			M.Set(i, j, M.At(i, j)+x)
+			// kept value
+			return true
+		}); err != nil {
+			return err
+		}
+
+		// for _, mm := range mc.ModalMasses {
+		// index := mm.N*3 + mcCase.direction
+		// M.Set(index, index, M.At(index, index)+mm.Mass/Gravity)
+		// }
+
+		dataH := make([]float64, dof*dof)
+		h := mat.NewDense(dof, dof, dataH)
+
+		for col := 0; col < dof; col++ {
+			for i := 0; i < dof; i++ {
+				// initialization by 0.0
+				MS[i] = 0.0
+			}
+			isZero := true
+			for i := 0; i < dof; i++ {
+				if M.At(i, col) != 0 {
+					isZero = false
+				}
+				MS[i] = M.At(i, col)
+			}
+
+			if isZero {
+				continue
+			}
+
+			// LU decomposition
+			hh, err := (*m.lu).Solve(MS)
+			if err != nil {
+				return err
+			}
+
+			for i := 0; i < dof; i++ {
+				h.Set(i, col, hh[i])
+			}
+		}
+
+		var e mat.Eigen
+
+		ok := e.Factorize(h, mat.EigenBoth)
+		if !ok {
+			return fmt.Errorf("Eigen factorization is not ok")
+		}
+
+		// create result report
+		v := e.Values(nil)
+		eVector := e.VectorsTo(nil)
+		for i := 0; i < len(v); i++ {
+			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
+				continue
+			}
+			if real(v[i]) < 0 {
+				// TODO: change sign. Check is it important
+				v[i] = complex(math.Abs(real(v[i])), 0)
+			}
+
+			_ = v[i]
+			_ = eVector
+			//	fmt.Fprintf(os.Stdout, "f = %v\n", 1./real(v[i]))
+			//	for p := 0; p < len(m.Points); p++ {
+			//		fmt.Fprintln(os.Stdout,
+			//			eVector.At(3*p+0, i),
+			//			eVector.At(3*p+1, i),
+			//			eVector.At(3*p+2, i))
+			//	}
+
+			// TODO: store the result
+			// TODO: add sort results
+		}
+
 	}
 
 	return nil
 }
 
-func (m *Model) assemblyK() (k *sparse.Matrix, ignore []int, err error) {
+func (m *Model) assemblyK(elementMatrix func(int) *mat.Dense) (
+	k *sparse.Matrix, ignore []int, err error) {
+
 	var T *sparse.Triplet
 	if T, err = sparse.NewTriplet(); err != nil {
 		return
 	}
 
 	for i := range m.Beams {
-		kr := m.getStiffBeam2d(i)
+		kr := elementMatrix(i) // m.getStiffBeam2d(i)
 		tr := m.getCoordTransStiffBeam2d(i)
 
 		kr.Mul(tr.T(), kr)
@@ -573,14 +669,14 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 			}
 		}
 
-		ok := e.Factorize(h, true, true)
+		ok := e.Factorize(h, mat.EigenBoth)
 		if !ok {
 			return fmt.Errorf("Eigen factorization is not ok")
 		}
 
 		// create result report
 		v := e.Values(nil)
-		eVector := e.Vectors()
+		eVector := e.VectorsTo(nil)
 		for i := 0; i < len(v); i++ {
 			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
 				continue
@@ -605,9 +701,9 @@ func (m *Model) runModal(mc *ModalCase) (err error) {
 
 			mr.ModalDisplacement = make([][3]float64, len(m.Points))
 			for p := 0; p < len(m.Points); p++ {
-				mr.ModalDisplacement[p][0] = eVector.At(3*p+0, i)
-				mr.ModalDisplacement[p][1] = eVector.At(3*p+1, i)
-				mr.ModalDisplacement[p][2] = eVector.At(3*p+2, i)
+				mr.ModalDisplacement[p][0] = real(eVector.At(3*p+0, i))
+				mr.ModalDisplacement[p][1] = real(eVector.At(3*p+1, i))
+				mr.ModalDisplacement[p][2] = real(eVector.At(3*p+2, i))
 			}
 			mc.Result = append(mc.Result, mr)
 		}
@@ -768,6 +864,8 @@ func (m Model) String() (out string) {
 			}
 		}
 	}
+
+	// TODO: add printing of linear buckling result
 
 	return
 }

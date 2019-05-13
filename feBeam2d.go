@@ -172,9 +172,21 @@ func (m Model) getCoordTransStiffBeam2d(pos int) *mat.Dense {
 }
 
 // matrix of geometric stiffner for beam 2d
-func (m Model) getGeometricBeam2d(pos int, axialForce float64) *mat.Dense {
+func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 	data := make([]float64, 36)
 	kr := mat.NewDense(6, 6, data)
+
+	// compress axial force
+	var axialForce float64
+	if lc.BeamForces[pos][0] > 0 {
+		// compress at the begin point of beam
+		axialForce = lc.BeamForces[pos][0]
+	}
+	if -lc.BeamForces[pos][3] > axialForce {
+		// compress at the end point of beam
+		axialForce = -lc.BeamForces[pos][3]
+	}
+
 	defer func() {
 		kr.Scale(axialForce, kr)
 	}()
@@ -258,5 +270,6 @@ func (m Model) getGeometricBeam2d(pos int, axialForce float64) *mat.Dense {
 		return kr
 	}
 
+	// TODO: add implementation
 	panic("add implementation")
 }

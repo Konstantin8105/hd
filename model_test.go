@@ -13,6 +13,7 @@ import (
 	"github.com/Konstantin8105/cs"
 	"github.com/Konstantin8105/hd"
 	"github.com/Konstantin8105/hd/example"
+	"github.com/pmezard/go-difflib/difflib"
 )
 
 func TestWrongLoad(t *testing.T) {
@@ -82,6 +83,7 @@ func TestModelFail(t *testing.T) {
 						{N: -1, Forces: [3]float64{0, 2.3, 0}},
 						{N: 5, Forces: [3]float64{math.Inf(1), 0, math.NaN()}},
 					},
+					AmountLinearBuckling: -100,
 				},
 			},
 			ModalCases: []hd.ModalCase{
@@ -360,14 +362,16 @@ func Example() {
 			{
 				LoadNodes: []hd.LoadNode{
 					{N: 1, Forces: [3]float64{0, 2.3, 0}},
-					{N: 1, Forces: [3]float64{10, 0, 0}},
+					{N: 1, Forces: [3]float64{-10, 0, 0}},
 				},
+				AmountLinearBuckling: 1,
 			},
 			{ // test for 2 cases with different positions
 				LoadNodes: []hd.LoadNode{
-					{N: 1, Forces: [3]float64{10, 0, 0}},
+					{N: 1, Forces: [3]float64{-10, 0, 0}},
 					{N: 1, Forces: [3]float64{0, 2.3, 0}},
 				},
+				AmountLinearBuckling: 2,
 			},
 		},
 		ModalCases: []hd.ModalCase{
@@ -392,6 +396,18 @@ func Example() {
 		fmt.Fprintf(os.Stdout, "same")
 	} else {
 		fmt.Fprintln(os.Stdout, b.String())
+
+		// show a diff between files
+		diff := difflib.UnifiedDiff{
+			A:        difflib.SplitLines(string(expect)),
+			B:        difflib.SplitLines(string(b.Bytes())),
+			FromFile: "Original",
+			ToFile:   "Current",
+			Context:  30000,
+		}
+		text, _ := difflib.GetUnifiedDiffString(diff)
+		fmt.Fprintf(os.Stdout, text)
+
 		fmt.Fprintf(os.Stdout, "not same")
 	}
 
