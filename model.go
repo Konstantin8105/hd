@@ -320,17 +320,6 @@ func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
 		m.Pins = make([][6]bool, len(m.Beams))
 	}
 
-	// TODO: move to check input data
-	// fix pin bug for truss elements
-	for beam := 0; beam < len(m.Pins); beam++ {
-		if m.Pins[beam][2] && m.Pins[beam][5] {
-			// TODO: create as error
-			// add free by Y direction
-			m.Pins[beam][1] = true
-			m.Pins[beam][4] = true
-		}
-	}
-
 	// check
 	err = m.checkInputData()
 	if err != nil {
