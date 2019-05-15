@@ -109,6 +109,12 @@ GUI:
 #### Coverage
 
 ```
-go test -coverprofile=coverage.out -run=TestLoadUniform
+go test -coverprofile=coverage.out ./...
 go tool cover -html=coverage.out
+```
+
+or on one line:
+
+```
+go test -coverprofile=coverage.out ./... ; go tool cover -html=coverage.out ; rm coverage.out
 ```

@@ -5,6 +5,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"runtime/debug"
 	"sort"
 
 	"github.com/Konstantin8105/errors"
@@ -306,6 +307,7 @@ func getK(m *Model) (k *sparse.Matrix, lu sparse.LU, ignore []int, err error) {
 	return
 }
 
+// TODO : comment
 func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
 	// by default output in standart stdio
 	out = in
@@ -318,6 +320,7 @@ func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
 		m.Pins = make([][6]bool, len(m.Beams))
 	}
 
+	// TODO: move to check input data
 	// fix pin bug for truss elements
 	for beam := 0; beam < len(m.Pins); beam++ {
 		if m.Pins[beam][2] && m.Pins[beam][5] {
@@ -352,7 +355,12 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 
 	// TODO : add error defer
 
-	// TODO : add panic free defer
+	// panic free. replace to stacktrace
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("stacktrace from panic: %s\n", debug.Stack())
+		}
+	}()
 
 	// calculate node displacament
 	dof := 3 * len(m.Points)
@@ -668,7 +676,12 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 
 	// TODO : add error defer
 
-	// TODO : add panic free defer
+	// panic free. replace to stacktrace
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("stacktrace from panic: %s\n", debug.Stack())
+		}
+	}()
 
 	// TODO: add comment
 	_, lu, _, err := getK(m)
@@ -790,7 +803,6 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 }
 
 func (m Model) String() (out string) {
-	// TODO: use github.com/olekukonko/tablewriter for create table
 	out += "\n"
 	// points and supports
 	out += fmt.Sprintf("Point coordinates:\n")
