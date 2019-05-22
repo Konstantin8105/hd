@@ -201,6 +201,11 @@ type ModalCase struct {
 	Result []ModalResult
 }
 
+// reset - set nil to old results
+func (mc *ModalCase) reset() {
+	mc.Result = nil
+}
+
 func (m ModalCase) String() (out string) {
 	out += fmt.Sprintf("\nModal case:\n")
 	out += fmt.Sprintf("%5s %15s\n",
@@ -337,12 +342,17 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 		return
 	}
 
-	fmt.Fprintf(out, "Linear Elastic Analysis\n")
-
 	// remove result data
 	lc.reset()
 
-	// TODO : add error defer
+	// error handling
+	name := "Linear Elastic Analysis"
+	fmt.Fprintf(out, "%s\n", name)
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("%s: %v", name, err)
+		}
+	}()
 
 	// panic free. replace to stacktrace
 	defer func() {
@@ -658,12 +668,17 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		return
 	}
 
-	fmt.Fprintf(out, "Calculate modal case\n")
+	// remove result data
+	mc.reset()
 
-	// TODO: comment
-	mc.Result = nil
-
-	// TODO : add error defer
+	// error handling
+	name := "Modal Analysis"
+	fmt.Fprintf(out, "%s\n", name)
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("%s: %v", name, err)
+		}
+	}()
 
 	// panic free. replace to stacktrace
 	defer func() {
