@@ -334,7 +334,7 @@ func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
 	return
 }
 
-// TODO: add comments
+// LinearStatic run linear static analysis.
 func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 	// TODO : add comment
 	out, err = prepare(out, m)
