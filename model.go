@@ -548,13 +548,15 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 				continue
 			}
 			if real(v[i]) < 0 {
-				v[i] = complex(math.Abs(real(v[i])), 0)
+				// ignore imag value
+				v[i] = complex(real(v[i]), 0)
 			}
 
 			// store the result
 			var lbr BucklingResult
 			if val := math.Abs(real(v[i])); val != 0.0 {
-				lbr.Factor = math.Abs(1. / val) // use only possitive value
+				// use only possitive value
+				lbr.Factor = 1. / val
 			} else {
 				// ignore that value
 				continue
@@ -744,8 +746,6 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	var e mat.Eigen
 
 	for _, mcCase := range mcCases {
-		// TODO: memory optimize for modal calc
-
 		fmt.Fprintf(out, "%s", mcCase.name)
 
 		dataM := make([]float64, dof*dof)
@@ -800,12 +800,19 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 				continue
 			}
 			if real(v[i]) < 0 {
-				// TODO: change sign. Check is it important
-				v[i] = complex(math.Abs(real(v[i])), 0)
+				// ignore imag value
+				v[i] = complex(real(v[i]), 0)
 			}
 
 			var mr ModalResult
-			mr.Hz = 1. / (math.Sqrt(real(v[i])) * 2.0 * math.Pi)
+
+			if val := math.Abs(real(v[i])); val != 0.0 {
+				// use only possitive value
+				mr.Hz = 1. / (math.Sqrt(val) * 2.0 * math.Pi)
+			} else {
+				// ignore that value
+				continue
+			}
 			// TODO: G-beam test have 2 frequency on 2 different direction. I think, that checking must be removed.
 			var isFound bool
 			for j := range mc.Result {
