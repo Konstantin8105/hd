@@ -123,7 +123,7 @@ type LoadCase struct {
 	// Amount of calculated forms.
 	// If Amount is zero or less zero, then no calculate.
 	// LinearBuckling is linear buckling calculation
-	AmountLinearBuckling int
+	AmountLinearBuckling uint16
 
 	// Result of linear buckling calculation
 	LinearBucklingResult []BucklingResult
@@ -576,7 +576,7 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 		})
 
 		// Cut result slice
-		if len(lc.LinearBucklingResult) > lc.AmountLinearBuckling {
+		if len(lc.LinearBucklingResult) > int(lc.AmountLinearBuckling) {
 			lc.LinearBucklingResult = lc.LinearBucklingResult[:lc.AmountLinearBuckling]
 		}
 	}

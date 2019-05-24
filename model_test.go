@@ -89,7 +89,7 @@ func TestModelFail(t *testing.T) {
 						{N: -1, Forces: [3]float64{0, 2.3, 0}},
 						{N: 5, Forces: [3]float64{math.Inf(1), 0, math.NaN()}},
 					},
-					AmountLinearBuckling: -100,
+					AmountLinearBuckling: 1,
 				},
 			},
 			mcs: []hd.ModalCase{
