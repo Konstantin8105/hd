@@ -256,6 +256,50 @@ func Truss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	return
 }
 
+func TrussWithBuckling() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	A := math.Pi * math.Pow(0.050, 2) / 4.0
+	J := math.Pi * math.Pow(0.050, 4) / 64.0
+	m = hd.Model{
+		Points: [][2]float64{
+			{0.000, 0.0}, // 0
+			{0.300, 0.0}, // 1
+			{0.700, 0.0}, // 2
+			{1.000, 0.0}, // 3
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: A, J: J, E: 2e11},
+			{N: [2]int{1, 2}, A: A, J: J, E: 2e11},
+			{N: [2]int{2, 3}, A: A, J: J, E: 2e11},
+		},
+		Supports: [][3]bool{
+			{true, true, true},    // 0
+			{false, false, false}, // 1
+			{false, false, false}, // 2
+			{false, true, false},  // 3
+		},
+		Pins: [][6]bool{
+			{false, false, false, false, false, false}, // 0
+			{false, false, false, false, false, false}, // 1
+			{false, false, false, false, false, false}, // 2
+		},
+	}
+	lc = []hd.LoadCase{
+		hd.LoadCase{
+			LoadNodes: []hd.LoadNode{
+				{N: 3, Forces: [3]float64{+70000, 0, 0}},
+			},
+			AmountLinearBuckling: 2,
+		},
+		hd.LoadCase{
+			LoadNodes: []hd.LoadNode{
+				{N: 3, Forces: [3]float64{-70000, 0, 0}},
+			},
+			AmountLinearBuckling: 2,
+		},
+	}
+	return
+}
+
 func ModalTruss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	A := math.Pi * math.Pow(0.050, 2) / 4.0
 	J := math.Pi * math.Pow(0.050, 4) / 64.0
@@ -282,7 +326,6 @@ func ModalTruss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 			{false, false, false, true, false, true},  // 1
 		},
 	}
-
 	mc = []hd.ModalCase{
 		{
 			ModalMasses: []hd.ModalMass{

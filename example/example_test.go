@@ -40,6 +40,9 @@ func TestModelString(t *testing.T) {
 		mf:       example.ModalBeamRotate,
 		filename: "beam-modal-rotate",
 	}, {
+		mf:       example.TrussWithBuckling,
+		filename: "truss-with-buckling",
+	}, {
 		mf:       example.ModalBeam3mass,
 		filename: "beam-modal-3mass",
 	}, {
@@ -71,7 +74,6 @@ func TestModelString(t *testing.T) {
 			}
 
 			// compare files
-			// TODO : String() for local case and modal in not added
 			actual := []byte(b.String())
 			b.Reset()
 

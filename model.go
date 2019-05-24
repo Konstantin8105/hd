@@ -26,7 +26,7 @@ type Model struct {
 	Beams []BeamProp
 
 	// Pins is slice of pins for beams in local system coordinate.
-	// Len of support must be same amount of Points.
+	// Len of support must be same amount of beam.
 	// Or if len is zero, then all DoF(degree of freedom) is rigid.
 	//
 	// first index is point index
