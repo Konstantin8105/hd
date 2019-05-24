@@ -468,10 +468,8 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 		}
 	}
 
-	// TODO : add test is only positive value, cannot be -5... for example
 	// TODO : split to specific function
 	if lc.AmountLinearBuckling > 0 {
-		// TODO: add implementation
 		// assembly matrix of stiffiner
 		g, _, err := m.assemblyK(func(pos int) *mat.Dense {
 			return m.getGeometricBeam2d(pos, lc)
