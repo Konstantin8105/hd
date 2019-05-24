@@ -548,13 +548,17 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 				continue
 			}
 			if real(v[i]) < 0 {
-				// TODO: change sign. Check is it important
 				v[i] = complex(math.Abs(real(v[i])), 0)
 			}
 
 			// store the result
 			var lbr BucklingResult
-			lbr.Factor = 1. / real(v[i])
+			if val := math.Abs(real(v[i])); val != 0.0 {
+				lbr.Factor = math.Abs(1. / val) // use only possitive value
+			} else {
+				// ignore that value
+				continue
+			}
 			for p := 0; p < len(m.Points); p++ {
 				lbr.PointDisplacementGlobal = append(lbr.PointDisplacementGlobal, [3]float64{
 					real(eVector.At(3*p+0, i)),
