@@ -395,10 +395,9 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 		return fmt.Errorf("Assembly node load: %v", err)
 	}
 
-	// TODO: add comment
+	// generate stiffiner matrix and ignore list
 	k, lu, ignore, err := getK(m)
 	if err != nil {
-		// TODO: not valid error string
 		return fmt.Errorf("Assembly node load: %v", err)
 	}
 
@@ -903,9 +902,6 @@ func (m Model) String() (out string) {
 	if !pinHeader {
 		out += fmt.Sprintf("All beams haven`t pins\n")
 	}
-
-	// TODO: add printing of linear buckling result
-
 	return
 }
 
