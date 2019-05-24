@@ -326,7 +326,7 @@ func getK(m *Model) (k *sparse.Matrix, lu sparse.LU, ignore []int, err error) {
 	return
 }
 
-// prepare input data
+// prepare input Model
 func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
 	// by default output in standart stdio
 	out = in
@@ -374,6 +374,11 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 			err = fmt.Errorf("stacktrace from panic: %s\n", debug.Stack())
 		}
 	}()
+
+	// check input data
+	if err = lc.checkInputData(m); err != nil {
+		return
+	}
 
 	// calculate node displacament
 	dof := 3 * len(m.Points)
@@ -709,6 +714,11 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 			err = fmt.Errorf("stacktrace from panic: %s\n", debug.Stack())
 		}
 	}()
+
+	// check input data
+	if err = mc.checkInputData(m); err != nil {
+		return
+	}
 
 	// get LU decomposition of stiffiner matrix
 	_, lu, _, err := getK(m)
