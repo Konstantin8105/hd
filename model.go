@@ -811,16 +811,6 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 				// ignore that value
 				continue
 			}
-			// TODO: G-beam test have 2 frequency on 2 different direction. I think, that checking must be removed.
-			var isFound bool
-			for j := range mc.Result {
-				if math.Abs((mc.Result[j].Hz-mr.Hz)/mr.Hz) < 1e-10 {
-					isFound = true
-				}
-			}
-			if isFound {
-				continue
-			}
 
 			mr.ModalDisplacement = make([][3]float64, len(m.Points))
 			for p := 0; p < len(m.Points); p++ {
