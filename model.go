@@ -407,8 +407,7 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 		var et errors.Tree
 		for _, i := range ignore {
 			if p[i] != 0.0 {
-				// TODO: add typing error
-				_ = et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
+				et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
 			}
 		}
 		if et.IsError() {
