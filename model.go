@@ -350,12 +350,6 @@ func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
 
 // LinearStatic run linear static analysis.
 func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
-	// prepare input data
-	out, err = prepare(out, m)
-	if err != nil {
-		return
-	}
-
 	// remove result data
 	lc.reset()
 
@@ -364,7 +358,9 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 	fmt.Fprintf(out, "%s\n", name)
 	defer func() {
 		if err != nil {
-			err = fmt.Errorf("%s: %v", name, err)
+			et := errors.New(name)
+			et.Add(err)
+			err = et
 		}
 	}()
 
@@ -375,9 +371,15 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 		}
 	}()
 
-	// check input data
-	if err = lc.checkInputData(m); err != nil {
-		return
+	// prepare input data
+	{
+		et := errors.New("")
+		out, err = prepare(out, m)
+		et.Add(err)
+		et.Add(lc.checkInputData(m))
+		if et.IsError() {
+			return et
+		}
 	}
 
 	// calculate node displacament
@@ -690,12 +692,6 @@ func (m *Model) addSupport() (ignore []int) {
 const Gravity float64 = 9.80665
 
 func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
-	// prepare input data
-	out, err = prepare(out, m)
-	if err != nil {
-		return
-	}
-
 	// remove result data
 	mc.reset()
 
@@ -704,7 +700,9 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	fmt.Fprintf(out, "%s\n", name)
 	defer func() {
 		if err != nil {
-			err = fmt.Errorf("%s: %v", name, err)
+			et := errors.New(name)
+			et.Add(err)
+			err = et
 		}
 	}()
 
@@ -715,9 +713,15 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		}
 	}()
 
-	// check input data
-	if err = mc.checkInputData(m); err != nil {
-		return
+	// prepare input data
+	{
+		et := errors.New("")
+		out, err = prepare(out, m)
+		et.Add(err)
+		et.Add(mc.checkInputData(m))
+		if et.IsError() {
+			return et
+		}
 	}
 
 	// get LU decomposition of stiffiner matrix
@@ -913,10 +917,13 @@ func Run(out io.Writer, m *Model, lcs []LoadCase, mcs []ModalCase) (err error) {
 		out = os.Stdout
 	}
 
+	et := errors.New("Run function")
+
 	fmt.Fprintf(out, "%s\n", *m)
 	for i := range lcs {
 		if err = LinearStatic(out, m, &(lcs[i])); err != nil {
-			return
+			et.Add(err)
+			continue
 		}
 		fmt.Fprintf(out, "\n\n")
 		fmt.Fprintf(out, "%s\n", lcs[i])
@@ -924,11 +931,16 @@ func Run(out io.Writer, m *Model, lcs []LoadCase, mcs []ModalCase) (err error) {
 	fmt.Fprintf(out, "\n\n")
 	for i := range mcs {
 		if err = Modal(out, m, &(mcs[i])); err != nil {
-			return
+			et.Add(err)
+			continue
 		}
 		fmt.Fprintf(out, "\n\n")
 		fmt.Fprintf(out, "%s\n", mcs[i])
 	}
 	fmt.Fprintf(out, "\n\n")
+
+	if et.IsError() {
+		return et
+	}
 	return
 }

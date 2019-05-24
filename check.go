@@ -29,16 +29,6 @@ func (m *Model) checkInputData() error {
 	// TODO: add checking for calculate one structure on model.
 	//       graph moving by beams with mark.
 
-	// fix pin bug for truss elements
-	for beam := 0; beam < len(m.Pins); beam++ {
-		if m.Pins[beam][2] && m.Pins[beam][5] {
-			// TODO: create as error
-			// add free by Y direction
-			m.Pins[beam][1] = true
-			m.Pins[beam][4] = true
-		}
-	}
-
 	// error handling
 	if et.IsError() {
 		return et
@@ -160,7 +150,7 @@ func isOk(errs ...errorFunc) (err error) {
 }
 
 func (m *Model) checkPoints() error {
-	et := errors.Tree{Name: "checkPoints"}
+	et := errors.Tree{Name: "check points"}
 	for i := range m.Points {
 		for j := 0; j < len(m.Points[i]); j++ {
 			err := isOk(
@@ -301,6 +291,18 @@ func (m *Model) checkPins() (err error) {
 			})
 		}
 	}
+
+	// check truss elements mistake
+	for beam := 0; beam < len(m.Pins); beam++ {
+		if m.Pins[beam][2] && m.Pins[beam][5] &&
+			!(m.Pins[beam][1] && m.Pins[beam][4]) {
+			et.Add(ErrorPin{
+				Beam: beam,
+				Err:  fmt.Errorf("Pins [1] and [4] in direction Y must be true"),
+			})
+		}
+	}
+
 	if et.IsError() {
 		return et
 	}

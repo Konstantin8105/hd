@@ -221,13 +221,13 @@ func Truss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 			{false, true, false},  // 5
 		},
 		Pins: [][6]bool{
-			{false, false, true, false, false, true}, // 1
-			{false, false, true, false, false, true}, // 2
-			{false, false, true, false, false, true}, // 3
-			{false, false, true, false, false, true}, // 4
-			{false, false, true, false, false, true}, // 5
-			{false, false, true, false, false, true}, // 6
-			{false, false, true, false, false, true}, // 7
+			{false, true, true, false, true, true}, // 1
+			{false, true, true, false, true, true}, // 2
+			{false, true, true, false, true, true}, // 3
+			{false, true, true, false, true, true}, // 4
+			{false, true, true, false, true, true}, // 5
+			{false, true, true, false, true, true}, // 6
+			{false, true, true, false, true, true}, // 7
 		},
 	}
 	lc = []hd.LoadCase{

@@ -199,6 +199,11 @@ func TestModelFail(t *testing.T) {
 					{N: [2]int{0, 1}, A: 12e-30, J: math.SmallestNonzeroFloat64, E: math.SmallestNonzeroFloat64},
 					{N: [2]int{1, 2}, A: 12e-30, J: 120e-30, E: 2.0e30},
 				},
+				Pins: [][6]bool{
+					{false, false, false, false, false, false},
+					{false, false, true, false, false, true},
+					{false, false, false, false, false, false},
+				},
 				Supports: [][3]bool{
 					{true, true, true},
 					{false, false, false},
@@ -208,12 +213,17 @@ func TestModelFail(t *testing.T) {
 			lcs: []hd.LoadCase{
 				{
 					LoadNodes: []hd.LoadNode{
-						{N: 2, Forces: [3]float64{0, 1, 0}},
+						{N: 20, Forces: [3]float64{0, 1, 0}},
+						{N: -20, Forces: [3]float64{0, 1, 0}},
 					},
 				},
 			},
 			mcs: []hd.ModalCase{
-				{ModalMasses: []hd.ModalMass{{N: 1, Mass: 1}}},
+				{ModalMasses: []hd.ModalMass{
+					{N: 1, Mass: 1},
+					{N: -1, Mass: -1},
+					{N: 10000, Mass: 0},
+				}},
 			},
 		},
 		// error - rigit
@@ -242,7 +252,11 @@ func TestModelFail(t *testing.T) {
 				},
 			},
 			mcs: []hd.ModalCase{
-				{ModalMasses: []hd.ModalMass{{N: 1, Mass: 1e20}}},
+				{ModalMasses: []hd.ModalMass{
+					{N: 1, Mass: 1e20},
+					{N: -10, Mass: 1e20},
+					{N: 10, Mass: 1e20},
+				}},
 			},
 		},
 	}
@@ -264,6 +278,8 @@ func TestModelFail(t *testing.T) {
 			if err == nil {
 				t.Fatalf("Error : %v", err)
 			}
+			b.Write([]byte(err.Error()))
+			t.Log(err)
 		})
 	}
 }
