@@ -181,6 +181,26 @@ func (lc LoadCase) String() (out string) {
 				i, lc.Reactions[i][0], lc.Reactions[i][1], lc.Reactions[i][2])
 		}
 	}
+
+	// output linear buckling data
+	if len(lc.LinearBucklingResult) > 0 {
+		out += fmt.Sprintf("\nLinear buckling result:\n")
+	} else if lc.AmountLinearBuckling > 0 {
+		out += fmt.Sprintf("\nLinear buckling result: is not calculated\n")
+	}
+	for _, lbr := range lc.LinearBucklingResult {
+		out += fmt.Sprintf("Linear buckling factor: %15.5f\n", lbr.Factor)
+		out += fmt.Sprintf("%5s %15s %15s %15s\n",
+			"Point", "X", "Y", "M")
+		for i := 0; i < len(lbr.PointDisplacementGlobal); i++ {
+			out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
+				i,
+				lbr.PointDisplacementGlobal[i][0],
+				lbr.PointDisplacementGlobal[i][1],
+				lbr.PointDisplacementGlobal[i][2])
+		}
+	}
+
 	return
 }
 
@@ -534,20 +554,27 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 				v[i] = complex(math.Abs(real(v[i])), 0)
 			}
 
-			_ = v[i]
-			_ = eVector
-			//	fmt.Fprintf(os.Stdout, "f = %v\n", 1./real(v[i]))
-			//	for p := 0; p < len(m.Points); p++ {
-			//		fmt.Fprintln(os.Stdout,
-			//			eVector.At(3*p+0, i),
-			//			eVector.At(3*p+1, i),
-			//			eVector.At(3*p+2, i))
-			//	}
-
-			// TODO: store the result
-			// TODO: add sort results
+			// store the result
+			var lbr BucklingResult
+			lbr.Factor = 1. / real(v[i])
+			for p := 0; p < len(m.Points); p++ {
+				lbr.PointDisplacementGlobal = append(lbr.PointDisplacementGlobal, [3]float64{
+					real(eVector.At(3*p+0, i)),
+					real(eVector.At(3*p+1, i)),
+					real(eVector.At(3*p+2, i)),
+				})
+			}
+			lc.LinearBucklingResult = append(lc.LinearBucklingResult, lbr)
 		}
+		// Sort by factors
+		sort.SliceStable(lc.LinearBucklingResult, func(i, j int) bool {
+			return lc.LinearBucklingResult[i].Factor < lc.LinearBucklingResult[j].Factor
+		})
 
+		// Cut result slice
+		if len(lc.LinearBucklingResult) > lc.AmountLinearBuckling {
+			lc.LinearBucklingResult = lc.LinearBucklingResult[:lc.AmountLinearBuckling]
+		}
 	}
 
 	return nil
