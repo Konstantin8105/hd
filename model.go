@@ -308,13 +308,7 @@ type LoadNode struct {
 	Forces [3]float64
 }
 
-// calculation of linear stiffiner model
-// TODO: more comfortable comments
-//	// internal variables
-//	out    io.Writer      // output file
-//	k      *sparse.Matrix // matrix of linear stiffiner model
-//	lu     *sparse.LU     // LU decomposition of linear stiffiner model
-//	ignore []int          // ignored freedom
+// getK return stiffiner matrix, LU decomposition, ignore list
 func getK(m *Model) (k *sparse.Matrix, lu sparse.LU, ignore []int, err error) {
 	// assembly matrix of stiffiner
 	k, ignore, err = m.assemblyK(m.getStiffBeam2d)
@@ -332,7 +326,7 @@ func getK(m *Model) (k *sparse.Matrix, lu sparse.LU, ignore []int, err error) {
 	return
 }
 
-// TODO : comment
+// prepare input data
 func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
 	// by default output in standart stdio
 	out = in
@@ -356,7 +350,7 @@ func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
 
 // LinearStatic run linear static analysis.
 func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
-	// TODO : add comment
+	// prepare input data
 	out, err = prepare(out, m)
 	if err != nil {
 		return
@@ -691,7 +685,7 @@ func (m *Model) addSupport() (ignore []int) {
 const Gravity float64 = 9.80665
 
 func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
-	// TODO : add comment
+	// prepare input data
 	out, err = prepare(out, m)
 	if err != nil {
 		return
@@ -716,7 +710,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		}
 	}()
 
-	// TODO: add comment
+	// get LU decomposition of stiffiner matrix
 	_, lu, _, err := getK(m)
 	if err != nil {
 		return fmt.Errorf("Assembly node load: %v", err)
