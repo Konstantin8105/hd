@@ -15,7 +15,15 @@ Index     Start point       End point       Area,sq.m Moment inertia,m4   Elasti
     3               3               4     1.20000e-01     1.50000e-03     2.00000e+11
 All beams haven`t pins
 
-Modal case #  0
+
+
+Modal Analysis
+Modal Analysis by X
+Modal Analysis by Y
+
+
+
+Modal case:
 Point         Mass, N
     1      2451.66250
     2      2451.66250
@@ -62,3 +70,6 @@ Point               X               Y               M
     2     0.00000e+00     5.64875e-01     0.00000e+00
     3     0.00000e+00    -2.06759e-01     0.00000e+00
     4     0.00000e+00    -2.06759e-01     0.00000e+00
+
+
+

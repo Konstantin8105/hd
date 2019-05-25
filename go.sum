@@ -1,0 +1,17 @@
+github.com/Konstantin8105/cs v0.0.0-20190517091010-c069cc1cee1b h1:IZkvBy8TJTxpPHjOW1R5KqIgVF2lVk8isx9iQBHnOnw=
+github.com/Konstantin8105/cs v0.0.0-20190517091010-c069cc1cee1b/go.mod h1:NquwK4RWQZiMO4cVCacCuMklZ+bPxxHSR8h8Qc51EPk=
+github.com/Konstantin8105/errors v0.0.0-20190517083224-0667bfd7a9ac h1:syUV8/Mgzpj/lYevIbCnoIUawY6EoxTm+D07nPzZdr4=
+github.com/Konstantin8105/errors v0.0.0-20190517083224-0667bfd7a9ac/go.mod h1:7wvBaOU91dxvleBlg9MPy3B1DFY/JKnWeLTzPQKkRwE=
+github.com/Konstantin8105/pow v0.0.0-20181230190922-b87b8419eb2f h1:fBYjlnFsOKw+du+3XIkSTrRIpAmlNbnybvl26lqJYmQ=
+github.com/Konstantin8105/pow v0.0.0-20181230190922-b87b8419eb2f/go.mod h1:MZ4NvCZNXhYu/vef0FZ8rSsVgZOo6eswfR3wqxVXafg=
+github.com/Konstantin8105/sparse v0.0.0-20190109100437-7d7273d702af h1:Y4FRJSfQT3Ak6GUiObYjsNQTfaRYzWHm/OAVDFyEMwM=
+github.com/Konstantin8105/sparse v0.0.0-20190109100437-7d7273d702af/go.mod h1:/ZMkKeWpLK53tqtgspe3X60yRBpR1ckauNuMoWyUqmI=
+github.com/Konstantin8105/tree v0.0.0-20190515202740-8a8e3df34a3b h1:FjXnLahgYDqBm8FeELONQ6+AoL/VYUQJOcexWqeAPM8=
+github.com/Konstantin8105/tree v0.0.0-20190515202740-8a8e3df34a3b/go.mod h1:iuUpRQi7E+GDKbY/a5HBliYk4j+cW1Nmv1hXoCSwuVU=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+golang.org/x/exp v0.0.0-20190125153040-c74c464bbbf2/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
+golang.org/x/tools v0.0.0-20190206041539-40960b6deb8e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
+gonum.org/v1/gonum v0.0.0-20190520094443-a5f8f3a4840b h1:6TIR0pAaLZhSQXUKh+yxFO4qaPuWt+ZlC8cEVzeME5I=
+gonum.org/v1/gonum v0.0.0-20190520094443-a5f8f3a4840b/go.mod h1:zXcK6UmEkbNk22MqyPrZPx3T6fsE/O56XzkDfeYUF+Y=
+gonum.org/v1/netlib v0.0.0-20190313105609-8cb42192e0e0/go.mod h1:wa6Ws7BG/ESfp6dHfk7C6KdzKA7wR7u/rKwOGE66zvw=

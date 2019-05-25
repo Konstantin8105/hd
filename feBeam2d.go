@@ -170,3 +170,106 @@ func (m Model) getCoordTransStiffBeam2d(pos int) *mat.Dense {
 
 	return tr
 }
+
+// matrix of geometric stiffner for beam 2d
+func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
+	data := make([]float64, 36)
+	kr := mat.NewDense(6, 6, data)
+
+	// compress axial force
+	var axialForce float64
+	if lc.BeamForces[pos][0] > 0 {
+		// compress at the begin point of beam
+		axialForce = lc.BeamForces[pos][0]
+	}
+	if -lc.BeamForces[pos][3] > axialForce {
+		// compress at the end point of beam
+		axialForce = -lc.BeamForces[pos][3]
+	}
+
+	defer func() {
+		kr.Scale(axialForce, kr)
+	}()
+
+	length := m.distance(m.Beams[pos].N[0], m.Beams[pos].N[1])
+
+	// no pins
+	if m.Pins[pos][2] == false && m.Pins[pos][5] == false {
+		G1 := 6. / (5. * length)
+		kr.Set(1, 1, +G1)
+		kr.Set(4, 4, +G1)
+		kr.Set(1, 4, -G1)
+		kr.Set(4, 1, -G1)
+
+		kr.Set(1, 2, +0.1)
+		kr.Set(2, 1, +0.1)
+		kr.Set(1, 5, +0.1)
+		kr.Set(5, 1, +0.1)
+
+		kr.Set(2, 4, -0.1)
+		kr.Set(4, 2, -0.1)
+		kr.Set(5, 4, -0.1)
+		kr.Set(4, 5, -0.1)
+
+		G2 := 2. * length / 15.
+		kr.Set(2, 2, +G2)
+		kr.Set(5, 5, +G2)
+
+		G3 := -length / 30.
+		kr.Set(5, 2, +G3)
+		kr.Set(2, 5, +G3)
+
+		return kr
+	}
+
+	// pins at the begin of beam
+	if m.Pins[pos][2] && m.Pins[pos][5] == false {
+		G1 := 6. / (5. * length)
+		kr.Set(1, 1, +G1)
+		kr.Set(4, 4, +G1)
+		kr.Set(1, 4, -G1)
+		kr.Set(4, 1, -G1)
+
+		kr.Set(1, 5, +1./5.)
+		kr.Set(5, 1, +1./5.)
+
+		kr.Set(4, 5, -1./5.)
+		kr.Set(5, 4, -1./5.)
+
+		kr.Set(5, 5, length/5.0)
+
+		return kr
+	}
+
+	// pins at the end of beam
+	if m.Pins[pos][2] == false && m.Pins[pos][5] {
+		G1 := 6. / (5. * length)
+		kr.Set(1, 1, +G1)
+		kr.Set(4, 4, +G1)
+		kr.Set(1, 4, -G1)
+		kr.Set(4, 1, -G1)
+
+		kr.Set(1, 2, +1./5.)
+		kr.Set(2, 1, +1./5.)
+
+		kr.Set(4, 2, -1./5.)
+		kr.Set(2, 4, -1./5.)
+
+		kr.Set(2, 2, length/5.0)
+
+		return kr
+	}
+
+	// pins on the start and end of beam
+	if m.Pins[pos][2] && m.Pins[pos][5] {
+		kr.Set(2, 2, +1.0/length)
+		kr.Set(5, 5, +1.0/length)
+		kr.Set(2, 5, -1.0/length)
+		kr.Set(5, 2, -1.0/length)
+
+		return kr
+	}
+
+	// TODO: add implementation
+	panic("add implementation")
+}

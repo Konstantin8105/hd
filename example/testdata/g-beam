@@ -11,7 +11,11 @@ Index     Start point       End point       Area,sq.m Moment inertia,m4   Elasti
     1               1               2     1.20000e-03     1.20000e-04     2.00000e+11
 All beams haven`t pins
 
-Load case #  0
+Linear Elastic Analysis
+
+
+
+Load case:
 Point           Fx, N           Fy, N          M, N*m
     1         0.00000        13.00000         0.00000
     1        13.00000         0.00000         0.00000
@@ -31,7 +35,15 @@ Index           Fx, N           Fy, N          M, N*m
     0    -1.00000e+01    -3.00000e+00    -3.00000e+00
     2    -3.00000e+00    -1.00000e+01    -3.00000e+00
 
-Modal case #  0
+
+
+Modal Analysis
+Modal Analysis by X
+Modal Analysis by Y
+
+
+
+Modal case:
 Point         Mass, N
     1     10000.00000
 Natural frequency :        98.70748 Hz
@@ -39,3 +51,11 @@ Point               X               Y               M
     0     0.00000e+00     0.00000e+00     0.00000e+00
     1     7.15180e-01     1.83903e-01     6.74312e-01
     2     0.00000e+00     0.00000e+00     0.00000e+00
+Natural frequency :        98.70748 Hz
+Point               X               Y               M
+    0     0.00000e+00     0.00000e+00     0.00000e+00
+    1     1.83903e-01     7.15180e-01     6.74312e-01
+    2     0.00000e+00     0.00000e+00     0.00000e+00
+
+
+

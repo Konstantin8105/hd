@@ -12,8 +12,8 @@ import (
 //	||==================== 🡲
 //	||
 //
-func ConsoleBeam() hd.Model {
-	return hd.Model{
+func ConsoleBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	m = hd.Model{
 		Points: [][2]float64{
 			{0.0, 0.0},
 			{1.0, 0.0},
@@ -25,26 +25,69 @@ func ConsoleBeam() hd.Model {
 			{true, true, true},
 			{false, false, false},
 		},
-		LoadCases: []hd.LoadCase{
-			{
-				LoadNodes: []hd.LoadNode{
-					{N: 1, Forces: [3]float64{0, 2.3, 0}},
-					{N: 1, Forces: [3]float64{10, 0, 0}},
-				},
-			},
-			{ // test for 2 cases with different positions
-				LoadNodes: []hd.LoadNode{
-					{N: 1, Forces: [3]float64{10, 0, 0}},
-					{N: 1, Forces: [3]float64{0, 2.3, 0}},
-				},
+	}
+	lc = []hd.LoadCase{
+		{
+			LoadNodes: []hd.LoadNode{
+				{N: 1, Forces: [3]float64{0, 2.3, 0}},
+				{N: 1, Forces: [3]float64{10, 0, 0}},
 			},
 		},
-		ModalCases: []hd.ModalCase{
-			{
-				ModalMasses: []hd.ModalMass{{N: 1, Mass: 10000}},
+		{ // test for 2 cases with different positions
+			LoadNodes: []hd.LoadNode{
+				{N: 1, Forces: [3]float64{10, 0, 0}},
+				{N: 1, Forces: [3]float64{0, 2.3, 0}},
 			},
 		},
 	}
+	mc = []hd.ModalCase{
+		{
+			ModalMasses: []hd.ModalMass{{N: 1, Mass: 10000}},
+		},
+	}
+
+	return
+}
+
+// BucklingBeam - example of `fd` Model
+//
+//	||
+//	||====================  ⟽
+//	||
+//
+func BucklingBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	m = hd.Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{0.5, 0.0},
+			{1.0, 0.0},
+			{1.5, 0.0},
+			{2.0, 0.0},
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{2, 3}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{3, 4}, A: 12e-4, J: 120e-6, E: 2.0e11},
+		},
+		Supports: [][3]bool{
+			{true, true, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, true, false},
+		},
+	}
+	lc = []hd.LoadCase{
+		{
+			LoadNodes: []hd.LoadNode{
+				{N: 4, Forces: [3]float64{-1.0, 0, 0}},
+			},
+			AmountLinearBuckling: 2,
+		},
+	}
+
+	return
 }
 
 // GBeam - example of `fd` Model
@@ -52,8 +95,8 @@ func ConsoleBeam() hd.Model {
 //	            🡱🡲
 //	0===========.============0
 //
-func GBeam() hd.Model {
-	return hd.Model{
+func GBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	m = hd.Model{
 		Points: [][2]float64{
 			{0.0, 0.0},
 			{1.0, 0.0},
@@ -68,20 +111,21 @@ func GBeam() hd.Model {
 			{false, false, false},
 			{true, true, true},
 		},
-		LoadCases: []hd.LoadCase{
-			{
-				LoadNodes: []hd.LoadNode{
-					{N: 1, Forces: [3]float64{0, 13, 0}},
-					{N: 1, Forces: [3]float64{13, 0, 0}},
-				},
-			},
-		},
-		ModalCases: []hd.ModalCase{
-			{
-				ModalMasses: []hd.ModalMass{{N: 1, Mass: 10000}},
+	}
+	lc = []hd.LoadCase{
+		{
+			LoadNodes: []hd.LoadNode{
+				{N: 1, Forces: [3]float64{0, 13, 0}},
+				{N: 1, Forces: [3]float64{13, 0, 0}},
 			},
 		},
 	}
+	mc = []hd.ModalCase{
+		{
+			ModalMasses: []hd.ModalMass{{N: 1, Mass: 10000}},
+		},
+	}
+	return
 }
 
 // DoubleBeam - example of `fd` Model
@@ -92,8 +136,8 @@ func GBeam() hd.Model {
 //	             |
 //	0=========== 0
 //
-func DoubleBeam() hd.Model {
-	return hd.Model{
+func DoubleBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	m = hd.Model{
 		Points: [][2]float64{
 			{0.0, 0.0},
 			{1.0, 0.0},
@@ -110,25 +154,26 @@ func DoubleBeam() hd.Model {
 			{true, true, true},
 			{false, false, false},
 		},
-		LoadCases: []hd.LoadCase{
-			{
-				LoadNodes: []hd.LoadNode{
-					{N: 1, Forces: [3]float64{0, 2.3, 0}},
-					{N: 1, Forces: [3]float64{10, 0, 0}},
-					{N: 3, Forces: [3]float64{0, 2.3, 0}},
-					{N: 3, Forces: [3]float64{10, 0, 0}},
-				},
-			},
-		},
-		ModalCases: []hd.ModalCase{
-			{
-				ModalMasses: []hd.ModalMass{
-					{N: 1, Mass: 10000},
-					{N: 3, Mass: 10000},
-				},
+	}
+	lc = []hd.LoadCase{
+		{
+			LoadNodes: []hd.LoadNode{
+				{N: 1, Forces: [3]float64{0, 2.3, 0}},
+				{N: 1, Forces: [3]float64{10, 0, 0}},
+				{N: 3, Forces: [3]float64{0, 2.3, 0}},
+				{N: 3, Forces: [3]float64{10, 0, 0}},
 			},
 		},
 	}
+	mc = []hd.ModalCase{
+		{
+			ModalMasses: []hd.ModalMass{
+				{N: 1, Mass: 10000},
+				{N: 3, Mass: 10000},
+			},
+		},
+	}
+	return
 }
 
 // Truss - example of `fd` Model
@@ -142,8 +187,8 @@ func DoubleBeam() hd.Model {
 //	0--0--0
 //	-  -  -
 //
-func Truss() hd.Model {
-	return hd.Model{
+func Truss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	m = hd.Model{
 		Points: [][2]float64{
 			{0.0, 0.0}, // 1
 			{0.0, 12.}, // 2
@@ -176,44 +221,89 @@ func Truss() hd.Model {
 			{false, true, false},  // 5
 		},
 		Pins: [][6]bool{
-			{false, false, true, false, false, true}, // 1
-			{false, false, true, false, false, true}, // 2
-			{false, false, true, false, false, true}, // 3
-			{false, false, true, false, false, true}, // 4
-			{false, false, true, false, false, true}, // 5
-			{false, false, true, false, false, true}, // 6
-			{false, false, true, false, false, true}, // 7
+			{false, true, true, false, true, true}, // 1
+			{false, true, true, false, true, true}, // 2
+			{false, true, true, false, true, true}, // 3
+			{false, true, true, false, true, true}, // 4
+			{false, true, true, false, true, true}, // 5
+			{false, true, true, false, true, true}, // 6
+			{false, true, true, false, true, true}, // 7
 		},
-		LoadCases: []hd.LoadCase{
-			{
-				LoadNodes: []hd.LoadNode{
-					{
-						N:      1,
-						Forces: [3]float64{-70000, 0, 0},
-					}, {
-						N:      3,
-						Forces: [3]float64{42000, 0, 0},
-					},
-				},
-			},
-		},
-		ModalCases: []hd.ModalCase{
-			{
-				ModalMasses: []hd.ModalMass{
-					{
-						N:    1,
-						Mass: 10000,
-					},
+	}
+	lc = []hd.LoadCase{
+		hd.LoadCase{
+			LoadNodes: []hd.LoadNode{
+				{
+					N:      1,
+					Forces: [3]float64{-70000, 0, 0},
+				}, {
+					N:      3,
+					Forces: [3]float64{42000, 0, 0},
 				},
 			},
 		},
 	}
+	mc = []hd.ModalCase{
+		hd.ModalCase{
+			ModalMasses: []hd.ModalMass{
+				{
+					N:    1,
+					Mass: 10000,
+				},
+			},
+		},
+	}
+	return
 }
 
-func ModalTruss() hd.Model {
+func TrussWithBuckling() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	A := math.Pi * math.Pow(0.050, 2) / 4.0
 	J := math.Pi * math.Pow(0.050, 4) / 64.0
-	m := hd.Model{
+	m = hd.Model{
+		Points: [][2]float64{
+			{0.000, 0.0}, // 0
+			{0.300, 0.0}, // 1
+			{0.700, 0.0}, // 2
+			{1.000, 0.0}, // 3
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: A, J: J, E: 2e11},
+			{N: [2]int{1, 2}, A: A, J: J, E: 2e11},
+			{N: [2]int{2, 3}, A: A, J: J, E: 2e11},
+		},
+		Supports: [][3]bool{
+			{true, true, true},    // 0
+			{false, false, false}, // 1
+			{false, false, false}, // 2
+			{false, true, false},  // 3
+		},
+		Pins: [][6]bool{
+			{false, false, false, false, false, false}, // 0
+			{false, false, false, false, false, false}, // 1
+			{false, false, false, false, false, false}, // 2
+		},
+	}
+	lc = []hd.LoadCase{
+		hd.LoadCase{
+			LoadNodes: []hd.LoadNode{
+				{N: 3, Forces: [3]float64{+70000, 0, 0}},
+			},
+			AmountLinearBuckling: 2,
+		},
+		hd.LoadCase{
+			LoadNodes: []hd.LoadNode{
+				{N: 3, Forces: [3]float64{-70000, 0, 0}},
+			},
+			AmountLinearBuckling: 2,
+		},
+	}
+	return
+}
+
+func ModalTruss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	A := math.Pi * math.Pow(0.050, 2) / 4.0
+	J := math.Pi * math.Pow(0.050, 4) / 64.0
+	m = hd.Model{
 		Points: [][2]float64{
 			{0.000, 0.0}, // 0
 			{0.400, 0.0}, // 1
@@ -235,24 +325,24 @@ func ModalTruss() hd.Model {
 			{false, false, true, false, false, false}, // 0
 			{false, false, false, true, false, true},  // 1
 		},
-		ModalCases: []hd.ModalCase{
-			{
-				ModalMasses: []hd.ModalMass{
-					{
-						N:    1,
-						Mass: 100 * hd.Gravity,
-					},
+	}
+	mc = []hd.ModalCase{
+		{
+			ModalMasses: []hd.ModalMass{
+				{
+					N:    1,
+					Mass: 100 * hd.Gravity,
 				},
 			},
 		},
 	}
-	return m
+	return
 }
 
-func ModalTrussRotate() hd.Model {
+func ModalTrussRotate() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	A := math.Pi * math.Pow(0.050, 2) / 4.0
 	J := math.Pi * math.Pow(0.050, 4) / 64.0
-	m := hd.Model{
+	m = hd.Model{
 		Points: [][2]float64{
 			{0.0, 0.000}, // 0
 			{0.0, 0.400}, // 1
@@ -274,24 +364,24 @@ func ModalTrussRotate() hd.Model {
 			{false, false, true, false, false, false}, // 0
 			{false, false, false, true, false, true},  // 1
 		},
-		ModalCases: []hd.ModalCase{
-			{
-				ModalMasses: []hd.ModalMass{
-					{
-						N:    1,
-						Mass: 100 * hd.Gravity,
-					},
+	}
+	mc = []hd.ModalCase{
+		{
+			ModalMasses: []hd.ModalMass{
+				{
+					N:    1,
+					Mass: 100 * hd.Gravity,
 				},
 			},
 		},
 	}
-	return m
+	return
 }
 
-func ModalBeam() hd.Model {
+func ModalBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	A := math.Pi * math.Pow(0.050, 2) / 4.0
 	J := math.Pi * math.Pow(0.050, 4) / 64.0
-	m := hd.Model{
+	m = hd.Model{
 		Points: [][2]float64{
 			{0.000, 0.0}, // 0
 			{0.400, 0.0}, // 1
@@ -313,24 +403,24 @@ func ModalBeam() hd.Model {
 			{false, false, false, false, false, false}, // 0
 			{false, false, false, false, false, false}, // 1
 		},
-		ModalCases: []hd.ModalCase{
-			{
-				ModalMasses: []hd.ModalMass{
-					{
-						N:    1,
-						Mass: 100 * hd.Gravity,
-					},
+	}
+	mc = []hd.ModalCase{
+		{
+			ModalMasses: []hd.ModalMass{
+				{
+					N:    1,
+					Mass: 100 * hd.Gravity,
 				},
 			},
 		},
 	}
-	return m
+	return
 }
 
-func ModalBeamRotate() hd.Model {
+func ModalBeamRotate() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	A := math.Pi * math.Pow(0.050, 2) / 4.0
 	J := math.Pi * math.Pow(0.050, 4) / 64.0
-	m := hd.Model{
+	m = hd.Model{
 		Points: [][2]float64{
 			{0.0, 0.000}, // 0
 			{0.0, 0.400}, // 1
@@ -352,27 +442,27 @@ func ModalBeamRotate() hd.Model {
 			{false, false, false, false, false, false}, // 0
 			{false, false, false, false, false, false}, // 1
 		},
-		ModalCases: []hd.ModalCase{
-			{
-				ModalMasses: []hd.ModalMass{
-					{
-						N:    1,
-						Mass: 100 * hd.Gravity,
-					},
+	}
+	mc = []hd.ModalCase{
+		{
+			ModalMasses: []hd.ModalMass{
+				{
+					N:    1,
+					Mass: 100 * hd.Gravity,
 				},
 			},
 		},
 	}
-	return m
+	return
 }
 
-func ModalBeam3mass() hd.Model {
+func ModalBeam3mass() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	E := 2e11
 	J := 15e-4
-	m := 250.0
+	mass := 250.0
 	l := 4.0
 	A := 12e-2
-	return hd.Model{
+	m = hd.Model{
 		Points: [][2]float64{
 			{0.0, 0.000},     // 0
 			{0.0, l / 6.0},   // 1
@@ -398,16 +488,17 @@ func ModalBeam3mass() hd.Model {
 			{false, false, false}, // 3
 			{true, false, false},  // 4
 		},
-		ModalCases: []hd.ModalCase{
-			{
-				ModalMasses: []hd.ModalMass{
-					{N: 1, Mass: m * hd.Gravity},
-					{N: 2, Mass: m * hd.Gravity},
-					{N: 3, Mass: m * hd.Gravity},
-				},
+	}
+	mc = []hd.ModalCase{
+		{
+			ModalMasses: []hd.ModalMass{
+				{N: 1, Mass: mass * hd.Gravity},
+				{N: 2, Mass: mass * hd.Gravity},
+				{N: 3, Mass: mass * hd.Gravity},
 			},
 		},
 	}
+	return
 }
 
 // baseBeamDc return 2 models for compare maximal displacement
@@ -422,61 +513,63 @@ func ModalBeam3mass() hd.Model {
 //	        V         V
 //	0-------0----0----0------0
 //
-func BeamDc() (m1, m2 hd.Model) {
-	return hd.Model{
-			Points: [][2]float64{
-				{0.0, 0.0},
-				{1.0, 0.0},
-				{2.0, 0.0},
-				{3.0, 0.0},
+func BeamDc() (m1, m2 hd.Model, lc1, lc2 []hd.LoadCase) {
+	m1 = hd.Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{1.0, 0.0},
+			{2.0, 0.0},
+			{3.0, 0.0},
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{2, 3}, A: 12e-4, J: 120e-6, E: 2.0e11},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+			{false, false, false},
+			{true, true, true},
+		},
+	}
+	lc1 = []hd.LoadCase{
+		{
+			LoadNodes: []hd.LoadNode{
+				{N: 1, Forces: [3]float64{0.0, 10.0, 0.0}},
+				{N: 2, Forces: [3]float64{0.0, 10.0, 0.0}},
 			},
-			Beams: []hd.BeamProp{
-				{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
-				{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
-				{N: [2]int{2, 3}, A: 12e-4, J: 120e-6, E: 2.0e11},
+		},
+	}
+	m2 = hd.Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{1.0, 0.0},
+			{1.5, 0.0},
+			{2.0, 0.0},
+			{3.0, 0.0},
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{2, 3}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{3, 4}, A: 12e-4, J: 120e-6, E: 2.0e11},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{true, true, true},
+		},
+	}
+	lc2 = []hd.LoadCase{
+		{
+			LoadNodes: []hd.LoadNode{
+				{N: 1, Forces: [3]float64{0.0, 10.0, 0.0}},
+				{N: 3, Forces: [3]float64{0.0, 10.0, 0.0}},
 			},
-			Supports: [][3]bool{
-				{true, true, true},
-				{false, false, false},
-				{false, false, false},
-				{true, true, true},
-			},
-			LoadCases: []hd.LoadCase{
-				{
-					LoadNodes: []hd.LoadNode{
-						{N: 1, Forces: [3]float64{0.0, 10.0, 0.0}},
-						{N: 2, Forces: [3]float64{0.0, 10.0, 0.0}},
-					},
-				},
-			},
-		}, hd.Model{
-			Points: [][2]float64{
-				{0.0, 0.0},
-				{1.0, 0.0},
-				{1.5, 0.0},
-				{2.0, 0.0},
-				{3.0, 0.0},
-			},
-			Beams: []hd.BeamProp{
-				{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
-				{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
-				{N: [2]int{2, 3}, A: 12e-4, J: 120e-6, E: 2.0e11},
-				{N: [2]int{3, 4}, A: 12e-4, J: 120e-6, E: 2.0e11},
-			},
-			Supports: [][3]bool{
-				{true, true, true},
-				{false, false, false},
-				{false, false, false},
-				{false, false, false},
-				{true, true, true},
-			},
-			LoadCases: []hd.LoadCase{
-				{
-					LoadNodes: []hd.LoadNode{
-						{N: 1, Forces: [3]float64{0.0, 10.0, 0.0}},
-						{N: 3, Forces: [3]float64{0.0, 10.0, 0.0}},
-					},
-				},
-			},
-		}
+		},
+	}
+	return
 }

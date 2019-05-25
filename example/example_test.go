@@ -13,58 +13,69 @@ import (
 
 func TestModelString(t *testing.T) {
 	ms := []struct {
-		m        hd.Model
+		mf       func() (hd.Model, []hd.LoadCase, []hd.ModalCase)
 		filename string
 	}{{
-		m:        example.ConsoleBeam(),
+		mf:       example.ConsoleBeam,
 		filename: "beam",
 	}, {
-		m:        example.Truss(),
+		mf:       example.Truss,
 		filename: "truss",
 	}, {
-		m:        example.GBeam(),
+		mf:       example.GBeam,
 		filename: "g-beam",
 	}, {
-		m:        example.DoubleBeam(),
+		mf:       example.DoubleBeam,
 		filename: "double-beam",
 	}, {
-		m:        example.ModalTruss(),
+		mf:       example.ModalTruss,
 		filename: "truss-modal",
 	}, {
-		m:        example.ModalTrussRotate(),
+		mf:       example.ModalTrussRotate,
 		filename: "truss-modal-rotate",
 	}, {
-		m:        example.ModalBeam(),
+		mf:       example.ModalBeam,
 		filename: "beam-modal",
 	}, {
-		m:        example.ModalBeamRotate(),
+		mf:       example.ModalBeamRotate,
 		filename: "beam-modal-rotate",
 	}, {
-		m:        example.ModalBeam3mass(),
+		mf:       example.TrussWithBuckling,
+		filename: "truss-with-buckling",
+	}, {
+		mf:       example.ModalBeam3mass,
 		filename: "beam-modal-3mass",
 	}, {
-		m: func() hd.Model {
-			m, _ := example.BeamDc()
-			return m
-		}(),
+		mf:       example.BucklingBeam,
+		filename: "beam-buckling",
+	}, {
+		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+			m, _, lc, _ := example.BeamDc()
+			return func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+				return m, lc, nil
+			}()
+		},
 		filename: "beam-dc-part1",
 	}, {
-		m: func() hd.Model {
-			_, m := example.BeamDc()
-			return m
-		}(),
+		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+			_, m, _, lc := example.BeamDc()
+			return func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+				return m, lc, nil
+			}()
+		},
 		filename: "beam-dc-part2",
 	}}
 	for _, m := range ms {
 		t.Run(m.filename, func(t *testing.T) {
+			model, lcs, mcs := m.mf()
 			var b bytes.Buffer
-			if err := m.m.Run(&b); err != nil {
+			if err := hd.Run(&b, &model, lcs, mcs); err != nil {
 				t.Errorf("Cannot calculate : %v", err)
 			}
-			b.Reset()
 
 			// compare files
-			actual := []byte(m.m.String())
+			actual := []byte(b.String())
+			b.Reset()
 
 			if os.Getenv("UPDATE") != "" {
 				err := ioutil.WriteFile("./testdata/"+m.filename, actual, 0644)

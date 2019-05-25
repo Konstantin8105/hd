@@ -83,9 +83,9 @@ func TestLoadUniform(t *testing.T) {
 								{false, false, false},
 								{false, true, false},
 							},
-							LoadCases: []hd.LoadCase{
-								{LoadNodes: []hd.LoadNode{{N: 1, Forces: [3]float64{100.0, 0.0, 0.0}}}},
-							},
+						}
+						lcs := []hd.LoadCase{
+							{LoadNodes: []hd.LoadNode{{N: 1, Forces: [3]float64{100.0, 0.0, 0.0}}}},
 						}
 
 						if mirror {
@@ -101,7 +101,7 @@ func TestLoadUniform(t *testing.T) {
 						}
 
 						// reset and allocate memory
-						m.LoadCases = make([]hd.LoadCase, 1)
+						lcs = make([]hd.LoadCase, 1)
 						// loads
 						ux := -10.0
 						uy := -25.0
@@ -115,11 +115,11 @@ func TestLoadUniform(t *testing.T) {
 							if err != nil {
 								t.Fatal(err)
 							}
-							m.LoadCases[0].LoadNodes = append(m.LoadCases[0].LoadNodes, un...)
+							lcs[0].LoadNodes = append(lcs[0].LoadNodes, un...)
 						}
 						// node load
 						mn := m
-						mn.LoadCases = make([]hd.LoadCase, 1)
+						lcsn := make([]hd.LoadCase, 1)
 						dx := math.Abs(m.Points[0][0] - m.Points[1][0])
 						dy := math.Abs(m.Points[0][1] - m.Points[1][1])
 						if !proj {
@@ -133,7 +133,7 @@ func TestLoadUniform(t *testing.T) {
 								continue
 							}
 							if m.Points[i][0] == 0.0 || m.Points[i][0] == 1.0 {
-								mn.LoadCases[0].LoadNodes = append(mn.LoadCases[0].LoadNodes, hd.LoadNode{
+								lcsn[0].LoadNodes = append(lcsn[0].LoadNodes, hd.LoadNode{
 									N: i,
 									Forces: [3]float64{
 										ux * dy / float64(size+1) / 2.0, // X
@@ -143,7 +143,7 @@ func TestLoadUniform(t *testing.T) {
 								})
 								continue
 							}
-							mn.LoadCases[0].LoadNodes = append(mn.LoadCases[0].LoadNodes, hd.LoadNode{
+							lcsn[0].LoadNodes = append(lcsn[0].LoadNodes, hd.LoadNode{
 								N: i,
 								Forces: [3]float64{
 									ux * dy / float64(size+1), // X
@@ -155,11 +155,11 @@ func TestLoadUniform(t *testing.T) {
 
 						// calculation
 						var buf bytes.Buffer
-						if err := m.Run(&buf); err != nil {
+						if err := hd.Run(&buf, &m, lcs, nil); err != nil {
 							t.Fatalf("m model error : %v", err)
 						}
 						buf.Reset()
-						if err := mn.Run(&buf); err != nil {
+						if err := hd.Run(&buf, &mn, lcsn, nil); err != nil {
 							t.Fatalf("mn model error : %v", err)
 						}
 						buf.Reset()
@@ -169,17 +169,17 @@ func TestLoadUniform(t *testing.T) {
 						var actual, sum float64
 						for i := 0; i < 3; i++ {
 							actual += math.Pow(
-								m.LoadCases[0].PointDisplacementGlobal[1][i]-
-									mn.LoadCases[0].PointDisplacementGlobal[1][i],
+								lcs[0].PointDisplacementGlobal[1][i]-
+									lcsn[0].PointDisplacementGlobal[1][i],
 								2)
-							sum += math.Pow(m.LoadCases[0].PointDisplacementGlobal[1][i], 2)
+							sum += math.Pow(lcs[0].PointDisplacementGlobal[1][i], 2)
 						}
 						actual = math.Sqrt(actual)
 						sum = math.Sqrt(sum)
 						if actual/sum >= eps {
 							t.Log(actual / sum)
-							t.Log(m.LoadCases[0].PointDisplacementGlobal[1])
-							t.Log(mn.LoadCases[0].PointDisplacementGlobal[1])
+							t.Log(lcs[0].PointDisplacementGlobal[1])
+							t.Log(lcsn[0].PointDisplacementGlobal[1])
 							t.Errorf("displacement precision of calculation is not ok: %10.5f >= 0.05", actual/sum)
 						}
 						t.Logf("displacament precition : %14f <= %14f", actual/sum, eps)
@@ -189,17 +189,17 @@ func TestLoadUniform(t *testing.T) {
 						sum = 0.0
 						for i := 0; i < 3; i++ {
 							actual += math.Pow(
-								m.LoadCases[0].Reactions[0][i]-
-									mn.LoadCases[0].Reactions[0][i],
+								lcs[0].Reactions[0][i]-
+									lcsn[0].Reactions[0][i],
 								2)
-							sum += math.Pow(mn.LoadCases[0].Reactions[0][i], 2)
+							sum += math.Pow(lcs[0].Reactions[0][i], 2)
 						}
 						actual = math.Sqrt(actual)
 						sum = math.Sqrt(sum)
 						if actual/sum >= eps {
 							t.Log(actual / sum)
-							t.Log(m.LoadCases[0].Reactions[0])
-							t.Log(mn.LoadCases[0].Reactions[0])
+							t.Log(lcs[0].Reactions[0])
+							t.Log(lcsn[0].Reactions[0])
 							t.Errorf("reaction     precision of calculation is not ok: %10.5f >= 0.05", actual/sum)
 						}
 						t.Logf("reaction     precition : %14f <= %14f", actual/sum, eps)
