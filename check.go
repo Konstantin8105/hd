@@ -106,6 +106,7 @@ func (m *Model) graphCheck() (err error) {
 		return nil
 	}
 
+	// TODO: create error type
 	return fmt.Errorf("Model is haven`t 1 calculation model. See points: %v", list)
 }
 
