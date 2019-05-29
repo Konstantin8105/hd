@@ -25,9 +25,6 @@ func TestModelString(t *testing.T) {
 		mf:       example.GBeam,
 		filename: "g-beam",
 	}, {
-		mf:       example.DoubleBeam,
-		filename: "double-beam",
-	}, {
 		mf:       example.ModalTruss,
 		filename: "truss-modal",
 	}, {
