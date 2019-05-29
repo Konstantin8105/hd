@@ -372,6 +372,8 @@ func TestDirectionLoadNode(t *testing.T) {
 	t.Logf("case 2 : %v", lcs[2].PointDisplacementGlobal)
 }
 
+// TODO: add test with rotation of beam with load
+
 func Example() {
 
 	m := hd.Model{
