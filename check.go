@@ -56,9 +56,6 @@ func (m *Model) graphCheck() (err error) {
 
 	for iter := 0; iter < 10000000; iter++ {
 		for _, pr := range presentBeam {
-			if beamMark[pr] == true {
-				continue
-			}
 			// mark points
 			mark[m.Beams[pr].N[0]] = true
 			mark[m.Beams[pr].N[1]] = true

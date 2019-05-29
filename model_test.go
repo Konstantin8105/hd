@@ -226,7 +226,7 @@ func TestModelFail(t *testing.T) {
 				}},
 			},
 		},
-		// error - rigit
+		// error - rigid
 		{
 			m: hd.Model{
 				Points: [][2]float64{
@@ -256,6 +256,46 @@ func TestModelFail(t *testing.T) {
 					{N: 1, Mass: 1e20},
 					{N: -10, Mass: 1e20},
 					{N: 10, Mass: 1e20},
+				}},
+			},
+		},
+		// error - two models in one model
+		{
+			m: hd.Model{
+				Points: [][2]float64{
+					{0, 0},
+					{1, 0},
+					{2, 0},
+					{0, 1},
+					{1, 1},
+					{2, 0},
+				},
+				Beams: []hd.BeamProp{
+					{N: [2]int{0, 1}, A: 1e200, J: 1e200, E: 1e200},
+					{N: [2]int{1, 2}, A: 1e200, J: 1e200, E: 1e200},
+					{N: [2]int{3, 4}, A: 1e200, J: 1e200, E: 1e200},
+					{N: [2]int{4, 5}, A: 1e200, J: 1e200, E: 1e200},
+				},
+				Supports: [][3]bool{
+					{true, true, true},
+					{false, false, false},
+					{false, false, false},
+					{true, true, true},
+					{false, false, false},
+					{false, false, false},
+				},
+			},
+			lcs: []hd.LoadCase{
+				{
+					LoadNodes: []hd.LoadNode{
+						{N: 2, Forces: [3]float64{1e20, 1e20, 0}},
+						{N: 5, Forces: [3]float64{1e20, 1e20, 0}},
+					},
+				},
+			},
+			mcs: []hd.ModalCase{
+				{ModalMasses: []hd.ModalMass{
+					{N: 1, Mass: 1},
 				}},
 			},
 		},
