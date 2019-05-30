@@ -30,7 +30,7 @@ func TestSplitFail(t *testing.T) {
 
 func TestSplit(t *testing.T) {
 	models := []func() (hd.Model, []hd.LoadCase, []hd.ModalCase){
-		example.ConsoleBeam, example.DoubleBeam,
+		example.ConsoleBeam,
 		example.GBeam,
 		example.Truss,
 		example.ModalBeam, example.ModalBeamRotate,

@@ -128,54 +128,6 @@ func GBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	return
 }
 
-// DoubleBeam - example of `fd` Model
-//
-//	             |
-//	             |
-//	             |
-//	             |
-//	0=========== 0
-//
-func DoubleBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
-	m = hd.Model{
-		Points: [][2]float64{
-			{0.0, 0.0},
-			{1.0, 0.0},
-			{0.0, 1.0},
-			{2.0, 1.0},
-		},
-		Beams: []hd.BeamProp{
-			{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
-			{N: [2]int{2, 3}, A: 12e-4, J: 120e-6, E: 2.0e11},
-		},
-		Supports: [][3]bool{
-			{true, true, true},
-			{false, false, false},
-			{true, true, true},
-			{false, false, false},
-		},
-	}
-	lc = []hd.LoadCase{
-		{
-			LoadNodes: []hd.LoadNode{
-				{N: 1, Forces: [3]float64{0, 2.3, 0}},
-				{N: 1, Forces: [3]float64{10, 0, 0}},
-				{N: 3, Forces: [3]float64{0, 2.3, 0}},
-				{N: 3, Forces: [3]float64{10, 0, 0}},
-			},
-		},
-	}
-	mc = []hd.ModalCase{
-		{
-			ModalMasses: []hd.ModalMass{
-				{N: 1, Mass: 10000},
-				{N: 3, Mass: 10000},
-			},
-		},
-	}
-	return
-}
-
 // Truss - example of `fd` Model
 //
 //	0

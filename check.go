@@ -26,14 +26,85 @@ func (m *Model) checkInputData() error {
 		_ = et.Add(err)
 	}
 
-	// TODO: add checking for calculate one structure on model.
-	//       graph moving by beams with mark.
+	if !et.IsError() {
+		// graph checking
+		if err := m.graphCheck(); err != nil {
+			_ = et.Add(err)
+		}
+	}
 
 	// error handling
 	if et.IsError() {
 		return et
 	}
 	return nil
+}
+
+// checking for calculate one structure on model.
+// graph moving by beams with mark.
+func (m *Model) graphCheck() (err error) {
+	if len(m.Beams) == 0 {
+		return
+	}
+	// all pointrs mark are false
+	mark := make([]bool, len(m.Points))
+	beamMark := make([]bool, len(m.Beams))
+
+	// walk by beam and mark all
+	var presentBeam, nextBeam []int
+	presentBeam = append(presentBeam, 0) // begin
+
+	for iter := 0; iter < 10000000; iter++ {
+		for _, pr := range presentBeam {
+			// mark points
+			mark[m.Beams[pr].N[0]] = true
+			mark[m.Beams[pr].N[1]] = true
+			// find near beams
+			nodes := m.Beams[pr].N
+			for index := range m.Beams {
+				var add bool
+				for i := range nodes {
+					if m.Beams[index].N[i] == nodes[0] ||
+						m.Beams[index].N[i] == nodes[1] {
+						add = true
+					}
+				}
+				if add {
+					nextBeam = append(nextBeam, index)
+				}
+			}
+		}
+		for _, pr := range presentBeam {
+			beamMark[pr] = true
+		}
+		presentBeam = presentBeam[:0]
+		// remove marked beams
+		for _, pr := range nextBeam {
+			if beamMark[pr] == true {
+				continue
+			}
+			presentBeam = append(presentBeam, pr)
+		}
+		// is ready to exit
+		if len(presentBeam) == 0 {
+			break
+		}
+	}
+
+	// list of unmarked points
+	var list []int
+	for index := range mark {
+		if !mark[index] {
+			list = append(list, index)
+		}
+	}
+
+	if len(list) == 0 {
+		return nil
+	}
+
+	// TODO: create error type
+	return fmt.Errorf("Model is haven`t 1 calculation model. See points: %v", list)
 }
 
 // ErrorLoad error in load data
@@ -187,7 +258,8 @@ func (e ErrorBeam) Error() string {
 }
 
 func (m *Model) checkBeams() error {
-	et := errors.Tree{Name: "checkBeams"}
+	et := errors.Tree{Name: "check beams"}
+	// TODO: add len beam is zero but points more zero
 	for i, b := range m.Beams {
 		for j := 0; j < len(b.N); j++ {
 			err := isOk(
@@ -201,6 +273,14 @@ func (m *Model) checkBeams() error {
 					Err:       fmt.Errorf("outside index of point : %d", b.N[j]),
 				})
 			}
+		}
+
+		if b.N[0] == b.N[1] {
+			_ = et.Add(ErrorBeam{
+				BeamIndex: i,
+				Detail:    "Point indexes",
+				Err:       fmt.Errorf("is same"),
+			})
 		}
 
 		if m.distance(b.N[0], b.N[1]) <= 0 {
