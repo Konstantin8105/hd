@@ -180,7 +180,7 @@ func isPositive(f float64) error {
 
 func isTrue(b bool) error {
 	if b {
-		fmt.Errorf("error case is true")
+		return fmt.Errorf("error case is true")
 	}
 	return nil
 }
