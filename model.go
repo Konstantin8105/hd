@@ -541,7 +541,8 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 
 		// create result report
 		v := e.Values(nil)
-		eVector := e.VectorsTo(nil)
+		eVector := mat.NewCDense(len(v), len(v), nil)
+		e.VectorsTo(eVector)
 		for i := 0; i < len(v); i++ {
 			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
 				continue
@@ -800,7 +801,8 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 
 		// create result report
 		v := e.Values(nil)
-		eVector := e.VectorsTo(nil)
+		eVector := mat.NewCDense(len(v), len(v), nil)
+		e.VectorsTo(eVector)
 		for i := 0; i < len(v); i++ {
 			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
 				continue
