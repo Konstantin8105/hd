@@ -157,44 +157,39 @@ func (l LoadCase) checkInputData(m *Model) error {
 	return nil
 }
 
-type errorFunc struct {
-	isError bool
-	Err     error
+func isNaN(f float64) error {
+	if math.IsNaN(f) {
+		return fmt.Errorf("NaN float")
+	}
+	return nil
 }
 
-func isNaN(f float64) errorFunc {
-	return errorFunc{
-		isError: math.IsNaN(f),
-		Err:     fmt.Errorf("NaN float"),
+func isInf(f float64) error {
+	if math.IsInf(f, 0) {
+		return fmt.Errorf("infinity float")
 	}
+	return nil
 }
 
-func isInf(f float64) errorFunc {
-	return errorFunc{
-		isError: math.IsInf(f, 0),
-		Err:     fmt.Errorf("infinity float"),
+func isPositive(f float64) error {
+	if f < 0 {
+		return fmt.Errorf("negative float")
 	}
+	return nil
 }
 
-func isPositive(f float64) errorFunc {
-	return errorFunc{
-		isError: f < 0,
-		Err:     fmt.Errorf("negative float"),
+func isTrue(b bool) error {
+	if b {
+		fmt.Errorf("error case is true")
 	}
+	return nil
 }
 
-func isTrue(b bool) errorFunc {
-	return errorFunc{
-		isError: b,
-		Err:     fmt.Errorf("error case is true"),
+func isNotZero(f float64) error {
+	if f == 0 {
+		return fmt.Errorf("zero float")
 	}
-}
-
-func isNotZero(f float64) errorFunc {
-	return errorFunc{
-		isError: f == 0,
-		Err:     fmt.Errorf("zero float"),
-	}
+	return nil
 }
 
 // ErrorPoint error in point data
@@ -211,10 +206,10 @@ func (e ErrorPoint) Error() string {
 		e.Err)
 }
 
-func isOk(errs ...errorFunc) (err error) {
+func isOk(errs ...error) (err error) {
 	for _, e := range errs {
-		if e.isError {
-			return e.Err
+		if e != nil {
+			return e
 		}
 	}
 	return nil
