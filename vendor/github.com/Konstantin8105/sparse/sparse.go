@@ -1836,7 +1836,8 @@ func Dupl(A *Matrix) error {
 // Name function in CSparse : cs_entry.
 func Entry(T *Triplet, i, j int, x float64) error {
 	// check input data
-	et := errors.New("Function Entry: check input data")
+	const etName string = "Function Entry: check input data"
+	et := new(errors.Tree)
 	if T == nil {
 		_ = et.Add(fmt.Errorf("matrix T is nil"))
 	}
@@ -1863,6 +1864,7 @@ func Entry(T *Triplet, i, j int, x float64) error {
 	}
 
 	if et.IsError() {
+		et.Name = etName
 		return et
 	}
 
