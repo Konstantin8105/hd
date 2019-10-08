@@ -335,12 +335,7 @@ func TestWriter(t *testing.T) {
 	if tf, err = ioutil.TempFile("", "testWriter"); err != nil {
 		t.Fatalf("Cannot create temp file: %v", err)
 	}
-	old := os.Stdout
-	os.Stdout = tf
-	defer func() {
-		os.Stdout = old
-	}()
-	if err = hd.Run(nil, &m, lcs, mcs); err != nil {
+	if err = hd.Run(tf, &m, lcs, mcs); err != nil {
 		t.Fatalf("Cannot calculate : %v", err)
 	}
 	if err = tf.Close(); err != nil {

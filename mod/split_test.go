@@ -105,15 +105,13 @@ func BenchmarkRun(b *testing.B) {
 				mcs[0].ModalMasses = append(mcs[0].ModalMasses,
 					hd.ModalMass{N: i, Mass: 100})
 			}
-			var bb bytes.Buffer
 			b.ResetTimer()
 			// run benchmark
 			for i := 0; i < b.N; i++ {
-				err := hd.Run(&bb, &m, lcs, mcs)
+				err := hd.Run(nil, &m, lcs, mcs)
 				if err != nil {
 					panic(err)
 				}
-				bb.Reset()
 			}
 		})
 	}
