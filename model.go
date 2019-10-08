@@ -1,6 +1,7 @@
 package hd
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"math"
@@ -350,6 +351,11 @@ func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
 
 // LinearStatic run linear static analysis.
 func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
+	if out == nil {
+		var buf bytes.Buffer
+		out = &buf
+		_ = buf
+	}
 	// remove result data
 	lc.reset()
 
@@ -693,6 +699,11 @@ func (m *Model) addSupport() (ignore []int) {
 const Gravity float64 = 9.80665
 
 func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
+	if out == nil {
+		var buf bytes.Buffer
+		out = &buf
+		_ = buf
+	}
 	// remove result data
 	mc.reset()
 
@@ -914,32 +925,38 @@ func (m Model) String() (out string) {
 }
 
 func Run(out io.Writer, m *Model, lcs []LoadCase, mcs []ModalCase) (err error) {
-	// by default output in standart stdio
-	if out == nil {
-		out = os.Stdout
-	}
-
 	et := errors.New("Run function")
 
-	fmt.Fprintf(out, "%s\n", *m)
+	if out != nil {
+		fmt.Fprintf(out, "%s\n", *m)
+	}
 	for i := range lcs {
 		if err = LinearStatic(out, m, &(lcs[i])); err != nil {
 			et.Add(err)
 			continue
 		}
-		fmt.Fprintf(out, "\n\n")
-		fmt.Fprintf(out, "%s\n", lcs[i])
+		if out != nil {
+			fmt.Fprintf(out, "\n\n")
+			fmt.Fprintf(out, "%s\n", lcs[i])
+		}
 	}
-	fmt.Fprintf(out, "\n\n")
+	if out != nil {
+		fmt.Fprintf(out, "\n\n")
+	}
 	for i := range mcs {
 		if err = Modal(out, m, &(mcs[i])); err != nil {
 			et.Add(err)
 			continue
 		}
-		fmt.Fprintf(out, "\n\n")
-		fmt.Fprintf(out, "%s\n", mcs[i])
+		if out != nil {
+			fmt.Fprintf(out, "\n\n")
+			fmt.Fprintf(out, "%s\n", mcs[i])
+		}
 	}
-	fmt.Fprintf(out, "\n\n")
+
+	if out != nil {
+		fmt.Fprintf(out, "\n\n")
+	}
 
 	if et.IsError() {
 		return et
