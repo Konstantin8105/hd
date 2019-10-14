@@ -704,12 +704,46 @@ const Gravity float64 = 9.80665
 // [  2.291 -0.833 -0.208]
 //
 func KHM(K, M *mat.SymDense) (H *mat.Dense, err error) {
-	// TODO
-	r, _ := K.Dims()
-	H = mat.NewDense(r, r, nil)
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("Not valid code: %v", r)
+		}
+	}()
+
+	size, _ := K.Dims()
+
+	H = mat.NewDense(size, size, nil)
+
 	var lu mat.LU
 	lu.Factorize(K)
-	err = lu.SolveTo(H, false, M)
+
+	m := make([]float64, size)
+	d := make([]float64, size)
+
+	dst := mat.NewVecDense(size, d)
+	vec := mat.NewVecDense(size, m)
+
+	for i := 0; i < size; i++ {
+		isZero := true
+		for j := 0; j < size; j++ {
+			vec.SetVec(j, M.At(j, i))
+			if vec.AtVec(j) != 0.0 {
+				isZero = false
+			}
+		}
+		if isZero {
+			continue
+		}
+
+		err = lu.SolveVecTo(dst, false, vec)
+
+		if err != nil {
+			return
+		}
+		for j := 0; j < size; j++ {
+			H.Set(j, i, d[j])
+		}
+	}
 	return
 }
 
@@ -754,8 +788,13 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	// memory initialization
 	dof := 3 * len(m.Points)
 
-	dataK := make([]float64, dof*dof)
-	K := mat.NewSymDense(dof, dataK)
+	var (
+		dataK = make([]float64, dof*dof)
+		K     = mat.NewSymDense(dof, dataK)
+
+		dataM = make([]float64, dof*dof)
+		M     = mat.NewSymDense(dof, dataM)
+	)
 	{
 		// assembly matrix of stiffiner
 		k, ignore, err := m.assemblyK(m.getStiffBeam2d)
@@ -778,30 +817,30 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		}); err != nil {
 			return fmt.Errorf("Cannot ignore list of K: %v", err)
 		}
-	}
 
-	dataM := make([]float64, dof*dof)
-	M := mat.NewSymDense(dof, dataM)
-	// TODO: ignored weigth of beam
-	// TODO: half mass on each corner of beam
-	// matrix mass for each elelemnt
-	// [ 1 0 ] * 1/2 * mass
-	// [ 0 1 ]
-	// matrix mass from local to global sysmem coordinate
-	// create global mass matrix
-	// assembly matrix of mass
-	//	mass, _, err := m.assemblyK(m.getMassBeam2d)
-	//	if err != nil {
-	//		return
-	//	}
-	//	ignoreSuppore := m.addSupport()
-
-	for _, mm := range mc.ModalMasses {
-		for _, dir := range []int{0, 1} {
-			index := mm.N*3 + dir
-			M.SetSym(index, index, M.At(index, index)+mm.Mass/Gravity)
+		// assembly matrix of mass
+		for _, mm := range mc.ModalMasses {
+			for _, dir := range []int{0, 1} {
+				index := mm.N*3 + dir
+				M.SetSym(index, index, M.At(index, index)+mm.Mass/Gravity)
+			}
+		}
+		for _, ing := range ignore {
+			for i := 0; i < dof; i++ {
+				M.SetSym(ing, i, 0)
+				M.SetSym(i, ing, 0)
+			}
 		}
 	}
+
+	// 	{
+	// 		fa := mat.Formatted(M, mat.Prefix("    "), mat.Squeeze())
+	// 		fmt.Fprintf(os.Stdout, "M = %.3g\n\n", fa)
+	// 	}
+	// 	{
+	// 		fa := mat.Formatted(K, mat.Prefix("    "), mat.Squeeze())
+	// 		fmt.Fprintf(os.Stdout, "K = %.3g\n\n", fa)
+	// 	}
 
 	H, err := KHM(K, M)
 	if err != nil {

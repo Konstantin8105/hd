@@ -452,7 +452,8 @@ func Example() {
 
 	var b bytes.Buffer
 	if err := hd.Run(&b, &m, lcs, mcs); err != nil {
-		panic(fmt.Errorf("Cannot calculate : %v", err))
+		fmt.Fprintf(os.Stdout, "Cannot calculate : %v", err)
+		return
 	}
 
 	expect, err := ioutil.ReadFile("./example/testdata/model.String")
@@ -513,4 +514,36 @@ func ExampleKHM() {
 	// H = ⎡-0.208  -0.833    2.29⎤
 	//     ⎢-0.833    1.67  -0.833⎥
 	//     ⎣  2.29  -0.833  -0.208⎦
+}
+
+func ExampleKHM2() {
+	K := mat.NewSymDense(3, []float64{1, 2, 0, 2, 5, 0, 0, 0, 1})
+	{
+		fa := mat.Formatted(K, mat.Prefix("    "), mat.Squeeze())
+		fmt.Fprintf(os.Stdout, "K = %.3g\n\n", fa)
+	}
+
+	M := mat.NewSymDense(3, []float64{5, 0, 0, 0, 5, 0, 0, 0, 0})
+	{
+		fa := mat.Formatted(M, mat.Prefix("    "), mat.Squeeze())
+		fmt.Fprintf(os.Stdout, "M = %.3g\n\n", fa)
+	}
+
+	H, _ := hd.KHM(K, M)
+	{
+		fa := mat.Formatted(H, mat.Prefix("    "), mat.Squeeze())
+		fmt.Fprintf(os.Stdout, "H = %.3g\n\n", fa)
+	}
+	// Output:
+	// K = ⎡1  2  0⎤
+	//     ⎢2  5  0⎥
+	//     ⎣0  0  1⎦
+	//
+	// M = ⎡5  0  0⎤
+	//     ⎢0  5  0⎥
+	//     ⎣0  0  0⎦
+	//
+	// H = ⎡ 25  -10  0⎤
+	//     ⎢-10    5  0⎥
+	//     ⎣  0    0  0⎦
 }
