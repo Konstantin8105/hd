@@ -14,6 +14,7 @@ import (
 	"github.com/Konstantin8105/hd"
 	"github.com/Konstantin8105/hd/example"
 	"github.com/pmezard/go-difflib/difflib"
+	"gonum.org/v1/gonum/mat"
 )
 
 func TestWrongLoad(t *testing.T) {
@@ -480,4 +481,24 @@ func Example() {
 
 	// Output:
 	// same
+}
+
+func TestH(t *testing.T) {
+	K := mat.NewDense(3, 3, []float64{1, 2, 3, 2, 5, 2, 3, 2, 1})
+	if testing.Verbose() {
+		fa := mat.Formatted(K, mat.Prefix("    "), mat.Squeeze())
+		fmt.Fprintf(os.Stdout, "values of K:\na = %.3g\n\n", fa)
+	}
+
+	M := mat.NewDense(3, 3, []float64{5, 0, 0, 0, 5, 0, 0, 0, 5})
+	if testing.Verbose() {
+		fa := mat.Formatted(M, mat.Prefix("    "), mat.Squeeze())
+		fmt.Fprintf(os.Stdout, "values of M:\na = %.3g\n\n", fa)
+	}
+
+	h := hd.H(K, M)
+	if testing.Verbose() {
+		fa := mat.Formatted(h, mat.Prefix("    "), mat.Squeeze())
+		fmt.Fprintf(os.Stdout, "values of H:\na = %.3g\n\n", fa)
+	}
 }

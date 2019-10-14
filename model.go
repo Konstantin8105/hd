@@ -710,8 +710,14 @@ const Gravity float64 = 9.80665
 // [  2.291 -0.833 -0.208]
 //
 func H(K, M *mat.Dense) *mat.Dense {
+
 	// TODO
-	return nil
+	r, _ := K.Dims()
+	h := mat.NewDense(r, r, nil)
+	var lu mat.LU
+	lu.Factorize(K)
+	lu.SolveTo(h, false, M)
+	return h
 }
 
 func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
@@ -753,7 +759,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	}
 
 	// get LU decomposition of stiffiner matrix
-	k, lu, _, err := getK(m)
+	_, lu, _, err := getK(m)
 	if err != nil {
 		return fmt.Errorf("Assembly node load: %v", err)
 	}
@@ -761,15 +767,17 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	// memory initialization
 	dof := 3 * len(m.Points)
 
-	// templorary data for mass preparing
-	MS := make([]float64, dof)
-
 	var e mat.Eigen
 
 	dataM := make([]float64, dof*dof)
 	M := mat.NewDense(dof, dof, dataM)
 
 	// TODO: half mass on each corner of beam
+	// matrix mass for each elelemnt
+	// [ 1 0 ] * 1/2 * mass
+	// [ 0 1 ]
+	// matrix mass from local to global sysmem coordinate
+	// create global mass matrix
 	for _, mm := range mc.ModalMasses {
 		for _, dir := range []int{0, 1} {
 			index := mm.N*3 + dir
@@ -777,34 +785,38 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		}
 	}
 
-	{
-		ok, err := sparse.IsSym(k)
-		fmt.Println(ok, err)
-	}
-	{
-		fa := mat.Formatted(M, mat.Prefix("    "), mat.Squeeze())
-		fmt.Printf("MASS with all values:\na = %.2g\n\n", fa)
-	}
-
+	//	{
+	//		ok, err := sparse.IsSym(k)
+	//		fmt.Println(ok, err)
+	//	}
+	//	{
+	//		fa := mat.Formatted(M, mat.Prefix("    "), mat.Squeeze())
+	//		fmt.Printf("MASS with all values:\na = %.2g\n\n", fa)
+	//	}
+	//
 	dataH := make([]float64, dof*dof)
 	h := mat.NewDense(dof, dof, dataH)
 
 	for col := 0; col < dof; col++ {
+		//	for i := 0; i < dof; i++ {
+		//		// initialization by 0.0
+		//		MS[i] = 0.0
+		//	}
+
+		// templorary data for mass preparing
+		MS := make([]float64, dof)
+
+		// 		isZero := true
 		for i := 0; i < dof; i++ {
-			// initialization by 0.0
-			MS[i] = 0.0
-		}
-		isZero := true
-		for i := 0; i < dof; i++ {
-			if M.At(i, col) != 0 {
-				isZero = false
-			}
+			// 			if M.At(i, col) != 0 {
+			// 				isZero = false
+			// 			}
 			MS[i] = M.At(i, col)
 		}
-
-		if isZero {
-			continue
-		}
+		//
+		// 		if isZero {
+		// 			continue
+		// 		}
 
 		// LU decomposition
 		hh, err := lu.Solve(MS)
@@ -816,11 +828,11 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 			h.Set(i, col, hh[i])
 		}
 	}
-
-	{
-		fa := mat.Formatted(h, mat.Prefix("    "), mat.Squeeze())
-		fmt.Printf("HHH with all values:\na = %.2g\n\n", fa)
-	}
+	//
+	//	{
+	//		fa := mat.Formatted(h, mat.Prefix("    "), mat.Squeeze())
+	//		fmt.Printf("HHH with all values:\na = %.2g\n\n", fa)
+	//	}
 
 	ok := e.Factorize(h, mat.EigenBoth)
 	if !ok {
