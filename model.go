@@ -692,6 +692,27 @@ func (m *Model) addSupport() (ignore []int) {
 // Gravity is Earth gravity constant, m/sq.sec.
 const Gravity float64 = 9.80665
 
+// [K] * [H] = [M]
+//
+// [H] = ([K]^(-1))*[M]
+//
+// K = [1 2 3;2 5 2;3 2 1]
+// M = [5 0 0;0 5 0;0 0 5]
+// inv(K)*M =
+// [ -0.208 -0.833  2.291]
+// [ -0.833  1.666 -0.833]
+// [  2.291 -0.833 -0.208]
+//
+func KHM(K, M *mat.SymDense) (H *mat.Dense, err error) {
+	// TODO
+	r, _ := K.Dims()
+	H = mat.NewDense(r, r, nil)
+	var lu mat.LU
+	lu.Factorize(K)
+	err = lu.SolveTo(H, false, M)
+	return
+}
+
 func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	if out == nil {
 		var buf bytes.Buffer
@@ -730,110 +751,100 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		}
 	}
 
-	// get LU decomposition of stiffiner matrix
-	_, lu, _, err := getK(m)
-	if err != nil {
-		return fmt.Errorf("Assembly node load: %v", err)
-	}
-
-	mcCases := []struct {
-		name      string
-		direction int
-	}{
-		{
-			name:      "Modal Analysis by X\n",
-			direction: 0,
-		}, {
-			name:      "Modal Analysis by Y\n",
-			direction: 1,
-		},
-	}
-
 	// memory initialization
 	dof := 3 * len(m.Points)
 
-	// templorary data for mass preparing
-	MS := make([]float64, dof)
-
-	var e mat.EigenSym
-
-	for _, mcCase := range mcCases {
-		fmt.Fprintf(out, "%s", mcCase.name)
-
-		dataM := make([]float64, dof*dof)
-		M := mat.NewDense(dof, dof, dataM)
-
-		for _, mm := range mc.ModalMasses {
-			index := mm.N*3 + mcCase.direction
-			M.Set(index, index, M.At(index, index)+mm.Mass/Gravity)
+	dataK := make([]float64, dof*dof)
+	K := mat.NewSymDense(dof, dataK)
+	{
+		// assembly matrix of stiffiner
+		k, ignore, err := m.assemblyK(m.getStiffBeam2d)
+		if err != nil {
+			return err
 		}
-
-		dataH := make([]float64, dof*dof)
-		h := mat.NewSymDense(dof, dataH)
-
-		for col := 0; col < dof; col++ {
-			for i := 0; i < dof; i++ {
-				// initialization by 0.0
-				MS[i] = 0.0
-			}
-			isZero := true
-			for i := 0; i < dof; i++ {
-				if M.At(i, col) != 0 {
-					isZero = false
+		ignore = append(ignore, m.addSupport()...)
+		if _, err := sparse.Fkeep(k, func(i, j int, x float64) bool {
+			for _, ign := range ignore {
+				if i == ign && j == ign {
+					K.SetSym(i, j, 1)
+					return true
 				}
-				MS[i] = M.At(i, col)
+				if i == ign || j == ign {
+					return true
+				}
 			}
+			K.SetSym(i, j, K.At(i, j)+x)
+			return true
+		}); err != nil {
+			return fmt.Errorf("Cannot ignore list of K: %v", err)
+		}
+	}
 
-			if isZero {
-				continue
-			}
+	dataM := make([]float64, dof*dof)
+	M := mat.NewSymDense(dof, dataM)
+	// TODO: ignored weigth of beam
+	// TODO: half mass on each corner of beam
+	// matrix mass for each elelemnt
+	// [ 1 0 ] * 1/2 * mass
+	// [ 0 1 ]
+	// matrix mass from local to global sysmem coordinate
+	// create global mass matrix
+	// assembly matrix of mass
+	//	mass, _, err := m.assemblyK(m.getMassBeam2d)
+	//	if err != nil {
+	//		return
+	//	}
+	//	ignoreSuppore := m.addSupport()
 
-			// LU decomposition
-			hh, err := lu.Solve(MS)
-			if err != nil {
-				return err
-			}
-			fmt.Println(hh)
+	for _, mm := range mc.ModalMasses {
+		for _, dir := range []int{0, 1} {
+			index := mm.N*3 + dir
+			M.SetSym(index, index, M.At(index, index)+mm.Mass/Gravity*0.5)
+		}
+	}
 
-			for i := 0; i < dof; i++ {
-				// 				if i > col {
-				h.SetSym(i, col, hh[i])
-				// 					h.SetSym(col, i, hh[i])
-				// 				}
-			}
+	H, err := KHM(K, M)
+	if err != nil {
+		return fmt.Errorf("Cannot calculate H: %v", err)
+	}
+
+	var e mat.Eigen
+	ok := e.Factorize(H, mat.EigenBoth)
+	if !ok {
+		return fmt.Errorf("Eigen factorization is not ok")
+	}
+
+	// create result report
+	v := e.Values(nil)
+	eVector := mat.NewCDense(len(v), len(v), nil)
+	e.VectorsTo(eVector)
+	for i := 0; i < len(v); i++ {
+		if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
+			continue
 		}
 
-		fa := mat.Formatted(h, mat.Prefix("    "), mat.Squeeze())
-		fmt.Printf("with all values:\na = %.2g\n\n", fa)
-
-		ok := e.Factorize(h, true)
-		if !ok {
-			return fmt.Errorf("Eigen factorization is not ok")
+		if real(v[i]) < 0 {
+			// ignore imag value
+			v[i] = complex(real(v[i]), 0)
 		}
 
-		// create result report
-		v := e.Values(nil)
-		eVector := mat.NewDense(len(v), len(v), nil)
-		e.VectorsTo(eVector)
-		for i := 0; i < len(v); i++ {
-			var mr ModalResult
+		var mr ModalResult
 
-			if val := math.Abs(v[i]); val != 0.0 {
-				// use only possitive value
-				mr.Hz = 1. / (math.Sqrt(val) * 2.0 * math.Pi)
-			} else {
-				// ignore that value
-				continue
-			}
-
-			mr.ModalDisplacement = make([][3]float64, len(m.Points))
-			for p := 0; p < len(m.Points); p++ {
-				mr.ModalDisplacement[p][0] = eVector.At(3*p+0, i)
-				mr.ModalDisplacement[p][1] = eVector.At(3*p+1, i)
-				mr.ModalDisplacement[p][2] = eVector.At(3*p+2, i)
-			}
-			mc.Result = append(mc.Result, mr)
+		if val := math.Abs(real(v[i])); val != 0.0 {
+			// use only possitive value
+			mr.Hz = 1. / (math.Sqrt(val) * 2.0 * math.Pi)
+		} else {
+			// ignore that value
+			continue
 		}
+
+		mr.ModalDisplacement = make([][3]float64, len(m.Points))
+		for p := 0; p < len(m.Points); p++ {
+			mr.ModalDisplacement[p][0] = real(eVector.At(3*p+0, i))
+			mr.ModalDisplacement[p][1] = real(eVector.At(3*p+1, i))
+			mr.ModalDisplacement[p][2] = real(eVector.At(3*p+2, i))
+		}
+		mc.Result = append(mc.Result, mr)
 	}
 
 	// Sort by frequency

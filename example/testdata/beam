@@ -54,22 +54,16 @@ Index           Fx, N           Fy, N          M, N*m
 
 
 Modal Analysis
-Modal Analysis by X
-Modal Analysis by Y
 
 
 
 Modal case:
 Point         Mass, N
     1     10000.00000
-Natural frequency :        34.53036 Hz
+Natural frequency :       109.19458 Hz
 Point               X               Y               M
     0     0.00000e+00     0.00000e+00     0.00000e+00
-    1     0.00000e+00    -7.07107e-01     7.07107e-01
-Natural frequency :        34.53036 Hz
-Point               X               Y               M
-    0     0.00000e+00     0.00000e+00     0.00000e+00
-    1     0.00000e+00     7.07107e-01     7.07107e-01
+    1     1.00000e+00     0.00000e+00     0.00000e+00
 
 
 
