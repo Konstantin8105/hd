@@ -803,19 +803,18 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		}
 		ignore = append(ignore, m.addSupport()...)
 		if _, err := sparse.Fkeep(k, func(i, j int, x float64) bool {
-			for _, ign := range ignore {
-				if i == ign && j == ign {
-					K.SetSym(i, j, 1)
-					return true
-				}
-				if i == ign || j == ign {
-					return true
-				}
-			}
 			K.SetSym(i, j, K.At(i, j)+x)
 			return true
 		}); err != nil {
 			return fmt.Errorf("Cannot ignore list of K: %v", err)
+		}
+		for i := 0; i < dof; i++ {
+			for _, ign := range ignore {
+				K.SetSym(i, ign, 0)
+			}
+		}
+		for _, ign := range ignore {
+			K.SetSym(ign, ign, 1)
 		}
 
 		// assembly matrix of mass
