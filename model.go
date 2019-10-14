@@ -508,7 +508,7 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 		// }
 
 		dataH := make([]float64, dof*dof)
-		h := mat.NewDense(dof, dof, dataH)
+		h := mat.NewSymDense(dof, dataH)
 
 		for col := 0; col < dof; col++ {
 			for i := 0; i < dof; i++ {
@@ -534,33 +534,29 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 			}
 
 			for i := 0; i < dof; i++ {
-				h.Set(i, col, hh[i])
+				h.SetSym(i, col, hh[i])
 			}
 		}
 
-		var e mat.Eigen
+		var e mat.EigenSym
 
-		ok := e.Factorize(h, mat.EigenBoth)
+		ok := e.Factorize(h, true)
 		if !ok {
 			return fmt.Errorf("Eigen factorization is not ok")
 		}
 
 		// create result report
 		v := e.Values(nil)
-		eVector := mat.NewCDense(len(v), len(v), nil)
+		eVector := mat.NewDense(len(v), len(v), nil)
 		e.VectorsTo(eVector)
 		for i := 0; i < len(v); i++ {
-			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
+			if v[i] == 0 {
 				continue
-			}
-			if real(v[i]) < 0 {
-				// ignore imag value
-				v[i] = complex(real(v[i]), 0)
 			}
 
 			// store the result
 			var lbr BucklingResult
-			if val := math.Abs(real(v[i])); val != 0.0 {
+			if val := math.Abs(v[i]); val != 0.0 {
 				// use only possitive value
 				lbr.Factor = 1. / val
 			} else {
@@ -569,9 +565,9 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 			}
 			for p := 0; p < len(m.Points); p++ {
 				lbr.PointDisplacementGlobal = append(lbr.PointDisplacementGlobal, [3]float64{
-					real(eVector.At(3*p+0, i)),
-					real(eVector.At(3*p+1, i)),
-					real(eVector.At(3*p+2, i)),
+					eVector.At(3*p+0, i),
+					eVector.At(3*p+1, i),
+					eVector.At(3*p+2, i),
 				})
 			}
 			lc.LinearBucklingResult = append(lc.LinearBucklingResult, lbr)
@@ -761,7 +757,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	// templorary data for mass preparing
 	MS := make([]float64, dof)
 
-	var e mat.Eigen
+	var e mat.EigenSym
 
 	for _, mcCase := range mcCases {
 		fmt.Fprintf(out, "%s", mcCase.name)
@@ -775,7 +771,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		}
 
 		dataH := make([]float64, dof*dof)
-		h := mat.NewDense(dof, dof, dataH)
+		h := mat.NewSymDense(dof, dataH)
 
 		for col := 0; col < dof; col++ {
 			for i := 0; i < dof; i++ {
@@ -801,31 +797,27 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 			}
 
 			for i := 0; i < dof; i++ {
-				h.Set(i, col, hh[i])
+				h.SetSym(i, col, hh[i])
 			}
 		}
 
-		ok := e.Factorize(h, mat.EigenBoth)
+		ok := e.Factorize(h, true)
 		if !ok {
 			return fmt.Errorf("Eigen factorization is not ok")
 		}
 
 		// create result report
 		v := e.Values(nil)
-		eVector := mat.NewCDense(len(v), len(v), nil)
+		eVector := mat.NewDense(len(v), len(v), nil)
 		e.VectorsTo(eVector)
 		for i := 0; i < len(v); i++ {
-			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
+			if v[i] == 0 {
 				continue
-			}
-			if real(v[i]) < 0 {
-				// ignore imag value
-				v[i] = complex(real(v[i]), 0)
 			}
 
 			var mr ModalResult
 
-			if val := math.Abs(real(v[i])); val != 0.0 {
+			if val := math.Abs(v[i]); val != 0.0 {
 				// use only possitive value
 				mr.Hz = 1. / (math.Sqrt(val) * 2.0 * math.Pi)
 			} else {
@@ -835,9 +827,9 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 
 			mr.ModalDisplacement = make([][3]float64, len(m.Points))
 			for p := 0; p < len(m.Points); p++ {
-				mr.ModalDisplacement[p][0] = real(eVector.At(3*p+0, i))
-				mr.ModalDisplacement[p][1] = real(eVector.At(3*p+1, i))
-				mr.ModalDisplacement[p][2] = real(eVector.At(3*p+2, i))
+				mr.ModalDisplacement[p][0] = eVector.At(3*p+0, i)
+				mr.ModalDisplacement[p][1] = eVector.At(3*p+1, i)
+				mr.ModalDisplacement[p][2] = eVector.At(3*p+2, i)
 			}
 			mc.Result = append(mc.Result, mr)
 		}
