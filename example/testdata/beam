@@ -60,10 +60,14 @@ Modal Analysis
 Modal case:
 Point         Mass, N
     1     10000.00000
-Natural frequency :       109.19458 Hz
+Natural frequency :        77.21223 Hz
 Point               X               Y               M
     0     0.00000e+00     0.00000e+00     0.00000e+00
     1     1.00000e+00     0.00000e+00     0.00000e+00
+Natural frequency :       119.61667 Hz
+Point               X               Y               M
+    0     0.00000e+00     0.00000e+00     0.00000e+00
+    1     0.00000e+00     3.16228e-01     9.48683e-01
 
 
 

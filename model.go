@@ -799,7 +799,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	for _, mm := range mc.ModalMasses {
 		for _, dir := range []int{0, 1} {
 			index := mm.N*3 + dir
-			M.SetSym(index, index, M.At(index, index)+mm.Mass/Gravity*0.5)
+			M.SetSym(index, index, M.At(index, index)+mm.Mass/Gravity)
 		}
 	}
 
@@ -807,6 +807,11 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	if err != nil {
 		return fmt.Errorf("Cannot calculate H: %v", err)
 	}
+
+	// 	{
+	// 		fa := mat.Formatted(H, mat.Prefix("    "), mat.Squeeze())
+	// 		fmt.Fprintf(os.Stdout, "H = %.3g\n\n", fa)
+	// 	}
 
 	var e mat.Eigen
 	ok := e.Factorize(H, mat.EigenBoth)
