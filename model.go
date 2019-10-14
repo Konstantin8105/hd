@@ -534,7 +534,9 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 			}
 
 			for i := 0; i < dof; i++ {
-				h.SetSym(i, col, hh[i])
+				if i > col {
+					h.SetSym(i, col, hh[i])
+				}
 			}
 		}
 
@@ -550,10 +552,6 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 		eVector := mat.NewDense(len(v), len(v), nil)
 		e.VectorsTo(eVector)
 		for i := 0; i < len(v); i++ {
-			if v[i] == 0 {
-				continue
-			}
-
 			// store the result
 			var lbr BucklingResult
 			if val := math.Abs(v[i]); val != 0.0 {
@@ -797,7 +795,9 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 			}
 
 			for i := 0; i < dof; i++ {
-				h.SetSym(i, col, hh[i])
+				if i > col {
+					h.SetSym(i, col, hh[i])
+				}
 			}
 		}
 
@@ -811,10 +811,6 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		eVector := mat.NewDense(len(v), len(v), nil)
 		e.VectorsTo(eVector)
 		for i := 0; i < len(v); i++ {
-			if v[i] == 0 {
-				continue
-			}
-
 			var mr ModalResult
 
 			if val := math.Abs(v[i]); val != 0.0 {
