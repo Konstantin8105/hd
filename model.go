@@ -731,17 +731,20 @@ func KHM(K, M *mat.SymDense) (H *mat.Dense, err error) {
 				isZero = false
 			}
 		}
+
 		// 		fmt.Println("mass = ", m, isZero)
 		if isZero {
 			continue
 		}
 
 		err = lu.SolveVecTo(dst, false, vec)
-		// 		fmt.Println("result = ", d, err)
+		// fmt.Println("result = ", d, err)
 
-		if err != nil {
-			return
-		}
+		// 		if err != nil {
+		// 			return
+		// 		}
+		err = nil // todo: remove
+
 		for j := 0; j < size; j++ {
 			H.Set(j, i, d[j])
 		}

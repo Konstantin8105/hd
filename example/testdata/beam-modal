@@ -16,3 +16,20 @@ All beams haven`t pins
 Modal Analysis
 
 
+
+Modal case:
+Point         Mass, N
+    1       980.66500
+Natural frequency :        86.92163 Hz
+Point               X               Y               M
+    0     0.00000e+00     0.00000e+00     8.61663e-01
+    1     0.00000e+00     1.08403e-01    -4.86404e-02
+    2     0.00000e+00     0.00000e+00    -4.93375e-01
+Natural frequency :       498.67785 Hz
+Point               X               Y               M
+    0     0.00000e+00     0.00000e+00     0.00000e+00
+    1     4.47214e-01     0.00000e+00     0.00000e+00
+    2     8.94427e-01     0.00000e+00     0.00000e+00
+
+
+
