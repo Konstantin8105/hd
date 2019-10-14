@@ -793,13 +793,18 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 			if err != nil {
 				return err
 			}
+			fmt.Println(hh)
 
 			for i := 0; i < dof; i++ {
-				if i > col {
-					h.SetSym(i, col, hh[i])
-				}
+				// 				if i > col {
+				h.SetSym(i, col, hh[i])
+				// 					h.SetSym(col, i, hh[i])
+				// 				}
 			}
 		}
+
+		fa := mat.Formatted(h, mat.Prefix("    "), mat.Squeeze())
+		fmt.Printf("with all values:\na = %.2g\n\n", fa)
 
 		ok := e.Factorize(h, true)
 		if !ok {
