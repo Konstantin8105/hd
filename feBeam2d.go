@@ -273,3 +273,28 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 	// TODO: add implementation
 	panic("add implementation")
 }
+
+// matrix of stiffiner for beam 2d
+func (m Model) getMassBeam2d(pos int) *mat.Dense {
+	data := make([]float64, 36)
+	mr := mat.NewDense(6, 6, data)
+
+	const ρ float64 = 7850 // kg/m3
+	var (
+		area   = m.Beams[pos].A
+		length = m.distance(m.Beams[pos].N[0], m.Beams[pos].N[1])
+	)
+
+	// mass of beam
+	μ := ρ * area * length // kg
+
+	mr.Set(0, 0, 1.0/3.0)
+	mr.Set(3, 3, 1.0/3.0)
+
+	mr.Set(0, 3, 1.0/6.0)
+	mr.Set(3, 0, 1.0/6.0)
+
+	mr.Scale(μ, mr)
+
+	return mr
+}

@@ -709,15 +709,14 @@ const Gravity float64 = 9.80665
 // [ -0.833  1.666 -0.833]
 // [  2.291 -0.833 -0.208]
 //
-func H(K, M *mat.Dense) *mat.Dense {
-
+func KHM(K, M *mat.Dense) (H *mat.Dense, err error) {
 	// TODO
 	r, _ := K.Dims()
-	h := mat.NewDense(r, r, nil)
+	H = mat.NewDense(r, r, nil)
 	var lu mat.LU
 	lu.Factorize(K)
-	lu.SolveTo(h, false, M)
-	return h
+	err = lu.SolveTo(H, false, M)
+	return
 }
 
 func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
@@ -758,30 +757,58 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		}
 	}
 
-	// get LU decomposition of stiffiner matrix
-	_, lu, _, err := getK(m)
-	if err != nil {
-		return fmt.Errorf("Assembly node load: %v", err)
-	}
-
 	// memory initialization
 	dof := 3 * len(m.Points)
 
-	var e mat.Eigen
+	// get LU decomposition of stiffiner matrix
+	dataK := make([]float64, dof*dof)
+	K := mat.NewDense(dof, dof, dataK)
+	{
+		// assembly matrix of stiffiner
+		k, ignore, err := m.assemblyK(m.getStiffBeam2d)
+		if err != nil {
+			return err
+		}
+		ignore = append(ignore, m.addSupport()...)
+		if _, err := sparse.Fkeep(k, func(i, j int, x float64) bool {
+			for _, ign := range ignore {
+				if i == ign && j == ign {
+					K.Set(i, j, 1)
+					return true
+				}
+				if i == ign || j == ign {
+					return true
+				}
+			}
+
+			K.Set(i, j, K.At(i, j)+x)
+			return true
+		}); err != nil {
+			return fmt.Errorf("Cannot ignore list of K: %v", err)
+		}
+	}
 
 	dataM := make([]float64, dof*dof)
 	M := mat.NewDense(dof, dof, dataM)
 
+	// TODO: ignored weigth of beam
 	// TODO: half mass on each corner of beam
 	// matrix mass for each elelemnt
 	// [ 1 0 ] * 1/2 * mass
 	// [ 0 1 ]
 	// matrix mass from local to global sysmem coordinate
 	// create global mass matrix
+	// assembly matrix of mass
+	//	mass, _, err := m.assemblyK(m.getMassBeam2d)
+	//	if err != nil {
+	//		return
+	//	}
+	//	ignoreSuppore := m.addSupport()
+
 	for _, mm := range mc.ModalMasses {
 		for _, dir := range []int{0, 1} {
 			index := mm.N*3 + dir
-			M.Set(index, index, M.At(index, index)+mm.Mass/Gravity)
+			M.Set(index, index, M.At(index, index)+mm.Mass/Gravity*0.5)
 		}
 	}
 
@@ -794,47 +821,62 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	//		fmt.Printf("MASS with all values:\na = %.2g\n\n", fa)
 	//	}
 	//
-	dataH := make([]float64, dof*dof)
-	h := mat.NewDense(dof, dof, dataH)
+	// 	dataH := make([]float64, dof*dof)
+	// 	H := mat.NewDense(dof, dof, dataH)
 
-	for col := 0; col < dof; col++ {
-		//	for i := 0; i < dof; i++ {
-		//		// initialization by 0.0
-		//		MS[i] = 0.0
-		//	}
-
-		// templorary data for mass preparing
-		MS := make([]float64, dof)
-
-		// 		isZero := true
-		for i := 0; i < dof; i++ {
-			// 			if M.At(i, col) != 0 {
-			// 				isZero = false
-			// 			}
-			MS[i] = M.At(i, col)
-		}
-		//
-		// 		if isZero {
-		// 			continue
-		// 		}
-
-		// LU decomposition
-		hh, err := lu.Solve(MS)
-		if err != nil {
-			return err
-		}
-
-		for i := 0; i < dof; i++ {
-			h.Set(i, col, hh[i])
-		}
-	}
+	//	for col := 0; col < dof; col++ {
+	//		//	for i := 0; i < dof; i++ {
+	//		//		// initialization by 0.0
+	//		//		MS[i] = 0.0
+	//		//	}
 	//
-	//	{
-	//		fa := mat.Formatted(h, mat.Prefix("    "), mat.Squeeze())
-	//		fmt.Printf("HHH with all values:\na = %.2g\n\n", fa)
+	//		// templorary data for mass preparing
+	//		MS := make([]float64, dof)
+	//
+	//		// 		isZero := true
+	//		for i := 0; i < dof; i++ {
+	//			// 			if M.At(i, col) != 0 {
+	//			// 				isZero = false
+	//			// 			}
+	//			MS[i] = M.At(i, col)
+	//		}
+	//		//
+	//		// 		if isZero {
+	//		// 			continue
+	//		// 		}
+	//
+	//		// LU decomposition
+	//		hh, err := lu.Solve(MS)
+	//		if err != nil {
+	//			return err
+	//		}
+	//
+	//		for i := 0; i < dof; i++ {
+	//			h.Set(i, col, hh[i])
+	//		}
 	//	}
+	//
 
-	ok := e.Factorize(h, mat.EigenBoth)
+	H, err := KHM(K, M)
+	if err != nil {
+		return fmt.Errorf("Cannot calculate H: %v", err)
+	}
+
+	// 	{
+	// 		fa := mat.Formatted(K, mat.Prefix("    "), mat.Squeeze())
+	// 		fmt.Printf("K with all values:\na = %.2g\n\n", fa)
+	// 	}
+	// 	{
+	// 		fa := mat.Formatted(H, mat.Prefix("    "), mat.Squeeze())
+	// 		fmt.Printf("H with all values:\na = %.2g\n\n", fa)
+	// 	}
+	// 	{
+	// 		fa := mat.Formatted(M, mat.Prefix("    "), mat.Squeeze())
+	// 		fmt.Printf("M with all values:\na = %.2g\n\n", fa)
+	// 	}
+
+	var e mat.Eigen
+	ok := e.Factorize(H, mat.EigenBoth)
 	if !ok {
 		return fmt.Errorf("Eigen factorization is not ok")
 	}
