@@ -14,7 +14,6 @@ import (
 	"github.com/Konstantin8105/hd"
 	"github.com/Konstantin8105/hd/example"
 	"github.com/pmezard/go-difflib/difflib"
-	"gonum.org/v1/gonum/mat"
 )
 
 func TestWrongLoad(t *testing.T) {
@@ -481,36 +480,4 @@ func Example() {
 
 	// Output:
 	// same
-}
-
-func ExampleKHM() {
-	K := mat.NewDense(3, 3, []float64{1, 2, 3, 2, 5, 2, 3, 2, 1})
-	if testing.Verbose() {
-		fa := mat.Formatted(K, mat.Prefix("    "), mat.Squeeze())
-		fmt.Fprintf(os.Stdout, "K = %.3g\n\n", fa)
-	}
-
-	M := mat.NewDense(3, 3, []float64{5, 0, 0, 0, 5, 0, 0, 0, 5})
-	if testing.Verbose() {
-		fa := mat.Formatted(M, mat.Prefix("    "), mat.Squeeze())
-		fmt.Fprintf(os.Stdout, "M = %.3g\n\n", fa)
-	}
-
-	H, _ := hd.KHM(K, M)
-	if testing.Verbose() {
-		fa := mat.Formatted(H, mat.Prefix("    "), mat.Squeeze())
-		fmt.Fprintf(os.Stdout, "H = %.3g\n\n", fa)
-	}
-	// Output:
-	// K = ⎡1  2  3⎤
-	//     ⎢2  5  2⎥
-	//     ⎣3  2  1⎦
-	//
-	// M = ⎡5  0  0⎤
-	//     ⎢0  5  0⎥
-	//     ⎣0  0  5⎦
-	//
-	// H = ⎡-0.208  -0.833    2.29⎤
-	//     ⎢-0.833    1.67  -0.833⎥
-	//     ⎣  2.29  -0.833  -0.208⎦
 }
