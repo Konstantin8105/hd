@@ -451,7 +451,8 @@ func Example() {
 
 	var b bytes.Buffer
 	if err := hd.Run(&b, &m, lcs, mcs); err != nil {
-		panic(fmt.Errorf("Cannot calculate : %v", err))
+		fmt.Fprintf(os.Stdout, "Cannot calculate : %v", err)
+		return
 	}
 
 	expect, err := ioutil.ReadFile("./example/testdata/model.String")
