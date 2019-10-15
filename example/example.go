@@ -532,7 +532,7 @@ func FrameModal() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 		A    = 24.0e-4
 		J    = 72.0e-8
 		E    = 2.00e10
-		mass = 100.0 * hd.Gravity
+		mass = 100.0 * 10 //  hd.Gravity
 	)
 	m = hd.Model{
 		Points: [][2]float64{
