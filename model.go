@@ -740,10 +740,10 @@ func KHM(K, M *mat.SymDense) (H *mat.Dense, err error) {
 		err = lu.SolveVecTo(dst, false, vec)
 		// fmt.Println("result = ", d, err)
 
-		// 		if err != nil {
-		// 			return
-		// 		}
-		err = nil // todo: remove
+		if err != nil {
+			return
+		}
+		// err = nil // todo: remove
 
 		for j := 0; j < size; j++ {
 			H.Set(j, i, d[j])
@@ -851,9 +851,17 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		return fmt.Errorf("Cannot calculate H: %v", err)
 	}
 
+	{
+		fa := mat.Formatted(H, mat.Prefix("    "), mat.Squeeze())
+		fmt.Fprintf(os.Stdout, "H = %.3g\n\n", fa)
+	}
 	// 	{
-	// 		fa := mat.Formatted(H, mat.Prefix("    "), mat.Squeeze())
-	// 		fmt.Fprintf(os.Stdout, "H = %.3g\n\n", fa)
+	// 		var m2 mat.Dense
+	// 		m2.Mul(K, H)
+	// 		{
+	// 			fa := mat.Formatted(&m2, mat.Prefix("    "), mat.Squeeze())
+	// 			fmt.Fprintf(os.Stdout, "m2 = %.3g\n\n", fa)
+	// 		}
 	// 	}
 
 	var e mat.Eigen
@@ -885,6 +893,8 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 			// ignore that value
 			continue
 		}
+
+		fmt.Println("HZ = ", mr.Hz)
 
 		mr.ModalDisplacement = make([][3]float64, len(m.Points))
 		for p := 0; p < len(m.Points); p++ {
