@@ -103,8 +103,8 @@ func GBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 			{1.0, 1.0},
 		},
 		Beams: []hd.BeamProp{
-			{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
-			{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			{N: [2]int{0, 1}, A: 2.5e-3, J: 0.5208e-6, E: 2.0e11},
+			{N: [2]int{1, 2}, A: 2.5e-3, J: 0.5208e-6, E: 2.0e11},
 		},
 		Supports: [][3]bool{
 			{true, true, true},
@@ -115,8 +115,8 @@ func GBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	lc = []hd.LoadCase{
 		{
 			LoadNodes: []hd.LoadNode{
-				{N: 1, Forces: [3]float64{0, 13, 0}},
-				{N: 1, Forces: [3]float64{13, 0, 0}},
+				{N: 1, Forces: [3]float64{0, 13e3, 0}},
+				{N: 1, Forces: [3]float64{13e3, 0, 0}},
 			},
 		},
 	}
