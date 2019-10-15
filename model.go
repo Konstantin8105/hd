@@ -534,9 +534,7 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 			}
 
 			for i := 0; i < dof; i++ {
-				if i > col {
-					h.Set(i, col, hh[i])
-				}
+				h.Set(i, col, hh[i])
 			}
 		}
 
