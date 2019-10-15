@@ -469,7 +469,7 @@ func TestRotateBeamLinear(t *testing.T) {
 
 func TestRotateBeamModal(t *testing.T) {
 	var hz [2]float64
-	for angle := 0.0; angle <= 90.0; angle += 5 {
+	for angle := 0.0; angle <= 360.0; angle += 5 {
 		const (
 			L = 2.200
 		)
