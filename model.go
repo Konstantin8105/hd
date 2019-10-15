@@ -742,19 +742,6 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		return fmt.Errorf("Assembly node load: %v", err)
 	}
 
-	mcCases := []struct {
-		name      string
-		direction int
-	}{
-		{
-			name:      "Modal Analysis by X\n",
-			direction: 0,
-		}, {
-			name:      "Modal Analysis by Y\n",
-			direction: 1,
-		},
-	}
-
 	// memory initialization
 	dof := 3 * len(m.Points)
 
@@ -763,84 +750,82 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 
 	var e mat.Eigen
 
-	for _, mcCase := range mcCases {
-		fmt.Fprintf(out, "%s", mcCase.name)
+	dataM := make([]float64, dof*dof)
+	M := mat.NewDense(dof, dof, dataM)
 
-		dataM := make([]float64, dof*dof)
-		M := mat.NewDense(dof, dof, dataM)
-
+	for _, dir := range []int{0, 1} {
 		for _, mm := range mc.ModalMasses {
-			index := mm.N*3 + mcCase.direction
+			index := mm.N*3 + dir
 			M.Set(index, index, M.At(index, index)+mm.Mass/Gravity)
 		}
+	}
 
-		dataH := make([]float64, dof*dof)
-		h := mat.NewDense(dof, dof, dataH)
+	dataH := make([]float64, dof*dof)
+	h := mat.NewDense(dof, dof, dataH)
 
-		for col := 0; col < dof; col++ {
-			for i := 0; i < dof; i++ {
-				// initialization by 0.0
-				MS[i] = 0.0
+	for col := 0; col < dof; col++ {
+		for i := 0; i < dof; i++ {
+			// initialization by 0.0
+			MS[i] = 0.0
+		}
+		isZero := true
+		for i := 0; i < dof; i++ {
+			if M.At(i, col) != 0 {
+				isZero = false
 			}
-			isZero := true
-			for i := 0; i < dof; i++ {
-				if M.At(i, col) != 0 {
-					isZero = false
-				}
-				MS[i] = M.At(i, col)
-			}
-
-			if isZero {
-				continue
-			}
-
-			// LU decomposition
-			hh, err := lu.Solve(MS)
-			if err != nil {
-				return err
-			}
-
-			for i := 0; i < dof; i++ {
-				h.Set(i, col, hh[i])
-			}
+			MS[i] = M.At(i, col)
 		}
 
-		ok := e.Factorize(h, mat.EigenBoth)
-		if !ok {
-			return fmt.Errorf("Eigen factorization is not ok")
+		if isZero {
+			continue
 		}
 
-		// create result report
-		v := e.Values(nil)
-		eVector := mat.NewCDense(len(v), len(v), nil)
-		e.VectorsTo(eVector)
-		for i := 0; i < len(v); i++ {
-			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
-				continue
-			}
-			if real(v[i]) < 0 {
-				// ignore imag value
-				v[i] = complex(real(v[i]), 0)
-			}
-
-			var mr ModalResult
-
-			if val := math.Abs(real(v[i])); val != 0.0 {
-				// use only possitive value
-				mr.Hz = 1. / (math.Sqrt(val) * 2.0 * math.Pi)
-			} else {
-				// ignore that value
-				continue
-			}
-
-			mr.ModalDisplacement = make([][3]float64, len(m.Points))
-			for p := 0; p < len(m.Points); p++ {
-				mr.ModalDisplacement[p][0] = real(eVector.At(3*p+0, i))
-				mr.ModalDisplacement[p][1] = real(eVector.At(3*p+1, i))
-				mr.ModalDisplacement[p][2] = real(eVector.At(3*p+2, i))
-			}
-			mc.Result = append(mc.Result, mr)
+		// LU decomposition
+		hh, err := lu.Solve(MS)
+		if err != nil {
+			return err
 		}
+
+		for i := 0; i < dof; i++ {
+			h.Set(i, col, hh[i])
+		}
+	}
+
+	ok := e.Factorize(h, mat.EigenBoth)
+	if !ok {
+		return fmt.Errorf("Eigen factorization is not ok")
+	}
+
+	// create result report
+	v := e.Values(nil)
+	eVector := mat.NewCDense(len(v), len(v), nil)
+	e.VectorsTo(eVector)
+	for i := 0; i < len(v); i++ {
+		if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
+			continue
+		}
+		if real(v[i]) < 0 {
+			// ignore imag value
+			v[i] = complex(real(v[i]), 0)
+		}
+
+		var mr ModalResult
+
+		if val := math.Abs(real(v[i])); val != 0.0 {
+			// use only possitive value
+			mr.Hz = 1. / (math.Sqrt(val) * 2.0 * math.Pi)
+		} else {
+			// ignore that value
+			continue
+		}
+
+		mr.ModalDisplacement = make([][3]float64, len(m.Points))
+		for p := 0; p < len(m.Points); p++ {
+			mr.ModalDisplacement[p][0] = real(eVector.At(3*p+0, i))
+			mr.ModalDisplacement[p][1] = real(eVector.At(3*p+1, i))
+			mr.ModalDisplacement[p][2] = real(eVector.At(3*p+2, i))
+		}
+		mc.Result = append(mc.Result, mr)
 	}
 
 	// Sort by frequency
