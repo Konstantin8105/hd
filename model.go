@@ -698,6 +698,10 @@ func (m *Model) addSupport() (ignore []int) {
 // Gravity is Earth gravity constant, m/sq.sec.
 const Gravity float64 = 9.80665
 
+// Modal function calcualate all modal frequency with all
+// modal shape.
+//
+// Selfweigth are ignored.
 func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	if out == nil {
 		var buf bytes.Buffer
@@ -745,43 +749,38 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	// memory initialization
 	dof := 3 * len(m.Points)
 
-	// templorary data for mass preparing
-	MS := make([]float64, dof)
-
-	var e mat.Eigen
-
-	dataM := make([]float64, dof*dof)
-	M := mat.NewDense(dof, dof, dataM)
-
-	for _, dir := range []int{0, 1} {
-		for _, mm := range mc.ModalMasses {
-			index := mm.N*3 + dir
-			M.Set(index, index, M.At(index, index)+mm.Mass/Gravity)
-		}
-	}
-
 	dataH := make([]float64, dof*dof)
 	h := mat.NewDense(dof, dof, dataH)
 
+	// templorary data for mass preparing
+	mass := make([]float64, dof)
+
 	for col := 0; col < dof; col++ {
-		for i := 0; i < dof; i++ {
-			// initialization by 0.0
-			MS[i] = 0.0
-		}
-		isZero := true
-		for i := 0; i < dof; i++ {
-			if M.At(i, col) != 0 {
-				isZero = false
-			}
-			MS[i] = M.At(i, col)
+		// initialize mass
+		for i := range mass {
+			mass[i] = 0.0
 		}
 
+		// mass generation
+		isZero := true
+		for _, dir := range []int{0, 1} {
+			for _, mm := range mc.ModalMasses {
+				index := mm.N*3 + dir
+				if index != col {
+					continue
+				}
+				isZero = false
+				mass[col] += mm.Mass / Gravity
+			}
+		}
+
+		// no need to calcualate with empty mass
 		if isZero {
 			continue
 		}
 
 		// LU decomposition
-		hh, err := lu.Solve(MS)
+		hh, err := lu.Solve(mass)
 		if err != nil {
 			return err
 		}
@@ -791,8 +790,9 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		}
 	}
 
-	ok := e.Factorize(h, mat.EigenBoth)
-	if !ok {
+	// eigen calcualation
+	var e mat.Eigen
+	if ok := e.Factorize(h, mat.EigenBoth); !ok {
 		return fmt.Errorf("Eigen factorization is not ok")
 	}
 
