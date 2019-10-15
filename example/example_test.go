@@ -43,6 +43,9 @@ func TestModelString(t *testing.T) {
 		mf:       example.ModalBeam3mass,
 		filename: "beam-modal-3mass",
 	}, {
+		mf:       example.FrameModal,
+		filename: "beam-frame-modal",
+	}, {
 		mf:       example.BucklingBeam,
 		filename: "beam-buckling",
 	}, {

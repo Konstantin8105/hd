@@ -525,3 +525,57 @@ func BeamDc() (m1, m2 hd.Model, lc1, lc2 []hd.LoadCase) {
 	}
 	return
 }
+
+// Modal analysis of frame
+func FrameModal() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	var (
+		A    = 24.0e-4
+		J    = 72.0e-8
+		E    = 2.00e10
+		mass = 100.0 * hd.Gravity
+	)
+	m = hd.Model{
+		Points: [][2]float64{
+			{0.00, 0.40}, // 1
+			{0.20, 0.40}, // 2
+			{0.40, 0.00}, // 3
+			{0.40, 0.20}, // 4
+			{0.40, 0.40}, // 5
+			{0.70, 0.40}, // 6
+			{1.00, 0.40}, // 7
+		},
+		Beams: []hd.BeamProp{
+			{ // 1
+				N: [2]int{0, 1}, A: A, J: J, E: E,
+			}, { // 2
+				N: [2]int{1, 4}, A: A, J: J, E: E,
+			}, { // 3
+				N: [2]int{2, 3}, A: A, J: J, E: E,
+			}, { // 4
+				N: [2]int{3, 4}, A: A, J: J, E: E,
+			}, { // 5
+				N: [2]int{4, 5}, A: A, J: J, E: E,
+			}, { // 6
+				N: [2]int{5, 6}, A: A, J: J, E: E,
+			},
+		},
+		Supports: [][3]bool{
+			{true, true, true},    // 1
+			{false, false, false}, // 2
+			{true, true, true},    // 3
+			{false, false, false}, // 4
+			{false, false, false}, // 5
+			{false, false, false}, // 6
+			{true, true, true},    // 7
+		},
+	}
+	mc = []hd.ModalCase{
+		{
+			ModalMasses: []hd.ModalMass{
+				{N: 1, Mass: mass}, // 2
+				{N: 5, Mass: mass}, // 6
+			},
+		},
+	}
+	return
+}
