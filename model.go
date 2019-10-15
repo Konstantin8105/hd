@@ -724,9 +724,13 @@ func KHM(K, M *mat.SymDense) (H *mat.Dense, err error) {
 	vec := mat.NewVecDense(size, m)
 
 	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			vec.SetVec(0, 0.0)
+		}
+
 		isZero := true
 		for j := 0; j < size; j++ {
-			vec.SetVec(j, M.At(j, i))
+			vec.SetVec(j, M.At(i, j))
 			if vec.AtVec(j) != 0.0 {
 				isZero = false
 			}
@@ -740,10 +744,10 @@ func KHM(K, M *mat.SymDense) (H *mat.Dense, err error) {
 		err = lu.SolveVecTo(dst, false, vec)
 		// fmt.Println("result = ", d, err)
 
-		if err != nil {
-			return
-		}
-		// err = nil // todo: remove
+		// 		if err != nil {
+		// 			return
+		// 		}
+		err = nil // todo: remove
 
 		for j := 0; j < size; j++ {
 			H.Set(j, i, d[j])
@@ -799,28 +803,10 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 
 		dataM = make([]float64, dof*dof)
 		M     = mat.NewSymDense(dof, dataM)
+
+		H *mat.Dense
 	)
 	{
-		// assembly matrix of stiffiner
-		k, ignore, err := m.assemblyK(m.getStiffBeam2d)
-		if err != nil {
-			return err
-		}
-		ignore = append(ignore, m.addSupport()...)
-		if _, err := sparse.Fkeep(k, func(i, j int, x float64) bool {
-			K.SetSym(i, j, K.At(i, j)+x)
-			return true
-		}); err != nil {
-			return fmt.Errorf("Cannot ignore list of K: %v", err)
-		}
-		for i := 0; i < dof; i++ {
-			for _, ign := range ignore {
-				K.SetSym(i, ign, 0)
-			}
-		}
-		for _, ign := range ignore {
-			K.SetSym(ign, ign, 1)
-		}
 
 		// assembly matrix of mass
 		for _, mm := range mc.ModalMasses {
@@ -829,11 +815,47 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 				M.SetSym(index, index, M.At(index, index)+mm.Mass/Gravity)
 			}
 		}
+		// assembly matrix of stiffiner
+		k, ignore, err := m.assemblyK(m.getStiffBeam2d)
+		if err != nil {
+			return err
+		}
+		if _, err := sparse.Fkeep(k, func(i, j int, x float64) bool {
+			K.SetSym(i, j, x)
+			return true
+		}); err != nil {
+			return fmt.Errorf("Cannot ignore list of K: %v", err)
+		}
+
+		// 		{
+		// 			fa := mat.Formatted(K, mat.Prefix("    "), mat.Squeeze())
+		// 			fmt.Fprintf(os.Stdout, "K = %.3g\n\n", fa)
+		// 		}
+		// 		{
+		// 			fa := mat.Formatted(M, mat.Prefix("    "), mat.Squeeze())
+		// 			fmt.Fprintf(os.Stdout, "M = %.3g\n\n", fa)
+		// 		}
+
+		H, err = KHM(K, M)
+		if err != nil {
+			return fmt.Errorf("Cannot calculate H: %v", err)
+		}
+
+		ignore = append(ignore, m.addSupport()...)
+
 		for _, ing := range ignore {
 			for i := 0; i < dof; i++ {
 				M.SetSym(ing, i, 0)
 				M.SetSym(i, ing, 0)
 			}
+		}
+		for i := 0; i < dof; i++ {
+			for _, ign := range ignore {
+				K.SetSym(i, ign, 0)
+			}
+		}
+		for _, ign := range ignore {
+			K.SetSym(ign, ign, 1)
 		}
 	}
 
@@ -845,16 +867,10 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	// 		fa := mat.Formatted(K, mat.Prefix("    "), mat.Squeeze())
 	// 		fmt.Fprintf(os.Stdout, "K = %.3g\n\n", fa)
 	// 	}
-
-	H, err := KHM(K, M)
-	if err != nil {
-		return fmt.Errorf("Cannot calculate H: %v", err)
-	}
-
-	{
-		fa := mat.Formatted(H, mat.Prefix("    "), mat.Squeeze())
-		fmt.Fprintf(os.Stdout, "H = %.3g\n\n", fa)
-	}
+	// 	{
+	// 		fa := mat.Formatted(H, mat.Prefix("    "), mat.Squeeze())
+	// 		fmt.Fprintf(os.Stdout, "H = %.3g\n\n", fa)
+	// 	}
 	// 	{
 	// 		var m2 mat.Dense
 	// 		m2.Mul(K, H)
