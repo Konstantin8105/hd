@@ -698,6 +698,10 @@ func (m *Model) addSupport() (ignore []int) {
 // Gravity is Earth gravity constant, m/sq.sec.
 const Gravity float64 = 9.80665
 
+// Modal function calcualate all modal frequency with all
+// modal shape.
+//
+// Selfweigth are ignored.
 func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	if out == nil {
 		var buf bytes.Buffer
@@ -742,105 +746,86 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		return fmt.Errorf("Assembly node load: %v", err)
 	}
 
-	mcCases := []struct {
-		name      string
-		direction int
-	}{
-		{
-			name:      "Modal Analysis by X\n",
-			direction: 0,
-		}, {
-			name:      "Modal Analysis by Y\n",
-			direction: 1,
-		},
-	}
-
 	// memory initialization
 	dof := 3 * len(m.Points)
 
+	dataH := make([]float64, dof*dof)
+	h := mat.NewDense(dof, dof, dataH)
+
 	// templorary data for mass preparing
-	MS := make([]float64, dof)
+	mass := make([]float64, dof)
 
-	var e mat.Eigen
-
-	for _, mcCase := range mcCases {
-		fmt.Fprintf(out, "%s", mcCase.name)
-
-		dataM := make([]float64, dof*dof)
-		M := mat.NewDense(dof, dof, dataM)
-
-		for _, mm := range mc.ModalMasses {
-			index := mm.N*3 + mcCase.direction
-			M.Set(index, index, M.At(index, index)+mm.Mass/Gravity)
+	for col := 0; col < dof; col++ {
+		// initialize mass
+		for i := range mass {
+			mass[i] = 0.0
 		}
 
-		dataH := make([]float64, dof*dof)
-		h := mat.NewDense(dof, dof, dataH)
-
-		for col := 0; col < dof; col++ {
-			for i := 0; i < dof; i++ {
-				// initialization by 0.0
-				MS[i] = 0.0
-			}
-			isZero := true
-			for i := 0; i < dof; i++ {
-				if M.At(i, col) != 0 {
-					isZero = false
+		// mass generation
+		isZero := true
+		for _, dir := range []int{0, 1} {
+			for _, mm := range mc.ModalMasses {
+				index := mm.N*3 + dir
+				if index != col {
+					continue
 				}
-				MS[i] = M.At(i, col)
-			}
-
-			if isZero {
-				continue
-			}
-
-			// LU decomposition
-			hh, err := lu.Solve(MS)
-			if err != nil {
-				return err
-			}
-
-			for i := 0; i < dof; i++ {
-				h.Set(i, col, hh[i])
+				isZero = false
+				mass[col] += mm.Mass / Gravity
 			}
 		}
 
-		ok := e.Factorize(h, mat.EigenBoth)
-		if !ok {
-			return fmt.Errorf("Eigen factorization is not ok")
+		// no need to calcualate with empty mass
+		if isZero {
+			continue
 		}
 
-		// create result report
-		v := e.Values(nil)
-		eVector := mat.NewCDense(len(v), len(v), nil)
-		e.VectorsTo(eVector)
-		for i := 0; i < len(v); i++ {
-			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
-				continue
-			}
-			if real(v[i]) < 0 {
-				// ignore imag value
-				v[i] = complex(real(v[i]), 0)
-			}
-
-			var mr ModalResult
-
-			if val := math.Abs(real(v[i])); val != 0.0 {
-				// use only possitive value
-				mr.Hz = 1. / (math.Sqrt(val) * 2.0 * math.Pi)
-			} else {
-				// ignore that value
-				continue
-			}
-
-			mr.ModalDisplacement = make([][3]float64, len(m.Points))
-			for p := 0; p < len(m.Points); p++ {
-				mr.ModalDisplacement[p][0] = real(eVector.At(3*p+0, i))
-				mr.ModalDisplacement[p][1] = real(eVector.At(3*p+1, i))
-				mr.ModalDisplacement[p][2] = real(eVector.At(3*p+2, i))
-			}
-			mc.Result = append(mc.Result, mr)
+		// LU decomposition
+		hh, err := lu.Solve(mass)
+		if err != nil {
+			return err
 		}
+
+		for i := 0; i < dof; i++ {
+			h.Set(i, col, hh[i])
+		}
+	}
+
+	// eigen calcualation
+	var e mat.Eigen
+	if ok := e.Factorize(h, mat.EigenBoth); !ok {
+		return fmt.Errorf("Eigen factorization is not ok")
+	}
+
+	// create result report
+	v := e.Values(nil)
+	eVector := mat.NewCDense(len(v), len(v), nil)
+	e.VectorsTo(eVector)
+	for i := 0; i < len(v); i++ {
+		if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
+			continue
+		}
+		if real(v[i]) < 0 {
+			// ignore imag value
+			v[i] = complex(real(v[i]), 0)
+		}
+
+		var mr ModalResult
+
+		if val := math.Abs(real(v[i])); val != 0.0 {
+			// use only possitive value
+			mr.Hz = 1. / (math.Sqrt(val) * 2.0 * math.Pi)
+		} else {
+			// ignore that value
+			continue
+		}
+
+		mr.ModalDisplacement = make([][3]float64, len(m.Points))
+		for p := 0; p < len(m.Points); p++ {
+			mr.ModalDisplacement[p][0] = real(eVector.At(3*p+0, i))
+			mr.ModalDisplacement[p][1] = real(eVector.At(3*p+1, i))
+			mr.ModalDisplacement[p][2] = real(eVector.At(3*p+2, i))
+		}
+		mc.Result = append(mc.Result, mr)
 	}
 
 	// Sort by frequency
