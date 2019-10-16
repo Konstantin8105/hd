@@ -120,7 +120,6 @@ type LoadCase struct {
 	// Unit: N and N*m
 	Reactions [][3]float64
 
-	// TODO : replace to specific struct
 	// Amount of calculated forms.
 	// If Amount is zero or less zero, then no calculate.
 	// LinearBuckling is linear buckling calculation

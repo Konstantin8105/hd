@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math"
 
+	goerrors "errors"
+
 	"github.com/Konstantin8105/errors"
 )
 
@@ -103,9 +105,12 @@ func (m *Model) graphCheck() (err error) {
 		return nil
 	}
 
-	// TODO: create error type
-	return fmt.Errorf("Model is haven`t 1 calculation model. See points: %v", list)
+	return ErrorAmountModel
 }
+
+// ErrorAmountModel error if calculation model is not single.
+// Calculate calculation models separetaly.
+var ErrorAmountModel = goerrors.New("Model isn`t single calculation model")
 
 // ErrorLoad error in load data
 type ErrorLoad struct {
@@ -252,9 +257,16 @@ func (e ErrorBeam) Error() string {
 		e.Err)
 }
 
+// ErrorBeamAmount error if calculation model have points, but haven`t beams.
+var ErrorBeamAmount = goerrors.New("Zero beams with non-zero amount of points")
+
 func (m *Model) checkBeams() error {
 	et := errors.Tree{Name: "check beams"}
-	// TODO: add len beam is zero but points more zero
+	// add len beam is zero but points more zero
+	if len(m.Points) > 0 && len(m.Beams) == 0 {
+		return ErrorBeamAmount
+	}
+	// check beam property
 	for i, b := range m.Beams {
 		for j := 0; j < len(b.N); j++ {
 			err := isOk(

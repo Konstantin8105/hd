@@ -387,11 +387,9 @@ func TestDirectionLoadNode(t *testing.T) {
 		},
 	}
 
-	var b bytes.Buffer
-	if err := hd.Run(&b, &m, lcs, nil); err != nil {
+	if err := hd.Run(nil, &m, lcs, nil); err != nil {
 		t.Fatalf("Cannot calculate : %v", err)
 	}
-	b.Reset()
 
 	if !(lcs[0].PointDisplacementGlobal[1][0] > 0) {
 		t.Errorf("load in direction X is not ok. See: %v", lcs[0].PointDisplacementGlobal[1])
@@ -407,7 +405,106 @@ func TestDirectionLoadNode(t *testing.T) {
 	t.Logf("case 2 : %v", lcs[2].PointDisplacementGlobal)
 }
 
-// TODO: add test with rotation of beam with load
+func TestRotateBeamLinear(t *testing.T) {
+	for angle := 0.0; angle <= 360.0; angle += 5 {
+		const (
+			F float64 = 100.0
+			L         = 2.200
+		)
+		var (
+			Fx = F * math.Cos(math.Pi/180.0*angle)
+			Fy = F * math.Sin(math.Pi/180.0*angle)
+			x  = L * math.Cos(math.Pi/180.0*angle)
+			y  = L * math.Sin(math.Pi/180.0*angle)
+		)
+		m := hd.Model{
+			Points: [][2]float64{{0.0, 0.0}, {x / 2, y / 2}, {x, y}},
+			Beams: []hd.BeamProp{
+				{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			},
+			Supports: [][3]bool{{true, true, true}, {false, false, false}, {false, false, false}},
+		}
+		lcs := hd.LoadCase{LoadNodes: []hd.LoadNode{{N: 2, Forces: [3]float64{Fx, Fy, 0.0}}}}
+		if err := hd.LinearStatic(nil, &m, &lcs); err != nil {
+			t.Fatalf("Cannot calculate : %v", err)
+		}
+		// tolerance
+		tol := 1e-6
+
+		// compare beam force
+		{
+			react := math.Sqrt(math.Pow(lcs.BeamForces[0][0], 2) + math.Pow(lcs.BeamForces[0][1], 2))
+			if diff := math.Abs((react - F) / F); diff > tol {
+				t.Errorf("Not valid beam force on angle %5.1f : %8.5e", angle, diff)
+			}
+		}
+		{
+			react := math.Sqrt(math.Pow(lcs.BeamForces[0][3], 2) + math.Pow(lcs.BeamForces[0][4], 2))
+			if diff := math.Abs((react - F) / F); diff > tol {
+				t.Errorf("Not valid beam force on angle %5.1f : %8.5e", angle, diff)
+			}
+		}
+		{
+			react := math.Sqrt(math.Pow(lcs.BeamForces[1][0], 2) + math.Pow(lcs.BeamForces[1][1], 2))
+			if diff := math.Abs((react - F) / F); diff > tol {
+				t.Errorf("Not valid beam force on angle %5.1f : %8.5e", angle, diff)
+			}
+		}
+		{
+			react := math.Sqrt(math.Pow(lcs.BeamForces[1][3], 2) + math.Pow(lcs.BeamForces[1][4], 2))
+			if diff := math.Abs((react - F) / F); diff > tol {
+				t.Errorf("Not valid beam force on angle %5.1f : %8.5e", angle, diff)
+			}
+		}
+		// compare reaction
+		{
+			react := math.Sqrt(math.Pow(lcs.Reactions[0][0], 2) + math.Pow(lcs.Reactions[0][1], 2))
+			if diff := math.Abs((react - F) / F); diff > tol {
+				t.Errorf("Not valid reaction on angle %5.1f : %8.5e", angle, diff)
+			}
+		}
+	}
+}
+
+func TestRotateBeamModal(t *testing.T) {
+	var hz [2]float64
+	for angle := 0.0; angle <= 360.0; angle += 5 {
+		const (
+			L = 2.200
+		)
+		var (
+			x = L * math.Cos(math.Pi/180.0*angle)
+			y = L * math.Sin(math.Pi/180.0*angle)
+		)
+		m := hd.Model{
+			Points: [][2]float64{{0.0, 0.0}, {x / 2, y / 2}, {x, y}},
+			Beams: []hd.BeamProp{
+				{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+				{N: [2]int{1, 2}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			},
+			Supports: [][3]bool{{true, true, true}, {false, false, false}, {false, false, false}},
+		}
+		mass := hd.ModalCase{ModalMasses: []hd.ModalMass{{N: 1, Mass: 50.0}, {N: 2, Mass: 100.0}}}
+		if err := hd.Modal(nil, &m, &mass); err != nil {
+			t.Fatalf("Cannot calculate : %v", err)
+		}
+		if angle == 0.0 {
+			hz[0] = mass.Result[0].Hz
+			hz[1] = mass.Result[1].Hz
+			continue
+		}
+		// tolerance
+		tol := 1e-6
+
+		// compare
+		for i := 0; i < 2; i++ {
+			if diff := math.Abs((hz[i] - mass.Result[i].Hz) / hz[i]); diff > tol {
+				t.Errorf("Not valid frequency on angle %5.1f: %8.5e", angle, diff)
+			}
+		}
+	}
+}
 
 func Example() {
 
