@@ -44,6 +44,12 @@ func TestSplit(t *testing.T) {
 				t.Fatalf("Error : %v", err)
 			}
 			expectResult := lcs
+			if len(mcs) == 0 {
+				t.Fatal("not enougth mcs")
+			}
+			if len(mcs[0].Result) == 0 {
+				t.Fatal("not enougth result")
+			}
 			hz := mcs[0].Result[0].Hz
 
 			for i := 1; i < 10; i++ {
