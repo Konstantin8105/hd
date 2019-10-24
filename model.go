@@ -185,20 +185,22 @@ func (lc LoadCase) String() (out string) {
 	// output linear buckling data
 	if len(lc.LinearBucklingResult) > 0 {
 		out += fmt.Sprintf("\nLinear buckling result:\n")
-	} else if lc.AmountLinearBuckling > 0 {
-		out += fmt.Sprintf("\nLinear buckling result: is not calculated\n")
-	}
-	for _, lbr := range lc.LinearBucklingResult {
-		out += fmt.Sprintf("Linear buckling factor: %15.5f\n", lbr.Factor)
-		out += fmt.Sprintf("%5s %15s %15s %15s\n",
-			"Point", "X", "Y", "M")
-		for i := 0; i < len(lbr.PointDisplacementGlobal); i++ {
-			out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
-				i,
-				lbr.PointDisplacementGlobal[i][0],
-				lbr.PointDisplacementGlobal[i][1],
-				lbr.PointDisplacementGlobal[i][2])
+		for _, lbr := range lc.LinearBucklingResult {
+			out += fmt.Sprintf("Linear buckling factor: %15.5f\n", lbr.Factor)
+			out += fmt.Sprintf("%5s %15s %15s %15s\n",
+				"Point", "X", "Y", "M")
+			for i := 0; i < len(lbr.PointDisplacementGlobal); i++ {
+				out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
+					i,
+					lbr.PointDisplacementGlobal[i][0],
+					lbr.PointDisplacementGlobal[i][1],
+					lbr.PointDisplacementGlobal[i][2])
+			}
 		}
+	} else if lc.AmountLinearBuckling == 0 {
+		out += fmt.Sprintf("\nLinear buckling result: is not calculated\n")
+	} else {
+		out += fmt.Sprintf("\nLinear buckling result: haven`t valid data. Probably all beams are tension\n")
 	}
 
 	return

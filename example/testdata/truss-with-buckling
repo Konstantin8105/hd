@@ -37,7 +37,7 @@ Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
     0    -7.00000e+04     0.00000e+00     0.00000e+00
 
-Linear buckling result: is not calculated
+Linear buckling result: haven`t valid data. Probably all beams are tension
 
 Linear Elastic Analysis
 

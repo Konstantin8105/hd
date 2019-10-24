@@ -30,6 +30,8 @@ Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
     0    -1.00000e+01    -2.30000e+00    -2.30000e+00
 
+Linear buckling result: is not calculated
+
 Linear Elastic Analysis
 
 
@@ -50,6 +52,8 @@ Index           Fx, N           Fy, N          M, N*m           Fx, N           
 Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
     0    -1.00000e+01    -2.30000e+00    -2.30000e+00
+
+Linear buckling result: is not calculated
 
 
 
