@@ -40,9 +40,6 @@ Point               X               Y               M
     0     0.00000e+00     0.00000e+00     0.00000e+00
     1     0.00000e+00     1.00000e+00     0.00000e+00
 
-Linear Elastic Analysis
-
-
 
 Load case:
 Point           Fx, N           Fy, N          M, N*m
