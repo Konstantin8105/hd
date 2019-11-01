@@ -48,6 +48,8 @@ In folder `mod` run:
 ```cmd
 go test -v -run=Benchmark -bench=Benchmark -benchmem -cpuprofile cpu.prof -memprofile mem.prof
 ```
+
+```
 goos: linux
 goarch: amd64
 pkg: github.com/Konstantin8105/hd/mod
