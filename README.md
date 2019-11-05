@@ -40,3 +40,26 @@ or on one line:
 ```
 go test -coverprofile=coverage.out ./... ; go tool cover -html=coverage.out ; rm coverage.out
 ```
+
+### Benchmark
+
+In folder `mod` run:
+
+```cmd
+go test -v -run=Benchmark -bench=Benchmark -benchmem -cpuprofile cpu.prof -memprofile mem.prof
+```
+goos: linux
+goarch: amd64
+pkg: github.com/Konstantin8105/hd/mod
+BenchmarkRun/____1-cases20-4         	    5184	    202061 ns/op	   95197 B/op	    1052 allocs/op
+BenchmarkRun/____2-cases20-4         	    3676	    275535 ns/op	  134711 B/op	    1288 allocs/op
+BenchmarkRun/____4-cases20-4         	    2658	    446752 ns/op	  226851 B/op	    1778 allocs/op
+BenchmarkRun/____8-cases20-4         	    1460	    807288 ns/op	  440599 B/op	    2738 allocs/op
+BenchmarkRun/___16-cases20-4         	     687	   1736805 ns/op	  928967 B/op	    4640 allocs/op
+BenchmarkRun/___32-cases20-4         	     230	   5137632 ns/op	 2239788 B/op	    8456 allocs/op
+BenchmarkRun/___64-cases20-4         	      57	  18934656 ns/op	 6173719 B/op	   16063 allocs/op
+BenchmarkRun/__128-cases20-4         	      10	 105636607 ns/op	18726030 B/op	   31323 allocs/op
+PASS
+ok  	github.com/Konstantin8105/hd/mod	11.064s
+```
+

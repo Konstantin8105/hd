@@ -12,3 +12,5 @@
 *.out
 *.txt
 *.pdf
+mod/*.prof
+*.prof

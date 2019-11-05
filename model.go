@@ -351,14 +351,16 @@ func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
 }
 
 // LinearStatic run linear static analysis.
-func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
+func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 	if out == nil {
 		var buf bytes.Buffer
 		out = &buf
 		_ = buf
 	}
 	// remove result data
-	lc.reset()
+	for i := range lcs {
+		lcs[i].reset()
+	}
 
 	// error handling
 	name := "Linear Elastic Analysis"
@@ -383,8 +385,11 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 		et := errors.New("")
 		out, err = prepare(out, m)
 		et.Add(err)
-		et.Add(lc.checkInputData(m))
+		for i := range lcs {
+			et.Add(lcs[i].checkInputData(m))
+		}
 		if et.IsError() {
+			et.Name = "Prepared input data"
 			return et
 		}
 	}
@@ -397,194 +402,198 @@ func LinearStatic(out io.Writer, m *Model, lc *LoadCase) (err error) {
 	data := make([]float64, 6)
 	Zo := mat.NewDense(6, 1, data)
 
-	// assembly node load
-	p, err := m.assemblyNodeLoad(lc)
-	if err != nil {
-		return fmt.Errorf("Assembly node load: %v", err)
-	}
-
 	// generate stiffiner matrix and ignore list
 	k, lu, ignore, err := getK(m)
 	if err != nil {
 		return fmt.Errorf("Assembly node load: %v", err)
 	}
 
-	{
-		// check loads on ignore free directions
-		// ignore load in free direction. usually for pin connection
-		var et errors.Tree
-		for _, i := range ignore {
-			if p[i] != 0.0 {
-				et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
-			}
-		}
-		if et.IsError() {
-			et.Name = "Warning: List loads on not valid directions"
-			return et
-		}
-	}
+	for lci := range lcs {
+		lc := lcs[lci]
 
-	// solve by LU decomposition
-	d, err = lu.Solve(p)
-	if err != nil {
-		return fmt.Errorf("Linear Elastic calculation error: %v", err)
-	}
-
-	// create result information
-	lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
-	for p := 0; p < len(m.Points); p++ {
-		for i := 0; i < 3; i++ {
-			lc.PointDisplacementGlobal[p][i] = d[3*p+i]
-		}
-	}
-
-	lc.BeamForces = make([][6]float64, len(m.Beams))
-	lc.Reactions = make([][3]float64, len(m.Points))
-	for bi, b := range m.Beams {
-		for i := 0; i < 3; i++ {
-			for j := 0; j < 2; j++ {
-				Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
-			}
-		}
-		tr := m.getCoordTransStiffBeam2d(bi)
-		var z mat.Dense
-		z.Mul(tr, Zo)
-		kr := m.getStiffBeam2d(bi)
-		s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
-		// calculate beam forces
-		s.Mul(kr, &z)
-	}
-
-	// calculate reactions
-	for pt := 0; pt < len(m.Points); pt++ {
-		for i := 0; i < 3; i++ {
-			if !m.Supports[pt][i] {
-				// free support
-				continue
-			}
-			// fix support
-			react := -p[3*pt+i]
-
-			row := 3*pt + i
-			_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
-				if i == row {
-					react += x * d[j]
-				}
-				return true
-			})
-			lc.Reactions[pt][i] = react
-		}
-	}
-
-	// TODO : split to specific function
-	if lc.AmountLinearBuckling > 0 {
-		// assembly matrix of stiffiner
-		g, _, err := m.assemblyK(func(pos int) *mat.Dense {
-			return m.getGeometricBeam2d(pos, lc)
-		})
+		// assembly node load
+		p, err := m.assemblyNodeLoad(lc)
 		if err != nil {
-			return err
+			return fmt.Errorf("Assembly node load: %v", err)
 		}
 
-		// memory initialization
-		dof := 3 * len(m.Points)
-
-		// templorary data for mass preparing
-		MS := make([]float64, dof)
-
-		dataM := make([]float64, dof*dof)
-		M := mat.NewDense(dof, dof, dataM)
-
-		if _, err = sparse.Fkeep(g, func(i, j int, x float64) bool {
-			M.Set(i, j, M.At(i, j)+x)
-			// kept value
-			return true
-		}); err != nil {
-			return err
-		}
-
-		// for _, mm := range mc.ModalMasses {
-		// index := mm.N*3 + mcCase.direction
-		// M.Set(index, index, M.At(index, index)+mm.Mass/Gravity)
-		// }
-
-		dataH := make([]float64, dof*dof)
-		h := mat.NewDense(dof, dof, dataH)
-
-		for col := 0; col < dof; col++ {
-			for i := 0; i < dof; i++ {
-				// initialization by 0.0
-				MS[i] = 0.0
-			}
-			isZero := true
-			for i := 0; i < dof; i++ {
-				if M.At(i, col) != 0 {
-					isZero = false
+		{
+			// check loads on ignore free directions
+			// ignore load in free direction. usually for pin connection
+			var et errors.Tree
+			for _, i := range ignore {
+				if p[i] != 0.0 {
+					et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
 				}
-				MS[i] = M.At(i, col)
 			}
-
-			if isZero {
-				continue
+			if et.IsError() {
+				et.Name = "Warning: List loads on not valid directions"
+				return et
 			}
+		}
 
-			// LU decomposition
-			hh, err := lu.Solve(MS)
+		// solve by LU decomposition
+		d, err = lu.Solve(p)
+		if err != nil {
+			return fmt.Errorf("Linear Elastic calculation error: %v", err)
+		}
+
+		// create result information
+		lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
+		for p := 0; p < len(m.Points); p++ {
+			for i := 0; i < 3; i++ {
+				lc.PointDisplacementGlobal[p][i] = d[3*p+i]
+			}
+		}
+
+		lc.BeamForces = make([][6]float64, len(m.Beams))
+		lc.Reactions = make([][3]float64, len(m.Points))
+		for bi, b := range m.Beams {
+			for i := 0; i < 3; i++ {
+				for j := 0; j < 2; j++ {
+					Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
+				}
+			}
+			tr := m.getCoordTransStiffBeam2d(bi)
+			var z mat.Dense
+			z.Mul(tr, Zo)
+			kr := m.getStiffBeam2d(bi)
+			s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
+			// calculate beam forces
+			s.Mul(kr, &z)
+		}
+
+		// calculate reactions
+		for pt := 0; pt < len(m.Points); pt++ {
+			for i := 0; i < 3; i++ {
+				if !m.Supports[pt][i] {
+					// free support
+					continue
+				}
+				// fix support
+				react := -p[3*pt+i]
+
+				row := 3*pt + i
+				_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
+					if i == row {
+						react += x * d[j]
+					}
+					return true
+				})
+				lc.Reactions[pt][i] = react
+			}
+		}
+
+		// TODO : split to specific function
+		if lc.AmountLinearBuckling > 0 {
+			// assembly matrix of stiffiner
+			g, _, err := m.assemblyK(func(pos int) *mat.Dense {
+				return m.getGeometricBeam2d(pos, lc)
+			})
 			if err != nil {
 				return err
 			}
 
-			for i := 0; i < dof; i++ {
-				h.Set(i, col, hh[i])
-			}
-		}
+			// memory initialization
+			dof := 3 * len(m.Points)
 
-		var e mat.Eigen
+			// templorary data for mass preparing
+			MS := make([]float64, dof)
 
-		ok := e.Factorize(h, mat.EigenBoth)
-		if !ok {
-			return fmt.Errorf("Eigen factorization is not ok")
-		}
+			dataM := make([]float64, dof*dof)
+			M := mat.NewDense(dof, dof, dataM)
 
-		// create result report
-		v := e.Values(nil)
-		eVector := mat.NewCDense(len(v), len(v), nil)
-		e.VectorsTo(eVector)
-		for i := 0; i < len(v); i++ {
-			if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
-				continue
-			}
-			if real(v[i]) < 0 {
-				// ignore imag value
-				v[i] = complex(real(v[i]), 0)
+			if _, err = sparse.Fkeep(g, func(i, j int, x float64) bool {
+				M.Set(i, j, M.At(i, j)+x)
+				// kept value
+				return true
+			}); err != nil {
+				return err
 			}
 
-			// store the result
-			var lbr BucklingResult
-			if val := math.Abs(real(v[i])); val != 0.0 {
-				// use only possitive value
-				lbr.Factor = 1. / val
-			} else {
-				// ignore that value
-				continue
-			}
-			for p := 0; p < len(m.Points); p++ {
-				lbr.PointDisplacementGlobal = append(lbr.PointDisplacementGlobal, [3]float64{
-					real(eVector.At(3*p+0, i)),
-					real(eVector.At(3*p+1, i)),
-					real(eVector.At(3*p+2, i)),
-				})
-			}
-			lc.LinearBucklingResult = append(lc.LinearBucklingResult, lbr)
-		}
-		// Sort by factors
-		sort.SliceStable(lc.LinearBucklingResult, func(i, j int) bool {
-			return lc.LinearBucklingResult[i].Factor < lc.LinearBucklingResult[j].Factor
-		})
+			// for _, mm := range mc.ModalMasses {
+			// index := mm.N*3 + mcCase.direction
+			// M.Set(index, index, M.At(index, index)+mm.Mass/Gravity)
+			// }
 
-		// Cut result slice
-		if len(lc.LinearBucklingResult) > int(lc.AmountLinearBuckling) {
-			lc.LinearBucklingResult = lc.LinearBucklingResult[:lc.AmountLinearBuckling]
+			dataH := make([]float64, dof*dof)
+			h := mat.NewDense(dof, dof, dataH)
+
+			for col := 0; col < dof; col++ {
+				for i := 0; i < dof; i++ {
+					// initialization by 0.0
+					MS[i] = 0.0
+				}
+				isZero := true
+				for i := 0; i < dof; i++ {
+					if M.At(i, col) != 0 {
+						isZero = false
+					}
+					MS[i] = M.At(i, col)
+				}
+
+				if isZero {
+					continue
+				}
+
+				// LU decomposition
+				hh, err := lu.Solve(MS)
+				if err != nil {
+					return err
+				}
+
+				for i := 0; i < dof; i++ {
+					h.Set(i, col, hh[i])
+				}
+			}
+
+			var e mat.Eigen
+
+			ok := e.Factorize(h, mat.EigenBoth)
+			if !ok {
+				return fmt.Errorf("Eigen factorization is not ok")
+			}
+
+			// create result report
+			v := e.Values(nil)
+			eVector := mat.NewCDense(len(v), len(v), nil)
+			e.VectorsTo(eVector)
+			for i := 0; i < len(v); i++ {
+				if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
+					continue
+				}
+				if real(v[i]) < 0 {
+					// ignore imag value
+					v[i] = complex(real(v[i]), 0)
+				}
+
+				// store the result
+				var lbr BucklingResult
+				if val := math.Abs(real(v[i])); val != 0.0 {
+					// use only possitive value
+					lbr.Factor = 1. / val
+				} else {
+					// ignore that value
+					continue
+				}
+				for p := 0; p < len(m.Points); p++ {
+					lbr.PointDisplacementGlobal = append(lbr.PointDisplacementGlobal, [3]float64{
+						real(eVector.At(3*p+0, i)),
+						real(eVector.At(3*p+1, i)),
+						real(eVector.At(3*p+2, i)),
+					})
+				}
+				lc.LinearBucklingResult = append(lc.LinearBucklingResult, lbr)
+			}
+			// Sort by factors
+			sort.SliceStable(lc.LinearBucklingResult, func(i, j int) bool {
+				return lc.LinearBucklingResult[i].Factor < lc.LinearBucklingResult[j].Factor
+			})
+
+			// Cut result slice
+			if len(lc.LinearBucklingResult) > int(lc.AmountLinearBuckling) {
+				lc.LinearBucklingResult = lc.LinearBucklingResult[:lc.AmountLinearBuckling]
+			}
 		}
 	}
 
@@ -916,14 +925,19 @@ func Run(out io.Writer, m *Model, lcs []LoadCase, mcs []ModalCase) (err error) {
 	if out != nil {
 		fmt.Fprintf(out, "%s\n", *m)
 	}
-	for i := range lcs {
-		if err = LinearStatic(out, m, &(lcs[i])); err != nil {
+	if len(lcs) > 0 {
+		arr := make([]*LoadCase, len(lcs))
+		for i := range arr {
+			arr[i] = &lcs[i]
+		}
+		if err = LinearStatic(out, m, arr...); err != nil {
 			et.Add(err)
-			continue
 		}
 		if out != nil {
 			fmt.Fprintf(out, "\n\n")
-			fmt.Fprintf(out, "%s\n", lcs[i])
+			for i := range lcs {
+				fmt.Fprintf(out, "%s\n", lcs[i])
+			}
 		}
 	}
 	if out != nil {
