@@ -52,7 +52,7 @@ func (lu *LU) Order(order Order) {
 // List `ignore` is list of ignore row and column in calculation.
 func (lu *LU) Factorize(A *Matrix, ignore ...int) error {
 	// check input data
-	et := errors.New("Function LU.Factorize: check input data")
+	et := errors.New("")
 	if A == nil {
 		_ = et.Add(fmt.Errorf("matrix A is nil"))
 	}
@@ -74,6 +74,7 @@ func (lu *LU) Factorize(A *Matrix, ignore ...int) error {
 	}
 
 	if et.IsError() {
+		et.Name = "Function LU.Factorize: check input data"
 		return et
 	}
 
@@ -90,11 +91,21 @@ func (lu *LU) Factorize(A *Matrix, ignore ...int) error {
 		cs_free(list)
 	}
 
-	// coping matrix A without ignored rows and columns
-	C, _ := A.Copy()
-	defer cs_free(C)
-	if len(ignore) > 0 {
-		_, err := Fkeep(C, func(i, j int, x float64) bool {
+	// preparing matrix for decomposition
+	var C *Matrix
+	// if matrix A have diagonal element for all ignored columns, rows,
+	// then no need to create a copy of matrix A
+	if len(ignore) == 0 {
+		C = A
+	} else {
+		var err error
+		C, err = A.Copy()
+		if err != nil {
+			return err
+		}
+		defer cs_free(C)
+
+		_, err = Fkeep(C, func(i, j int, x float64) bool {
 			var found bool
 			for k := range ignore {
 				if i == ignore[k] || j == ignore[k] {
@@ -189,7 +200,7 @@ func (lu *LU) Factorize(A *Matrix, ignore ...int) error {
 //
 func (lu *LU) Solve(b []float64) (x []float64, _ error) {
 	// check input data
-	et := errors.New("Function LU.Solve: check input data")
+	et := errors.New("")
 	if b == nil {
 		_ = et.Add(fmt.Errorf("vector b is nil"))
 	}
@@ -207,6 +218,7 @@ func (lu *LU) Solve(b []float64) (x []float64, _ error) {
 	}
 
 	if et.IsError() {
+		et.Name = "Function LU.Solve: check input data"
 		return nil, et
 	}
 

@@ -6,28 +6,30 @@
 [![GitHub license](https://img.shields.io/badge/license-LGPL%20v2.1-blue.svg)](https://github.com/Konstantin8105/sparse/blob/master/LICENSE)
 [![GoDoc](https://godoc.org/github.com/Konstantin8105/sparse?status.svg)](https://godoc.org/github.com/Konstantin8105/sparse)
 
-**This package based on program CSparse from [SuiteSparse 5.3.0](http://faculty.cse.tamu.edu/davis/SuiteSparse/)**
+**This package based on program CSparse from [SuiteSparse 5.4.0](http://faculty.cse.tamu.edu/davis/SuiteSparse/)**
 
 ### Comparation with `gonum.mat.LU`
 
 ```cmd
 go test -v -cpuprofile cpu.prof -memprofile mem.prof -coverprofile=coverage.out -run=BenchmarkLU -bench=BenchmarkLU -benchmem
-# goos: linux
-# goarch: amd64
-# pkg: github.com/Konstantin8105/sparse
-# BenchmarkLU/Sparse:__30:__300-6         	   50000	     34007 ns/op	   51456 B/op	      32 allocs/op
-# BenchmarkLU/Dense_:__30:__300-6         	   50000	     30012 ns/op	    9249 B/op	      11 allocs/op
-# BenchmarkLU/Sparse:_100:_1070-6         	   10000	    125092 ns/op	  201458 B/op	      32 allocs/op
-# BenchmarkLU/Dense_:_100:_1070-6         	    5000	    241981 ns/op	   85261 B/op	      11 allocs/op
-# BenchmarkLU/Sparse:_300:_3270-6         	    5000	    354187 ns/op	  566515 B/op	      32 allocs/op
-# BenchmarkLU/Dense_:_300:_3270-6         	     500	   2377480 ns/op	  746151 B/op	      22 allocs/op
-# BenchmarkLU/Sparse:1000:10970-6         	    1000	   1152972 ns/op	 1794937 B/op	      32 allocs/op
-# BenchmarkLU/Dense_:1000:10970-6         	      20	  86145264 ns/op	 8079531 B/op	      54 allocs/op
-# BenchmarkLU/Sparse:3000:32970-6         	     500	   3320653 ns/op	 5383122 B/op	      32 allocs/op
-# BenchmarkLU/Dense_:3000:32970-6         	       1	1328677635 ns/op	72346808 B/op	     156 allocs/op
+```
+```result
+goos: linux
+goarch: amd64
+pkg: github.com/Konstantin8105/sparse
+BenchmarkLU/Sparse:__30:__300-4         	   37153	     30785 ns/op	   51328 B/op	      28 allocs/op
+BenchmarkLU/Dense_:__30:__300-4         	   41449	     29516 ns/op	    9236 B/op	      11 allocs/op
+BenchmarkLU/Sparse:_100:_1070-4         	    9572	    108839 ns/op	  201328 B/op	      28 allocs/op
+BenchmarkLU/Dense_:_100:_1070-4         	    4323	    233880 ns/op	   85005 B/op	      11 allocs/op
+BenchmarkLU/Sparse:_300:_3270-4         	    3404	    324523 ns/op	  566384 B/op	      28 allocs/op
+BenchmarkLU/Dense_:_300:_3270-4         	     476	   2494250 ns/op	  739173 B/op	      20 allocs/op
+BenchmarkLU/Sparse:1000:10970-4         	    1029	   1065713 ns/op	 1794812 B/op	      28 allocs/op
+BenchmarkLU/Dense_:1000:10970-4         	      18	  63434980 ns/op	 8061283 B/op	      47 allocs/op
+BenchmarkLU/Sparse:3000:32970-4         	     378	   3206861 ns/op	 5382921 B/op	      28 allocs/op
+BenchmarkLU/Dense_:3000:32970-4         	       2	 802618764 ns/op	72295580 B/op	     111 allocs/op
 ```
 
-Using sparse algorithm is effective in test case for square matrixes with size more 100.
+Using sparse algorithm is effective in test case for square matrixes with size more 50.
 
 ### Example of comparing CSparse and CXSparse
 

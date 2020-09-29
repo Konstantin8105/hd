@@ -8,10 +8,13 @@
 
 // +build !noasm,!appengine,!safe
 
-#include "textflag.h"
+package math32
 
-// func Sqrt(x float32) float32
-TEXT ·Sqrt(SB),NOSPLIT,$0
-	SQRTSS x+0(FP), X0
-	MOVSS X0, ret+8(FP)
-	RET
+// Sqrt returns the square root of x.
+//
+// Special cases are:
+//	Sqrt(+Inf) = +Inf
+//	Sqrt(±0) = ±0
+//	Sqrt(x < 0) = NaN
+//	Sqrt(NaN) = NaN
+func Sqrt(x float32) float32

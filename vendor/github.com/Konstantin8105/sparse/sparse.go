@@ -1,6 +1,7 @@
 package sparse
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"math"
@@ -11,8 +12,6 @@ import (
 
 	"math/rand"
 )
-
-var osStdout *os.File = os.Stdout
 
 // Matrix - sparse matrix.
 // Matrix in compressed-column or triplet fotmat.
@@ -30,7 +29,7 @@ type Matrix struct { // struct cs_sparse
 
 func (A *Matrix) Copy() (*Matrix, error) {
 	// check input data
-	et := errors.New("Function Copy: check input data")
+	et := errors.New("")
 	if A == nil {
 		_ = et.Add(fmt.Errorf("matrix A is nil"))
 	}
@@ -39,6 +38,7 @@ func (A *Matrix) Copy() (*Matrix, error) {
 	}
 
 	if et.IsError() {
+		et.Name = "Function Copy: check input data"
 		return nil, et
 	}
 
@@ -109,7 +109,7 @@ type csd struct { // struct cs_dmperm_results
 // Name function in CSparse : cs_add.
 func Add(A *Matrix, B *Matrix, α float64, β float64) (*Matrix, error) {
 	// check input data
-	et := errors.New("Function Add: check input data")
+	et := errors.New("")
 	if A == nil {
 		_ = et.Add(fmt.Errorf("matrix A is nil"))
 	}
@@ -144,6 +144,7 @@ func Add(A *Matrix, B *Matrix, α float64, β float64) (*Matrix, error) {
 	}
 
 	if et.IsError() {
+		et.Name = "Function Add: check input data"
 		return nil, et
 	}
 
@@ -1089,7 +1090,7 @@ func cs_cholsol(order Order, A *Matrix, b []float64) (result bool) {
 // Name function in CSparse : cs_compress.
 func Compress(T *Triplet) (_ *Matrix, err error) {
 	// check input data
-	et := errors.New("Function Add: check input data")
+	et := errors.New("")
 	if T == nil {
 		_ = et.Add(fmt.Errorf("matrix T is nil"))
 	}
@@ -1098,6 +1099,7 @@ func Compress(T *Triplet) (_ *Matrix, err error) {
 	}
 
 	if et.IsError() {
+		et.Name = "Function Add: check input data"
 		return nil, et
 	}
 
@@ -1358,7 +1360,7 @@ func cs_counts(A *Matrix, parent []int, post []int, ata bool) []int {
 //
 func cs_cumsum(p []int, c []int) (int, error) {
 	// check input data
-	et := errors.New("Function cs_cumsum: check input data")
+	et := errors.New("")
 	if p == nil {
 		_ = et.Add(fmt.Errorf("Vector p is nil"))
 	}
@@ -1370,6 +1372,7 @@ func cs_cumsum(p []int, c []int) (int, error) {
 	}
 
 	if et.IsError() {
+		et.Name = "Function cs_cumsum: check input data"
 		return -1, et
 	}
 
@@ -1762,7 +1765,7 @@ func cs_droptol(A *Matrix, tol float64) (int, error) {
 // Name function in CSparse: cs_dupl
 func Dupl(A *Matrix) error {
 	// check input data
-	et := errors.New("Function Dupl: check input data")
+	et := errors.New("")
 	if A == nil {
 		_ = et.Add(fmt.Errorf("matrix A is nil"))
 	}
@@ -1771,6 +1774,7 @@ func Dupl(A *Matrix) error {
 	}
 
 	if et.IsError() {
+		et.Name = "Function Dupl: check input data"
 		return et
 	}
 
@@ -1836,8 +1840,7 @@ func Dupl(A *Matrix) error {
 // Name function in CSparse : cs_entry.
 func Entry(T *Triplet, i, j int, x float64) error {
 	// check input data
-	const etName string = "Function Entry: check input data"
-	et := new(errors.Tree)
+	et := errors.New("")
 	if T == nil {
 		_ = et.Add(fmt.Errorf("matrix T is nil"))
 	}
@@ -1864,7 +1867,7 @@ func Entry(T *Triplet, i, j int, x float64) error {
 	}
 
 	if et.IsError() {
-		et.Name = etName
+		et.Name = "Function Entry: check input data"
 		return et
 	}
 
@@ -2022,7 +2025,7 @@ func cs_etree(A *Matrix, ata bool) []int {
 // Name function of CSparse: cs_fkeep
 func Fkeep(A *Matrix, fkeep func(i int, j int, x float64) bool) (_ int, err error) {
 	// check input data
-	et := errors.New("Function Add: check input data")
+	et := errors.New("")
 	if A == nil {
 		_ = et.Add(fmt.Errorf("matrix A is nil"))
 	}
@@ -2034,6 +2037,7 @@ func Fkeep(A *Matrix, fkeep func(i int, j int, x float64) bool) (_ int, err erro
 	}
 
 	if et.IsError() {
+		et.Name = "Function Add: check input data"
 		return -1, et
 	}
 
@@ -2071,9 +2075,6 @@ func Fkeep(A *Matrix, fkeep func(i int, j int, x float64) bool) (_ int, err erro
 	return nz, nil
 }
 
-// etGaxpy error tree for function Gaxpy
-var etGaxpy = errors.New("Function Gaxpy: check input data")
-
 // Gaxpy - calculate by next formula.
 //
 // Matrix A is sparse matrix in CSC format.
@@ -2083,7 +2084,7 @@ var etGaxpy = errors.New("Function Gaxpy: check input data")
 // Name function in CSparse : cs_gaxpy.
 func Gaxpy(A *Matrix, x []float64, y []float64) error {
 	// check input data
-	etGaxpy.Reset() // reset errors
+	etGaxpy := errors.New("")
 	if A == nil {
 		_ = etGaxpy.Add(fmt.Errorf("matrix A is nil"))
 	}
@@ -2106,6 +2107,7 @@ func Gaxpy(A *Matrix, x []float64, y []float64) error {
 	}
 
 	if etGaxpy.IsError() {
+		etGaxpy.Name = "Function Gaxpy: check input data"
 		return etGaxpy
 	}
 
@@ -2513,18 +2515,27 @@ func cs_free(p interface{}) {
 		return
 	}
 
-	// TODO (KI): reused memory
+	// TODO (KI): remove "return" for reused memory or debugging
+	return
 
 	switch v := p.(type) {
 	case []float64:
 		if v == nil || (v != nil && cap(v) == 0) {
 			return
 		}
+		// TODO : only for debugging
+		for i := range v {
+			v[i] = -12121212
+		}
 		// TODO (KI) : fmt.Fprintf(os.Stdout, "Type : %8d %T\n", cap(v), v)
 
 	case []int:
 		if v == nil || (v != nil && cap(v) == 0) {
 			return
+		}
+		// TODO : only for debugging
+		for i := range v {
+			v[i] = -12121212
 		}
 		// TODO (KI) : fmt.Fprintf(os.Stdout, "Type : %8d %T\n", cap(v), v)
 
@@ -2573,14 +2584,17 @@ func cs_free(p interface{}) {
 
 // cs_realloc - wrapper for realloc
 func cs_realloc(p interface{}, n int, ok *bool) interface{} {
+
+	realloc := func(length, n int) bool {
+		// reallocation critetia
+		return 2*n < length || // slice is too big
+			length < n // slice is too small
+	}
+
 	switch v := p.(type) {
 	case []int:
-		// TODO (KI) : only for memory analyzing
-		// if 2*n < len(v) {
-		// 	fmt.Fprintf(os.Stdout, "realloc: %6d %6d\n", n, len(v))
-		// }
 		// reallocate memory
-		if 2*n < len(v) || len(v) < n {
+		if realloc(len(v), n) {
 			arr := make([]int, n)
 			copy(arr, v)
 			v, arr = arr, v
@@ -2591,7 +2605,7 @@ func cs_realloc(p interface{}, n int, ok *bool) interface{} {
 
 	case []float64:
 		// reallocate memory
-		if 2*n < len(v) || len(v) < n {
+		if realloc(len(v), n) {
 			arr := make([]float64, n)
 			copy(arr, v)
 			v, arr = arr, v
@@ -2853,7 +2867,7 @@ func cs_maxtrans(A *Matrix, seed int) []int {
 // Name function in CSparse : cs_multiply.
 func Multiply(A *Matrix, B *Matrix) (*Matrix, error) {
 	// check input data
-	et := errors.New("Function Add: check input data")
+	et := errors.New("")
 	if A == nil {
 		_ = et.Add(fmt.Errorf("matrix A is nil"))
 	}
@@ -2873,6 +2887,7 @@ func Multiply(A *Matrix, B *Matrix) (*Matrix, error) {
 	}
 
 	if et.IsError() {
+		et.Name = "Function Add: check input data"
 		return nil, et
 	}
 
@@ -2954,13 +2969,9 @@ func Norm(A *Matrix) float64 {
 		for p := Ap[j]; p < Ap[j+1]; p++ {
 			s += math.Abs(Ax[p])
 		}
-
-		norm = func() float64 {
-			if norm > s {
-				return (norm)
-			}
-			return s
-		}()
+		if norm < s {
+			norm = s
+		}
 	}
 	return norm
 }
@@ -3045,7 +3056,6 @@ func cs_post(parent []int, n int) []int {
 	}
 	// allocate result
 	post := make([]int, n)
-	defer cs_free(post)
 	// get workspace
 	w := make([]int, 3*n)
 	defer cs_free(w)
@@ -3086,8 +3096,10 @@ func cs_post(parent []int, n int) []int {
 
 // Print - print a sparse matrix.
 //
+//	if brief is true, then print shortly
+//
 // Name function in CSparse : cs_print.
-func (A *Matrix) Print(brief bool) error {
+func (A *Matrix) Print(out io.Writer, brief bool) error {
 	if A == nil {
 		return fmt.Errorf("Matrix is nil")
 	}
@@ -3098,20 +3110,28 @@ func (A *Matrix) Print(brief bool) error {
 	// initialization
 	m, n, Ap, Ai, Ax, nzmax := A.m, A.n, A.p, A.i, A.x, A.nzmax
 
-	fmt.Fprintf(osStdout, "Sparse\n")
+	// print in buffer
+	var buf bytes.Buffer
+	defer func() {
+		if out != nil {
+			fmt.Fprintf(out, "%s", buf.String())
+		}
+	}()
 
-	fmt.Fprintf(osStdout, "%d-by-%d, nzmax: %d nnz: %d, 1-norm: %10e\n", m, n, nzmax, Ap[n], Norm(A))
+	fmt.Fprintf(&buf, "Sparse\n")
+
+	fmt.Fprintf(&buf, "%d-by-%d, nzmax: %d nnz: %d, 1-norm: %10e\n", m, n, nzmax, Ap[n], Norm(A))
 	for j := 0; j < n; j++ {
-		fmt.Fprintf(osStdout, "    col %d : locations %d to %d\n", j, Ap[j], Ap[j+1]-1)
+		fmt.Fprintf(&buf, "    col %d : locations %d to %d\n", j, Ap[j], Ap[j+1]-1)
 		for p := Ap[j]; p < Ap[j+1]; p++ {
-			fmt.Fprintf(osStdout, "      %d : %10e\n", Ai[p], func() float64 {
+			fmt.Fprintf(&buf, "      %d : %10e\n", Ai[p], func() float64 {
 				if Ax != nil {
 					return Ax[p]
 				}
 				return 1
 			}())
 			if brief && p > 20 {
-				fmt.Fprintf(osStdout, "  ...\n")
+				fmt.Fprintf(&buf, "  ...\n")
 				return nil
 			}
 		}
@@ -3119,24 +3139,35 @@ func (A *Matrix) Print(brief bool) error {
 	return nil
 }
 
-func (A *Triplet) Print(brief bool) error {
+// Print triplets of matrix
+//
+//	if brief is true, then print shortly
+func (A *Triplet) Print(out io.Writer, brief bool) error {
 	if A == nil {
 		return fmt.Errorf("Matrix is nil")
 	}
 
 	m, n, Ap, Ai, Ax, nzmax, nz := A.m, A.n, A.p, A.i, A.x, A.nzmax, A.nz
 
-	fmt.Fprintf(osStdout, "Sparse\n")
-	fmt.Fprintf(osStdout, "triplet: %d-by-%d, nzmax: %d nnz: %d\n", m, n, nzmax, nz)
+	// print in buffer
+	var buf bytes.Buffer
+	defer func() {
+		if out != nil {
+			fmt.Fprintf(out, "%s", buf.String())
+		}
+	}()
+
+	fmt.Fprintf(&buf, "Sparse\n")
+	fmt.Fprintf(&buf, "triplet: %d-by-%d, nzmax: %d nnz: %d\n", m, n, nzmax, nz)
 	for p := 0; p < nz; p++ {
-		fmt.Fprintf(osStdout, "    %d %d : %10e\n", Ai[p], Ap[p], func() float64 {
+		fmt.Fprintf(&buf, "    %d %d : %10e\n", Ai[p], Ap[p], func() float64 {
 			if Ax != nil {
 				return Ax[p]
 			}
 			return 1
 		}())
 		if brief && p > 20 {
-			fmt.Fprintf(osStdout, "  ...\n")
+			fmt.Fprintf(&buf, "  ...\n")
 			return nil
 		}
 	}
@@ -4107,7 +4138,7 @@ func Transpose(A *Matrix) (*Matrix, error) {
 // if values == true, then initialize vector x in Matrix
 func cs_transpose(A *Matrix, values bool) (*Matrix, error) {
 	// check input data
-	et := errors.New("Function Transpose: check input data")
+	et := errors.New("")
 	if A == nil {
 		_ = et.Add(fmt.Errorf("matrix A is nil"))
 	}
@@ -4116,6 +4147,7 @@ func cs_transpose(A *Matrix, values bool) (*Matrix, error) {
 	}
 
 	if et.IsError() {
+		et.Name = "Function Transpose: check input data"
 		return nil, et
 	}
 
@@ -4297,7 +4329,7 @@ const (
 // cs_spalloc - allocate a sparse matrix (triplet form or compressed-column form)
 func cs_spalloc(m, n, nzmax int, values bool, mf matrixFormat) (*Matrix, error) {
 	// check input data
-	et := errors.New("Function cs_spalloc: check input data")
+	et := errors.New("")
 	if m < 0 {
 		_ = et.Add(fmt.Errorf("Value m is less zero : %d", m))
 	}
@@ -4309,6 +4341,7 @@ func cs_spalloc(m, n, nzmax int, values bool, mf matrixFormat) (*Matrix, error) 
 	}
 
 	if et.IsError() {
+		et.Name = "Function cs_spalloc: check input data"
 		return nil, et
 	}
 
@@ -4373,24 +4406,6 @@ func cs_sprealloc(A *Matrix, nzmax int) (result bool) {
 	return ok
 }
 
-// // cs_spfree - free a sparse matrix
-// func cs_spfree(A *Cs) *Cs {
-// 	// free the cs struct and return NULL
-// 	return nil
-// }
-//
-// // cs_nfree - free a numeric factorization
-// func cs_nfree(N *csn) *csn {
-// 	// free the csn struct and return NULL
-// 	return nil
-// }
-//
-// // cs_sfree - free a symbolic factorization
-// func cs_sfree(S *css) *css {
-// 	// free the css struct and return NULL
-// 	return nil
-// }
-
 // cs_dalloc - allocate a cs_dmperm or cs_scc result
 func cs_dalloc(m, n int) *csd {
 	// if m < 1 || n < 1 { // TODO (KI) error handling
@@ -4405,12 +4420,6 @@ func cs_dalloc(m, n int) *csd {
 
 	return D
 }
-
-// cs_dfree - free a cs_dmperm or cs_scc result
-// func cs_dfree(D *csd) *csd {
-// 	// free the csd struct and return NULL
-// 	return nil
-// }
 
 // cs_done - free workspace and return a sparse matrix result
 func cs_done(C *Matrix, w []int, x []float64, ok bool) *Matrix {

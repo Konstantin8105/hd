@@ -12,6 +12,9 @@ func E2(x float64) float64
 func E3(x float64) float64
     E3 function replace `math.Pow(x,3.0)`
 
+func E4(x float64) float64
+    E4 function replace `math.Pow(x,4.0)`
+
 func En(x float64, e int) float64
     En function replace `math.Pow(x,e)`
 ```
@@ -23,17 +26,21 @@ go test -bench=. -count=5 > bench.txt
 benchstat bench.txt 
 ```
 ```
-name              time/op
-/math.Pow2-5      41.1ns ± 3%
-/pow.E2-5         0.60ns ± 1%
-/pow.En2-5        7.10ns ± 0%
+name                time/op
+/math.Pow2-4        41.7ns ±11%
+/pow.E2-4           0.60ns ± 9%
+/pow.En2-4          6.88ns ± 1%
 
-/math.Pow3-5      39.7ns ± 1%
-/pow.E3-5         0.60ns ± 1%
-/pow.En3-5        7.73ns ± 1%
+/math.Pow3-4        39.1ns ± 1%
+/pow.E3-4           0.59ns ± 2%
+/pow.En3-4          7.80ns ± 2%
 
-/math.Pow(151)-5  41.0ns ± 0%
-/pow.En(151)-5    17.6ns ± 1%
+/math.Pow4-4        42.8ns ± 2%
+/pow.E4-4           0.58ns ± 0%
+/pow.En4-4          7.76ns ± 3%
+
+/math.Pow(x,_51)-4  46.3ns ± 0%
+/pow.En(x,_51)-4    16.8ns ± 0%
 ```
 
 So, that package is more optimal at more 30 times.

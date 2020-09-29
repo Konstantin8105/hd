@@ -10,6 +10,12 @@ func E3(x float64) float64 {
 	return x * x * x
 }
 
+// E4 function replace `math.Pow(x,4.0)`
+func E4(x float64) float64 {
+	x2 := x * x
+	return x2 * x2
+}
+
 // En function replace `math.Pow(x,e)`
 func En(x float64, e int) float64 {
 	var isNegative bool
@@ -27,7 +33,7 @@ func En(x float64, e int) float64 {
 		c   uint8
 	)
 
-	for n > 1 {
+	for 1 < n {
 		tmp = x
 		c = 1
 		for c <= n/2 {
