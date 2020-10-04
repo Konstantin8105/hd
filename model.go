@@ -139,10 +139,14 @@ func (lc LoadCase) String() (out string) {
 	}
 	if len(lc.PointDisplacementGlobal) > 0 {
 		out += fmt.Sprintf("Point displacament in global system coordinate:\n")
-		out += fmt.Sprintf("%5s %15s %15s\n", "Point", "DX, m", "DY, m")
+		out += fmt.Sprintf("%5s %15s %15s %15s\n", "Point", "DX, m", "DY, m", "Angle, rad.")
 		for i := 0; i < len(lc.PointDisplacementGlobal); i++ {
-			out += fmt.Sprintf("%5d %15.5e %15.5e\n",
-				i, lc.PointDisplacementGlobal[i][0], lc.PointDisplacementGlobal[i][1])
+			out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
+				i,
+				lc.PointDisplacementGlobal[i][0],
+				lc.PointDisplacementGlobal[i][1],
+				lc.PointDisplacementGlobal[i][2],
+			)
 		}
 	}
 	// results
