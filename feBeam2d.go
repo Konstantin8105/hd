@@ -18,7 +18,8 @@ func (m Model) distance(st, en int) (res float64) {
 		m.Points[st][1]-m.Points[en][1])
 }
 
-// matrix of stiffiner for beam 2d
+// matrix of stiffiner for beam 2d.
+// local linear-elastic stiffiness matrix
 func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 	data := make([]float64, 36)
 	kr := mat.NewDense(6, 6, data)
@@ -273,3 +274,5 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 	// TODO: add implementation
 	panic("add implementation")
 }
+
+// TODO: The tangent stiffness matrix contains information regarding both the linear elastic and geometric stiffness of the structure. 
