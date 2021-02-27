@@ -51,6 +51,7 @@ type Model struct {
 	//	[1] - Y
 	//	[2] - M
 	//
+	// if `true` then fixed support direction
 	Supports [][3]bool
 }
 
@@ -127,10 +128,13 @@ type LoadCase struct {
 
 	// Result of linear buckling calculation
 	LinearBucklingResult []BucklingResult
+
+	// Result of nonlinear buckling calculation
+	NonlinearBuckling bool
 }
 
 func (lc LoadCase) String() (out string) {
-	out += fmt.Sprintf("\nLoad case:\n")
+	out += "\nLoad case:\n"
 	out += fmt.Sprintf("%5s %15s %15s %15s\n",
 		"Point", "Fx, N", "Fy, N", "M, N*m")
 	for _, ln := range lc.LoadNodes {
@@ -138,7 +142,7 @@ func (lc LoadCase) String() (out string) {
 			ln.N, ln.Forces[0], ln.Forces[1], ln.Forces[2])
 	}
 	if len(lc.PointDisplacementGlobal) > 0 {
-		out += fmt.Sprintf("Point displacament in global system coordinate:\n")
+		out += "Point displacament in global system coordinate:\n"
 		out += fmt.Sprintf("%5s %15s %15s %15s\n", "Point", "DX, m", "DY, m", "Angle, rad.")
 		for i := 0; i < len(lc.PointDisplacementGlobal); i++ {
 			out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
@@ -151,7 +155,7 @@ func (lc LoadCase) String() (out string) {
 	}
 	// results
 	if len(lc.BeamForces) > 0 {
-		out += fmt.Sprintf("Local force in beam:\n")
+		out += "Local force in beam:\n"
 		out += fmt.Sprintf("%5s %45s %45s\n",
 			"", "START OF BEAM     ", "END OF BEAM       ")
 		out += fmt.Sprintf("%5s %45s %45s\n",
@@ -168,11 +172,11 @@ func (lc LoadCase) String() (out string) {
 					out += " "
 				}
 			}
-			out += fmt.Sprintf("\n")
+			out += "\n"
 		}
 	}
 	if len(lc.Reactions) > 0 {
-		out += fmt.Sprintf("Reaction on support:\n")
+		out += "Reaction on support:\n"
 		out += fmt.Sprintf("%5s %15s %15s %15s\n",
 			"Index", "Fx, N", "Fy, N", "M, N*m")
 		for i := 0; i < len(lc.Reactions); i++ {
@@ -188,7 +192,7 @@ func (lc LoadCase) String() (out string) {
 
 	// output linear buckling data
 	if len(lc.LinearBucklingResult) > 0 {
-		out += fmt.Sprintf("\nLinear buckling result:\n")
+		out += "\nLinear buckling result:\n"
 		for _, lbr := range lc.LinearBucklingResult {
 			out += fmt.Sprintf("Linear buckling factor: %15.5f\n", lbr.Factor)
 			out += fmt.Sprintf("%5s %15s %15s %15s\n",
@@ -202,9 +206,9 @@ func (lc LoadCase) String() (out string) {
 			}
 		}
 	} else if lc.AmountLinearBuckling == 0 {
-		out += fmt.Sprintf("\nLinear buckling result: is not calculated\n")
+		out += "\nLinear buckling result: is not calculated\n"
 	} else {
-		out += fmt.Sprintf("\nLinear buckling result: haven`t valid data. Probably all beams are tension\n")
+		out += "\nLinear buckling result: haven`t valid data. Probably all beams are tension\n"
 	}
 
 	return
@@ -233,7 +237,7 @@ func (mc *ModalCase) reset() {
 }
 
 func (m ModalCase) String() (out string) {
-	out += fmt.Sprintf("\nModal case:\n")
+	out += "\nModal case:\n"
 	out += fmt.Sprintf("%5s %15s\n",
 		"Point", "Mass, N")
 	for _, mn := range m.ModalMasses {
@@ -327,7 +331,12 @@ func getK(m *Model) (k *sparse.Matrix, lu sparse.LU, ignore []int, err error) {
 		// add support
 		append(ignore, m.addSupport()...)...)
 	if err != nil {
-		err = fmt.Errorf("LU error factorization: %v", err)
+		err = fmt.Errorf("LU error factorization: %v\n"+
+			"ignore = %v\n"+"supports = %v",
+			err,
+			ignore,
+			m.addSupport(),
+		)
 	}
 	return
 }
@@ -372,7 +381,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 	defer func() {
 		if err != nil {
 			et := errors.New(name)
-			et.Add(err)
+			_ = et.Add(err)
 			err = et
 		}
 	}()
@@ -380,7 +389,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 	// panic free. replace to stacktrace
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("stacktrace from panic: %s\n", debug.Stack())
+			err = fmt.Errorf("stacktrace from panic: %s", debug.Stack())
 		}
 	}()
 
@@ -388,9 +397,9 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 	{
 		et := errors.New("")
 		out, err = prepare(out, m)
-		et.Add(err)
+		_ = et.Add(err)
 		for i := range lcs {
-			et.Add(lcs[i].checkInputData(m))
+			_ = et.Add(lcs[i].checkInputData(m))
 		}
 		if et.IsError() {
 			et.Name = "Prepared input data"
@@ -409,7 +418,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 	// generate stiffiner matrix and ignore list
 	k, lu, ignore, err := getK(m)
 	if err != nil {
-		return fmt.Errorf("Assembly node load: %v", err)
+		return fmt.Errorf("Generate stiffiner matrix: %v", err)
 	}
 
 	for lci := range lcs {
@@ -427,7 +436,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 			var et errors.Tree
 			for _, i := range ignore {
 				if p[i] != 0.0 {
-					et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
+					_ = et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
 				}
 			}
 			if et.IsError() {
@@ -451,8 +460,15 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 		}
 
 		lc.BeamForces = make([][6]float64, len(m.Beams))
-		lc.Reactions = make([][3]float64, len(m.Points))
 		for bi, b := range m.Beams {
+			// Alternative for
+			// Zo := mat.NewDense(6, 1, data)
+			// is:
+			for k := 0; k < 6; k++ {
+				data[k] = 0.0
+			}
+
+			// displacement for 1 beam in global system
 			for i := 0; i < 3; i++ {
 				for j := 0; j < 2; j++ {
 					Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
@@ -468,6 +484,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 		}
 
 		// calculate reactions
+		lc.Reactions = make([][3]float64, len(m.Points))
 		for pt := 0; pt < len(m.Points); pt++ {
 			for i := 0; i < 3; i++ {
 				if !m.Supports[pt][i] {
@@ -599,6 +616,224 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 				lc.LinearBucklingResult = lc.LinearBucklingResult[:lc.AmountLinearBuckling]
 			}
 		}
+
+		if lc.NonlinearBuckling {
+
+			IterationMax := 600
+			ddlast := make([]float64, len(d))
+
+			// loop
+			amount := 10
+			dp := make([]float64, len(p))
+			for i := range dp {
+				dp[i] = p[i] / float64(amount)
+			}
+			p = make([]float64, len(p))
+
+			for i := 0; i < amount; i++ {
+				for i := range p {
+					p[i] += dp[i]
+				}
+				var iter int
+
+				// solve by LU decomposition
+				d, err = lu.Solve(p)
+				if err != nil {
+					return fmt.Errorf("Linear Elastic calculation error: %v", err)
+				}
+
+				// create result information
+				lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
+				for p := 0; p < len(m.Points); p++ {
+					for i := 0; i < 3; i++ {
+						lc.PointDisplacementGlobal[p][i] = d[3*p+i]
+					}
+				}
+
+				lc.BeamForces = make([][6]float64, len(m.Beams))
+				for bi, b := range m.Beams {
+					// Alternative for
+					// Zo := mat.NewDense(6, 1, data)
+					// is:
+					for k := 0; k < 6; k++ {
+						data[k] = 0.0
+					}
+
+					// displacement for 1 beam in global system
+					for i := 0; i < 3; i++ {
+						for j := 0; j < 2; j++ {
+							Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
+						}
+					}
+					tr := m.getCoordTransStiffBeam2d(bi)
+					var z mat.Dense
+					z.Mul(tr, Zo)
+					kr := m.getStiffBeam2d(bi)
+					s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
+					// calculate beam forces
+					s.Mul(kr, &z)
+				}
+
+				// calculate reactions
+				lc.Reactions = make([][3]float64, len(m.Points))
+				for pt := 0; pt < len(m.Points); pt++ {
+					for i := 0; i < 3; i++ {
+						if !m.Supports[pt][i] {
+							// free support
+							continue
+						}
+						// fix support
+						react := -p[3*pt+i]
+
+						row := 3*pt + i
+						_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
+							if i == row {
+								react += x * d[j]
+							}
+							return true
+						})
+						lc.Reactions[pt][i] = react
+					}
+				}
+
+				for ; ; iter++ {
+					if IterationMax < iter {
+						// TODO : add error handling
+						return fmt.Errorf("not enought iterations: %d", iter)
+					}
+
+					// assemble stiffness matrix with geometric nonlinearity
+					g, _, err := m.assemblyK(func(pos int) *mat.Dense {
+						return m.getGeometricBeam2d(pos, lc)
+					})
+					if err != nil {
+						return err
+					}
+
+					var summ *sparse.Matrix
+					summ, err = sparse.Add(k, g, 1.0, -1.0)
+					if err != nil {
+						return err
+					}
+
+					plast := make([]float64, len(p))
+					err = sparse.Gaxpy(summ, d, plast)
+					if err != nil {
+						return err
+					}
+
+					// calculate error
+					delta := make([]float64, len(p))
+					for i := range p {
+						delta[i] = p[i] - plast[i]
+					}
+
+					// LU decomposition
+					var lu sparse.LU
+					err = lu.Factorize(summ,
+						// add support
+						append(ignore, m.addSupport()...)...)
+					if err != nil {
+						err = fmt.Errorf("LU error factorization: %v\n"+
+							"ignore = %v\n"+"supports = %v",
+							err,
+							ignore,
+							m.addSupport(),
+						)
+						return err
+					}
+
+					// solve
+					dd, err := lu.Solve(delta)
+					if err != nil {
+						return fmt.Errorf("Linear Elastic calculation error: %v", err)
+					}
+
+					// displacement increment
+					for i := range d {
+						d[i] += dd[i]
+					}
+
+					lc.BeamForces = make([][6]float64, len(m.Beams))
+					for bi, b := range m.Beams {
+						// Alternative for
+						// Zo := mat.NewDense(6, 1, data)
+						// is:
+						for k := 0; k < 6; k++ {
+							data[k] = 0.0
+						}
+
+						// displacement for 1 beam in global system
+						for i := 0; i < 3; i++ {
+							for j := 0; j < 2; j++ {
+								Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
+							}
+						}
+						tr := m.getCoordTransStiffBeam2d(bi)
+						var z mat.Dense
+						z.Mul(tr, Zo)
+						kr := m.getStiffBeam2d(bi)
+						s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
+						// calculate beam forces
+						s.Mul(kr, &z)
+					}
+
+					// error
+					var e, max float64
+					for i := range dd {
+						if v := math.Abs(d[i]); max < v {
+							max = v
+						}
+						e += math.Pow((dd[i] - ddlast[i]), 2)
+					}
+					e = math.Sqrt(e)
+					//if e/max < 1e-6 {
+					if e < 1e-6 {
+						break
+					}
+
+					lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
+					for p := 0; p < len(m.Points); p++ {
+						for i := 0; i < 3; i++ {
+							lc.PointDisplacementGlobal[p][i] = d[3*p+i]
+						}
+					}
+
+					ddlast = dd
+
+					// calculate reactions
+					lc.Reactions = make([][3]float64, len(m.Points))
+					for pt := 0; pt < len(m.Points); pt++ {
+						for i := 0; i < 3; i++ {
+							if !m.Supports[pt][i] {
+								// free support
+								continue
+							}
+							// fix support
+							react := -p[3*pt+i]
+
+							row := 3*pt + i
+							_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
+								if i == row {
+									react += x * d[j]
+								}
+								return true
+							})
+							lc.Reactions[pt][i] = react
+						}
+					}
+
+					// calculate load on beam
+
+					// find maximal of beam forces
+
+					// calculate reactions
+
+					// find maximal of reaction
+				}
+				// create result information
+			}
+		}
 	}
 
 	return nil
@@ -606,9 +841,15 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 
 func (m *Model) assemblyK(elementMatrix func(int) *mat.Dense) (
 	k *sparse.Matrix, ignore []int, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("assemblyK: %v", err)
+		}
+	}()
 
 	var T *sparse.Triplet
 	if T, err = sparse.NewTriplet(); err != nil {
+		err = fmt.Errorf("NewTriplet: %v", err)
 		return
 	}
 
@@ -627,6 +868,7 @@ func (m *Model) assemblyK(elementMatrix func(int) *mat.Dense) (
 						y := m.Beams[i].N[p2]*3 + r2
 						val := kr.At(p1*3+r1, p2*3+r2)
 						if err = sparse.Entry(T, x, y, val); err != nil {
+							err = fmt.Errorf("Entry: %v", err)
 							return
 						}
 					}
@@ -638,6 +880,7 @@ func (m *Model) assemblyK(elementMatrix func(int) *mat.Dense) (
 	// from triplet to sparse matrix
 	k, err = sparse.Compress(T)
 	if err != nil {
+		err = fmt.Errorf("Compress: %v", err)
 		return
 	}
 
@@ -645,12 +888,14 @@ func (m *Model) assemblyK(elementMatrix func(int) *mat.Dense) (
 	if _, err = sparse.Fkeep(k, func(i, j int, x float64) bool {
 		return x != 0.0
 	}); err != nil {
+		err = fmt.Errorf("Fkeep: %v", err)
 		return
 	}
 
 	// remove duplicate matrix
 	err = sparse.Dupl(k)
 	if err != nil {
+		err = fmt.Errorf("Dupl: %v", err)
 		return
 	}
 
@@ -668,6 +913,7 @@ func (m *Model) assemblyK(elementMatrix func(int) *mat.Dense) (
 		// keep entry
 		return true
 	}); err != nil {
+		err = fmt.Errorf("Fkeep2: %v", err)
 		return
 	}
 
@@ -681,6 +927,12 @@ func (m *Model) assemblyK(elementMatrix func(int) *mat.Dense) (
 }
 
 func (m *Model) assemblyNodeLoad(lc *LoadCase) (p []float64, err error) {
+	defer func() {
+		if err != nil {
+			err = fmt.Errorf("assemblyNodeLoad: %v", err)
+		}
+	}()
+
 	dof := 3 * len(m.Points)
 	p = make([]float64, dof)
 	// node loads
@@ -731,7 +983,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	defer func() {
 		if err != nil {
 			et := errors.New(name)
-			et.Add(err)
+			_ = et.Add(err)
 			err = et
 		}
 	}()
@@ -747,7 +999,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	{
 		et := errors.New("")
 		out, err = prepare(out, m)
-		et.Add(err)
+		_ = et.Add(err)
 		et.Add(mc.checkInputData(m))
 		if et.IsError() {
 			return et
@@ -853,7 +1105,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 func (m Model) String() (out string) {
 	out += "\n"
 	// points and supports
-	out += fmt.Sprintf("Point coordinates:\n")
+	out += "Point coordinates:\n"
 	out += fmt.Sprintf("%37s %17s\n", "", "   SUPPORT DIRECTION")
 	out += fmt.Sprintf("%5s %15s %15s ", "Index", "X, m", "Y, m")
 	out += fmt.Sprintf("%5s %5s %5s (0 - free, 1 - fixed)\n", "SX", "SY", "SM")
@@ -872,10 +1124,10 @@ func (m Model) String() (out string) {
 				out += " "
 			}
 		}
-		out += fmt.Sprintf("\n")
+		out += "\n"
 	}
 	// beams
-	out += fmt.Sprintf("Beam property:\n")
+	out += "Beam property:\n"
 	out += fmt.Sprintf("%5s %15s %15s ", "Index", "Start point", "End point")
 	out += fmt.Sprintf("%15s %15s %15s\n",
 		"Area,sq.m", "Moment inertia,m4", "Elasticity,Pa")
@@ -898,7 +1150,7 @@ func (m Model) String() (out string) {
 			continue
 		}
 		if !pinHeader {
-			out += fmt.Sprintf("Pins of beam in local system coordinate:\n")
+			out += "Pins of beam in local system coordinate:\n"
 			out += fmt.Sprintf("%5s %23s %23s\n",
 				"", "START OF BEAM     ", "END OF BEAM       ")
 			out += fmt.Sprintf("%5s %23s %23s\n",
@@ -915,10 +1167,10 @@ func (m Model) String() (out string) {
 				out += " "
 			}
 		}
-		out += fmt.Sprintf("\n")
+		out += "\n"
 	}
 	if !pinHeader {
-		out += fmt.Sprintf("All beams haven`t pins\n")
+		out += "All beams haven`t pins\n"
 	}
 	return
 }

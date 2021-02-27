@@ -408,8 +408,8 @@ func TestDirectionLoadNode(t *testing.T) {
 func TestRotateBeamLinear(t *testing.T) {
 	for angle := 0.0; angle <= 360.0; angle += 5 {
 		const (
-			F float64 = 100.0
-			L         = 2.200
+			F = 100.0
+			L = 2.200
 		)
 		var (
 			Fx = F * math.Cos(math.Pi/180.0*angle)
@@ -565,7 +565,7 @@ func Example() {
 		// show a diff between files
 		diff := difflib.UnifiedDiff{
 			A:        difflib.SplitLines(string(expect)),
-			B:        difflib.SplitLines(string(b.Bytes())),
+			B:        difflib.SplitLines(b.String()),
 			FromFile: "Original",
 			ToFile:   "Current",
 			Context:  30000,
@@ -579,3 +579,190 @@ func Example() {
 	// Output:
 	// same
 }
+
+// func TestLinear2(t *testing.T) {
+// 	E := 2e11
+// 	J := 120e-6
+// 	A := 12e-4
+// 	m := hd.Model{
+// 		Points: [][2]float64{
+// 			{0.0, 0.0},
+// 			{0.0, 1.0},
+// 			{0.0, 2.0},
+// 			{0.0, 3.0},
+// 			{0.0, 4.0},
+// 			{3.0, 4.0},
+// 		},
+// 		Beams: []hd.BeamProp{
+// 			{N: [2]int{0, 1}, A: A, J: J, E: E},
+// 			{N: [2]int{1, 2}, A: A, J: J, E: E},
+// 			{N: [2]int{2, 3}, A: A, J: J, E: E},
+// 			{N: [2]int{3, 4}, A: A, J: J, E: E},
+// 			{N: [2]int{4, 5}, A: A, J: 2 * J, E: E},
+// 		},
+// 		Supports: [][3]bool{
+// 			{true, true, true},
+// 			{false, false, false},
+// 			{false, false, false},
+// 			{false, false, false},
+// 			{false, false, false},
+// 			{true, true, false},
+// 		},
+// 	}
+// 	P := 2.04039*E*J
+// 	lc := hd.LoadCase{
+// 		LoadNodes: []hd.LoadNode{
+// 			{N: 4, Forces: [3]float64{0, -P, 0}},
+// 		},
+// 		AmountLinearBuckling: 1,
+// 	}
+// 	var buf bytes.Buffer
+// 	err := hd.LinearStatic(&buf, &m, &lc)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	if f:=lc.LinearBucklingResult[0].Factor; 1e-6 < math.Abs((f-1)/1)  {
+// 		t.Errorf("Not valid linear buckling factor: %.12f. delta = %.12f", f, 1-f)
+// 	}
+// }
+
+func TestNonlinear2(t *testing.T) {
+	d := 0.14
+	E := 2.05e11
+	J := math.Pow(d, 4) / 12
+	A := d * d
+	m := hd.Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{0.0, 1.0},
+			{0.0, 2.0},
+			{0.0, 3.0},
+			{0.0, 4.0},
+			{0.0, 5.0},
+			{0.1, 5.0},
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: A, J: J, E: E},
+			{N: [2]int{1, 2}, A: A, J: J, E: E},
+			{N: [2]int{2, 3}, A: A, J: J, E: E},
+			{N: [2]int{3, 4}, A: A, J: J, E: E},
+			{N: [2]int{4, 5}, A: A, J: J, E: E},
+			{N: [2]int{5, 6}, A: A, J: J, E: E},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+		},
+	}
+	t.Logf("%s", m)
+	P := 600000.0 // 600e3
+	lc := hd.LoadCase{
+		LoadNodes: []hd.LoadNode{
+			{N: 6, Forces: [3]float64{1, -P, 0}},
+		},
+		AmountLinearBuckling: 1,
+	}
+
+	// linear
+	var buf bytes.Buffer
+	if err := hd.LinearStatic(&buf, &m, &lc); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%s", lc)
+	linear := lc.PointDisplacementGlobal[6][0]
+	// Nonlinear
+	lc.NonlinearBuckling = true
+	lc.AmountLinearBuckling = 0
+	if err := hd.LinearStatic(&buf, &m, &lc); err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("%s", lc)
+	nonlinear := lc.PointDisplacementGlobal[6][0]
+
+	t.Logf("linear    = %.5f\n", linear)
+	t.Logf("nonlinear = %.5f\n", nonlinear)
+}
+
+// func TestNonlinear(t *testing.T) {
+// 	// Test based on example from document:
+// 	// Nonlinear Analysis of Structures
+// 	// The Arc Length Method: Formulation, Implementation and Applications
+// 	// Nikolaos Vasios
+//
+// 	var (
+// 		E  = 2.0e11
+// 		EA = 5e7
+// 		Ao = EA / E // 12e-4
+//
+// 		θo = math.Pi / 3.0            // math.Atan(dy / dx)       //  math.Pi / 3.0 // 60 degree
+// 		dx = 2500.0                   //  math.Sqrt(Lo*Lo-dy*dy)
+// 		dy = dx * math.Tan(θo)        // 25.0                     // math.Sqrt(Lo*Lo-dx*dx) // Lo *math.Sin(θo)
+// 		Lo = math.Sqrt(dx*dx + dy*dy) // 2500.0 // 1.0
+// 	)
+//
+// 	m := hd.Model{
+// 		Points: [][2]float64{
+// 			{0.0, 0.0}, // Support
+// 			{dx, dy},   // Load point
+// 		},
+// 		Beams: []hd.BeamProp{
+// 			{N: [2]int{0, 1}, A: Ao, J: 120e-6, E: E},
+// 		},
+// 		Pins: [][6]bool{
+// 			{false, true, true, false, true, true},
+// 		},
+// 		Supports: [][3]bool{
+// 			{true, true, false},
+// 			{true, false, false},
+// 		},
+// 	}
+// 	lc := hd.LoadCase{
+// 		LoadNodes: []hd.LoadNode{
+// 			{N: 1, Forces: [3]float64{0, 0, 0}},
+// 		},
+// 		NonlinearBuckling: true,
+// 	}
+//
+// 	P := 100000000.0 // 1e8 // 3.0// 2e8
+// 	var buf bytes.Buffer
+// 	//for ; P < 1e9; P = P + 2e8 {
+// 	lc.LoadNodes[0].Forces[1] = -P / 2.0
+// 	err := hd.LinearStatic(&buf, &m, &lc)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+//
+// 	k := E * Ao / Lo
+// 	t.Logf("dx = %v", dx)
+// 	t.Logf("dy = %v", dy)
+// 	t.Logf("Lo = %v", Lo)
+// 	t.Logf("k  = %v", k)
+// 	t.Logf("θo = %v", θo)
+// 	betta := E * Ao / Lo
+// 	t.Logf("betta = E*A/L   = %.5f", betta)
+// 	t.Logf("w     = betta/k = %.5f", betta/k)
+//
+// 	w := -lc.PointDisplacementGlobal[1][1]
+// 	t.Logf("w    = %.4f displacement of %.4f", w, dy)
+//
+// 	λ := math.Abs(lc.Reactions[0][1] * 2 / (2.0 * k * Lo))
+// 	a := math.Abs((-lc.PointDisplacementGlobal[1][1]) / Lo)
+// 	L2 := (1.0/math.Sqrt(1-2*a*math.Sin(θo)+a*a) - 1) * (math.Sin(θo) - a)
+// 	t.Logf("λ    = %.5f a = %.5f L2 = %.5f", λ, a, L2)
+//
+// 	// Z := dy - w
+// 	// t.Logf("P by research = %.4e", E*Ao*Z*(2*Z*w-w*w)/(2*Lo*Lo*Lo))
+// 	// t.Logf("z             = %.4e %s", Z, " displacament")
+// 	// t.Logf("P             = %.4e  %.4e", P, 2*k*Lo*L2)
+// 	// t.Logf("L/Lo          = %f %f", math.Sqrt(1.0-2*w/Lo*math.Sin(θo)+math.Pow(w/Lo, 2.0)), ( math.Sqrt(dx*dx+Z*Z) )/Lo)
+//
+// 	// ArcLength(E, Ao, Lo, θo)
+//
+// 	// }
+// 	// t.Log(buf.String())
+// }

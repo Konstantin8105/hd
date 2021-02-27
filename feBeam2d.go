@@ -89,6 +89,16 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 
 		// initialization data
 		KAA := kr.At(fr, fr)
+		if KAA == 0.0 {
+			uncorrect := false
+			for i := 0; i < 6; i++ {
+				uncorrect = uncorrect || kr.At(i, fr) != 0.0 || kr.At(fr, i) != 0.0
+			}
+			if uncorrect {
+				panic("KAA")
+			}
+			continue
+		}
 		for i := 0; i < 6; i++ {
 			ia := i
 			if i == fr {
@@ -188,13 +198,14 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 	}
 
 	defer func() {
+		// TODO : propably : minus axial force ??
 		kr.Scale(axialForce, kr)
 	}()
 
 	length := m.distance(m.Beams[pos].N[0], m.Beams[pos].N[1])
 
 	// no pins
-	if m.Pins[pos][2] == false && m.Pins[pos][5] == false {
+	if !m.Pins[pos][2] && !m.Pins[pos][5] {
 		G1 := 6. / (5. * length)
 		kr.Set(1, 1, +G1)
 		kr.Set(4, 4, +G1)
@@ -223,7 +234,7 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 	}
 
 	// pins at the begin of beam
-	if m.Pins[pos][2] && m.Pins[pos][5] == false {
+	if m.Pins[pos][2] && !m.Pins[pos][5] {
 		G1 := 6. / (5. * length)
 		kr.Set(1, 1, +G1)
 		kr.Set(4, 4, +G1)
@@ -242,7 +253,7 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 	}
 
 	// pins at the end of beam
-	if m.Pins[pos][2] == false && m.Pins[pos][5] {
+	if !m.Pins[pos][2] && m.Pins[pos][5] {
 		G1 := 6. / (5. * length)
 		kr.Set(1, 1, +G1)
 		kr.Set(4, 4, +G1)
@@ -262,10 +273,10 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 
 	// pins on the start and end of beam
 	if m.Pins[pos][2] && m.Pins[pos][5] {
-		kr.Set(2, 2, +1.0/length)
-		kr.Set(5, 5, +1.0/length)
-		kr.Set(2, 5, -1.0/length)
-		kr.Set(5, 2, -1.0/length)
+		kr.Set(1, 1, +1.0/length)
+		kr.Set(4, 4, +1.0/length)
+		kr.Set(1, 4, -1.0/length)
+		kr.Set(4, 1, -1.0/length)
 
 		return kr
 	}

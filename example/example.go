@@ -193,6 +193,7 @@ func Truss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 					Forces: [3]float64{42000, 0, 0},
 				},
 			},
+			AmountLinearBuckling: 1,
 		},
 	}
 	mc = []hd.ModalCase{
