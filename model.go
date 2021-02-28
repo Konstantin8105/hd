@@ -133,6 +133,81 @@ type LoadCase struct {
 	NonlinearBuckling bool
 }
 
+// calcDisplacement is calculate point displacement in global system
+func (lc *LoadCase) calcDisplacement(points int, d []float64) {
+	if len(lc.PointDisplacementGlobal) != points {
+		lc.PointDisplacementGlobal = make([][3]float64, points)
+	}
+	if len(d) != 3*points {
+		panic(fmt.Errorf("not valid displacement vector: %d != %d", len(d), 3*points))
+	}
+	for p := 0; p < points; p++ {
+		for i := 0; i < 3; i++ {
+			lc.PointDisplacementGlobal[p][i] = d[3*p+i]
+		}
+	}
+}
+
+// calculate reactions
+func (lc *LoadCase) calcReactions(d, p []float64, m *Model, k *sparse.Matrix) {
+	if len(lc.Reactions) != len(m.Points) {
+		lc.Reactions = make([][3]float64, len(m.Points))
+	}
+	for pt := 0; pt < len(m.Points); pt++ {
+		for i := 0; i < 3; i++ {
+			if !m.Supports[pt][i] {
+				// free support
+				continue
+			}
+			// fix support
+			react := -p[3*pt+i]
+
+			row := 3*pt + i
+			_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
+				if i == row {
+					react += x * d[j]
+				}
+				return true
+			})
+			lc.Reactions[pt][i] = react
+		}
+	}
+}
+
+// calculate beam internal force in local beam system
+func (lc *LoadCase) calcBeamForces(d []float64, m *Model) {
+	if len(lc.BeamForces) != len(m.Beams) {
+		lc.BeamForces = make([][6]float64, len(m.Beams))
+	}
+
+	// templorary data for displacement in global system coordinate
+	data := make([]float64, 6)
+	Zo := mat.NewDense(6, 1, data)
+
+	for bi, b := range m.Beams {
+		// Alternative for
+		// Zo := mat.NewDense(6, 1, data)
+		// is:
+		for k := 0; k < 6; k++ {
+			data[k] = 0.0
+		}
+
+		// displacement for 1 beam in global system
+		for i := 0; i < 3; i++ {
+			for j := 0; j < 2; j++ {
+				Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
+			}
+		}
+		tr := m.getCoordTransStiffBeam2d(bi)
+		var z mat.Dense
+		z.Mul(tr, Zo)
+		kr := m.getStiffBeam2d(bi)
+		s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
+		// calculate beam forces
+		s.Mul(kr, &z)
+	}
+}
+
 func (lc LoadCase) String() (out string) {
 	out += "\nLoad case:\n"
 	out += fmt.Sprintf("%5s %15s %15s %15s\n",
@@ -411,10 +486,6 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 	dof := 3 * len(m.Points)
 	d := make([]float64, dof)
 
-	// templorary data for displacement in global system coordinate
-	data := make([]float64, 6)
-	Zo := mat.NewDense(6, 1, data)
-
 	// generate stiffiner matrix and ignore list
 	k, lu, ignore, err := getK(m)
 	if err != nil {
@@ -452,59 +523,17 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 		}
 
 		// create result information
-		lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
-		for p := 0; p < len(m.Points); p++ {
-			for i := 0; i < 3; i++ {
-				lc.PointDisplacementGlobal[p][i] = d[3*p+i]
-			}
-		}
 
-		lc.BeamForces = make([][6]float64, len(m.Beams))
-		for bi, b := range m.Beams {
-			// Alternative for
-			// Zo := mat.NewDense(6, 1, data)
-			// is:
-			for k := 0; k < 6; k++ {
-				data[k] = 0.0
-			}
+		// calculate point displacement in global system
+		lc.calcDisplacement(len(m.Points), d)
 
-			// displacement for 1 beam in global system
-			for i := 0; i < 3; i++ {
-				for j := 0; j < 2; j++ {
-					Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
-				}
-			}
-			tr := m.getCoordTransStiffBeam2d(bi)
-			var z mat.Dense
-			z.Mul(tr, Zo)
-			kr := m.getStiffBeam2d(bi)
-			s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
-			// calculate beam forces
-			s.Mul(kr, &z)
-		}
+		// calculate beam internal force in local beam system
+		lc.calcBeamForces(d, m)
 
 		// calculate reactions
-		lc.Reactions = make([][3]float64, len(m.Points))
-		for pt := 0; pt < len(m.Points); pt++ {
-			for i := 0; i < 3; i++ {
-				if !m.Supports[pt][i] {
-					// free support
-					continue
-				}
-				// fix support
-				react := -p[3*pt+i]
+		lc.calcReactions(d, p, m, k)
 
-				row := 3*pt + i
-				_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
-					if i == row {
-						react += x * d[j]
-					}
-					return true
-				})
-				lc.Reactions[pt][i] = react
-			}
-		}
-
+		// TODO : external function
 		// TODO : split to specific function
 		if lc.AmountLinearBuckling > 0 {
 			// assembly matrix of stiffiner
@@ -617,6 +646,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 			}
 		}
 
+		// TODO : external function
 		if lc.NonlinearBuckling {
 
 			IterationMax := 600
@@ -643,58 +673,15 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 				}
 
 				// create result information
-				lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
-				for p := 0; p < len(m.Points); p++ {
-					for i := 0; i < 3; i++ {
-						lc.PointDisplacementGlobal[p][i] = d[3*p+i]
-					}
-				}
 
-				lc.BeamForces = make([][6]float64, len(m.Beams))
-				for bi, b := range m.Beams {
-					// Alternative for
-					// Zo := mat.NewDense(6, 1, data)
-					// is:
-					for k := 0; k < 6; k++ {
-						data[k] = 0.0
-					}
+				// calculate point displacement in global system
+				lc.calcDisplacement(len(m.Points), d)
 
-					// displacement for 1 beam in global system
-					for i := 0; i < 3; i++ {
-						for j := 0; j < 2; j++ {
-							Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
-						}
-					}
-					tr := m.getCoordTransStiffBeam2d(bi)
-					var z mat.Dense
-					z.Mul(tr, Zo)
-					kr := m.getStiffBeam2d(bi)
-					s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
-					// calculate beam forces
-					s.Mul(kr, &z)
-				}
+				// calculate beam internal force in local beam system
+				lc.calcBeamForces(d, m)
 
 				// calculate reactions
-				lc.Reactions = make([][3]float64, len(m.Points))
-				for pt := 0; pt < len(m.Points); pt++ {
-					for i := 0; i < 3; i++ {
-						if !m.Supports[pt][i] {
-							// free support
-							continue
-						}
-						// fix support
-						react := -p[3*pt+i]
-
-						row := 3*pt + i
-						_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
-							if i == row {
-								react += x * d[j]
-							}
-							return true
-						})
-						lc.Reactions[pt][i] = react
-					}
-				}
+				lc.calcReactions(d, p, m, k)
 
 				for ; ; iter++ {
 					if IterationMax < iter {
@@ -754,30 +741,6 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 						d[i] += dd[i]
 					}
 
-					lc.BeamForces = make([][6]float64, len(m.Beams))
-					for bi, b := range m.Beams {
-						// Alternative for
-						// Zo := mat.NewDense(6, 1, data)
-						// is:
-						for k := 0; k < 6; k++ {
-							data[k] = 0.0
-						}
-
-						// displacement for 1 beam in global system
-						for i := 0; i < 3; i++ {
-							for j := 0; j < 2; j++ {
-								Zo.Set(j*3+i, 0, d[b.N[j]*3+i])
-							}
-						}
-						tr := m.getCoordTransStiffBeam2d(bi)
-						var z mat.Dense
-						z.Mul(tr, Zo)
-						kr := m.getStiffBeam2d(bi)
-						s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
-						// calculate beam forces
-						s.Mul(kr, &z)
-					}
-
 					// error
 					var e, max float64
 					for i := range dd {
@@ -792,36 +755,16 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 						break
 					}
 
-					lc.PointDisplacementGlobal = make([][3]float64, len(m.Points))
-					for p := 0; p < len(m.Points); p++ {
-						for i := 0; i < 3; i++ {
-							lc.PointDisplacementGlobal[p][i] = d[3*p+i]
-						}
-					}
+					// calculate point displacement in global system
+					lc.calcDisplacement(len(m.Points), d)
 
-					ddlast = dd
+					// calculate beam internal force in local beam system
+					lc.calcBeamForces(d, m)
 
 					// calculate reactions
-					lc.Reactions = make([][3]float64, len(m.Points))
-					for pt := 0; pt < len(m.Points); pt++ {
-						for i := 0; i < 3; i++ {
-							if !m.Supports[pt][i] {
-								// free support
-								continue
-							}
-							// fix support
-							react := -p[3*pt+i]
+					lc.calcReactions(d, p, m, k)
 
-							row := 3*pt + i
-							_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
-								if i == row {
-									react += x * d[j]
-								}
-								return true
-							})
-							lc.Reactions[pt][i] = react
-						}
-					}
+					ddlast = dd
 
 					// calculate load on beam
 
@@ -835,6 +778,8 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 			}
 		}
 	}
+
+	// TODO: add shear impleentaion like  frame3dd, but may be frame3dd have bug
 
 	return nil
 }

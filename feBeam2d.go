@@ -198,7 +198,7 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 	}
 
 	defer func() {
-		// TODO : propably : minus axial force ??
+		//TODO : propably : minus axial force ??
 		kr.Scale(axialForce, kr)
 	}()
 
