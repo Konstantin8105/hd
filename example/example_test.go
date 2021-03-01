@@ -49,6 +49,19 @@ func TestModelString(t *testing.T) {
 		mf:       example.BucklingBeam,
 		filename: "beam-buckling",
 	}, {
+		mf:       example.Gframe,
+		filename: "gframe",
+	}, {
+		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+			return example.G(true)
+		},
+		filename: "G-linear",
+	}, {
+		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+			return example.G(false)
+		},
+		filename: "G-nonlinear",
+	}, {
 		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
 			m, _, lc, _ := example.BeamDc()
 			return func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {

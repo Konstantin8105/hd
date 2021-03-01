@@ -580,3 +580,93 @@ func FrameModal() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	}
 	return
 }
+
+// nonlinear example
+func G(isLinear bool) (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	d := 0.14
+	E := 2.05e11
+	J := math.Pow(d, 4) / 12
+	A := d * d
+	m = hd.Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{0.0, 1.0},
+			{0.0, 2.0},
+			{0.0, 3.0},
+			{0.0, 4.0},
+			{0.0, 5.0},
+			{0.1, 5.0},
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: A, J: J, E: E},
+			{N: [2]int{1, 2}, A: A, J: J, E: E},
+			{N: [2]int{2, 3}, A: A, J: J, E: E},
+			{N: [2]int{3, 4}, A: A, J: J, E: E},
+			{N: [2]int{4, 5}, A: A, J: J, E: E},
+			{N: [2]int{5, 6}, A: A, J: J, E: E},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+		},
+	}
+	P := 600000.0
+	l := hd.LoadCase{
+		LoadNodes: []hd.LoadNode{
+			{N: 6, Forces: [3]float64{1, -P, 0}},
+		},
+	}
+	if isLinear {
+		l.AmountLinearBuckling = 1
+	} else {
+		l.NonlinearBuckling = true
+	}
+	lc = append([]hd.LoadCase{}, l)
+	return
+}
+
+// linear buckling
+func Gframe() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	E := 2e11
+	J := 120e-6
+	A := 12e-4
+	m = hd.Model{
+		Points: [][2]float64{
+			{0.0, 0.0},
+			{0.0, 1.0},
+			{0.0, 2.0},
+			{0.0, 3.0},
+			{0.0, 4.0},
+			{3.0, 4.0},
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: A, J: J, E: E},
+			{N: [2]int{1, 2}, A: A, J: J, E: E},
+			{N: [2]int{2, 3}, A: A, J: J, E: E},
+			{N: [2]int{3, 4}, A: A, J: J, E: E},
+			{N: [2]int{4, 5}, A: A, J: 2 * J, E: E},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{true, true, false},
+		},
+	}
+	P := 2.04039 * E * J
+	l := hd.LoadCase{
+		LoadNodes: []hd.LoadNode{
+			{N: 4, Forces: [3]float64{0, -P, 0}},
+		},
+		AmountLinearBuckling: 1,
+	}
+	lc = append([]hd.LoadCase{}, l)
+	return
+}

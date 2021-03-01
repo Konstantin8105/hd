@@ -799,7 +799,7 @@ func (m *Model) assemblyK(elementMatrix func(int) *mat.Dense) (
 	}
 
 	for i := range m.Beams {
-		kr := elementMatrix(i) // m.getStiffBeam2d(i)
+		kr := elementMatrix(i)
 		tr := m.getCoordTransStiffBeam2d(i)
 
 		kr.Mul(tr.T(), kr)
