@@ -133,6 +133,20 @@ type LoadCase struct {
 
 	// Result of nonlinear buckling calculation
 	NonlinearBuckling bool
+
+	proto []Nonlinear
+}
+
+// TODO ??????????????//
+type Nonlinear struct {
+	// Newton
+	// Newton-Rafson
+	// Ньютон-Кантарович
+	// Arc method
+	Algorithm int
+
+	AmountSubSteps uint
+	Recorders      []*LoadCase
 }
 
 // calcDisplacement is calculate point displacement in global system
