@@ -121,13 +121,15 @@ type LoadCase struct {
 	// Unit: N and N*m
 	Reactions [][3]float64
 
-	// Amount of calculated forms.
-	// If Amount is zero or less zero, then no calculate.
 	// LinearBuckling is linear buckling calculation
-	AmountLinearBuckling uint16
+	LinearBuckling struct {
+		// Amount of calculated forms.
+		// If Amount is zero or less zero, then no calculate.
+		Amount uint16
 
-	// Result of linear buckling calculation
-	LinearBucklingResult []BucklingResult
+		// Result of linear buckling calculation
+		Results []BucklingResult
+	}
 
 	// Result of nonlinear buckling calculation
 	NonlinearBuckling bool
@@ -266,9 +268,9 @@ func (lc LoadCase) String() (out string) {
 	}
 
 	// output linear buckling data
-	if len(lc.LinearBucklingResult) > 0 {
+	if len(lc.LinearBuckling.Results) > 0 {
 		out += "\nLinear buckling result:\n"
-		for _, lbr := range lc.LinearBucklingResult {
+		for _, lbr := range lc.LinearBuckling.Results {
 			out += fmt.Sprintf("Linear buckling factor: %15.5f\n", lbr.Factor)
 			out += fmt.Sprintf("%5s %15s %15s %15s\n",
 				"Point", "X", "Y", "M")
@@ -280,7 +282,7 @@ func (lc LoadCase) String() (out string) {
 					lbr.PointDisplacementGlobal[i][2])
 			}
 		}
-	} else if lc.AmountLinearBuckling == 0 {
+	} else if lc.LinearBuckling.Amount == 0 {
 		out += "\nLinear buckling result: is not calculated\n"
 	} else {
 		out += "\nLinear buckling result: haven`t valid data. Probably all beams are tension\n"
@@ -294,7 +296,7 @@ func (lc *LoadCase) reset() {
 	lc.PointDisplacementGlobal = nil
 	lc.BeamForces = nil
 	lc.Reactions = nil
-	lc.LinearBucklingResult = nil
+	lc.LinearBuckling.Results = nil
 }
 
 // ModalCase is modal calculation case
@@ -535,7 +537,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 
 		// TODO : external function
 		// TODO : split to specific function
-		if lc.AmountLinearBuckling > 0 {
+		if lc.LinearBuckling.Amount > 0 {
 			// assembly matrix of stiffiner
 			g, _, err := m.assemblyK(func(pos int) *mat.Dense {
 				return m.getGeometricBeam2d(pos, lc)
@@ -633,16 +635,16 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 						real(eVector.At(3*p+2, i)),
 					})
 				}
-				lc.LinearBucklingResult = append(lc.LinearBucklingResult, lbr)
+				lc.LinearBuckling.Results = append(lc.LinearBuckling.Results, lbr)
 			}
 			// Sort by factors
-			sort.SliceStable(lc.LinearBucklingResult, func(i, j int) bool {
-				return lc.LinearBucklingResult[i].Factor < lc.LinearBucklingResult[j].Factor
+			sort.SliceStable(lc.LinearBuckling.Results, func(i, j int) bool {
+				return lc.LinearBuckling.Results[i].Factor < lc.LinearBuckling.Results[j].Factor
 			})
 
 			// Cut result slice
-			if len(lc.LinearBucklingResult) > int(lc.AmountLinearBuckling) {
-				lc.LinearBucklingResult = lc.LinearBucklingResult[:lc.AmountLinearBuckling]
+			if len(lc.LinearBuckling.Results) > int(lc.LinearBuckling.Amount) {
+				lc.LinearBuckling.Results = lc.LinearBuckling.Results[:lc.LinearBuckling.Amount]
 			}
 		}
 

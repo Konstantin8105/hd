@@ -83,7 +83,12 @@ func BucklingBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 			LoadNodes: []hd.LoadNode{
 				{N: 4, Forces: [3]float64{-1.0, 0, 0}},
 			},
-			AmountLinearBuckling: 2,
+			LinearBuckling: struct {
+				Amount  uint16
+				Results []hd.BucklingResult
+			}{
+				Amount: 2,
+			},
 		},
 	}
 
@@ -193,7 +198,12 @@ func Truss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 					Forces: [3]float64{42000, 0, 0},
 				},
 			},
-			AmountLinearBuckling: 1,
+			LinearBuckling: struct {
+				Amount  uint16
+				Results []hd.BucklingResult
+			}{
+				Amount: 1,
+			},
 		},
 	}
 	mc = []hd.ModalCase{
@@ -241,13 +251,23 @@ func TrussWithBuckling() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 			LoadNodes: []hd.LoadNode{
 				{N: 3, Forces: [3]float64{+70000, 0, 0}},
 			},
-			AmountLinearBuckling: 2,
+			LinearBuckling: struct {
+				Amount  uint16
+				Results []hd.BucklingResult
+			}{
+				Amount: 2,
+			},
 		},
 		hd.LoadCase{
 			LoadNodes: []hd.LoadNode{
 				{N: 3, Forces: [3]float64{-70000, 0, 0}},
 			},
-			AmountLinearBuckling: 2,
+			LinearBuckling: struct {
+				Amount  uint16
+				Results []hd.BucklingResult
+			}{
+				Amount: 2,
+			},
 		},
 	}
 	return
@@ -622,7 +642,7 @@ func G(isLinear bool) (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 		},
 	}
 	if isLinear {
-		l.AmountLinearBuckling = 1
+		l.LinearBuckling.Amount = 1
 	} else {
 		l.NonlinearBuckling = true
 	}
@@ -665,7 +685,12 @@ func Gframe() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 		LoadNodes: []hd.LoadNode{
 			{N: 4, Forces: [3]float64{0, -P, 0}},
 		},
-		AmountLinearBuckling: 1,
+		LinearBuckling: struct {
+			Amount  uint16
+			Results []hd.BucklingResult
+		}{
+			Amount: 1,
+		},
 	}
 	lc = append([]hd.LoadCase{}, l)
 	return
