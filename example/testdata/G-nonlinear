@@ -52,7 +52,7 @@ Index           Fx, N           Fy, N          M, N*m
 Linear buckling result: is not calculated
 
 Nonlinear buckling result:
-Algorithm: Newton
+Algorithm by Newton nonlinear algorithm
 Step : 0
 
 Load case:

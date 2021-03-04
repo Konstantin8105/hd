@@ -131,32 +131,14 @@ type LoadCase struct {
 		Results []BucklingResult
 	}
 
-	// Result of nonlinear buckling calculation
-	Nonlinear struct {
-		Algorithm     NonlinearAlgorithm // Algorithm of nonlinear analysis
-		MaxIterations uint64             // Allowable amount iterations
-		Substep       uint64             // Step is 1/Substep of Linear calculation
+	// Result of nonlinear buckling calculation by newton algorithm
+	NonlinearNewton struct {
+		MaxIterations uint64 // Allowable amount iterations
+		Substep       uint64 // Step is 1/Substep of Linear calculation
 
 		// Result of calculation
 		Results []*LoadCase
 	}
-}
-
-type NonlinearAlgorithm uint
-
-const (
-	None NonlinearAlgorithm = iota
-	Newton
-)
-
-func (n NonlinearAlgorithm) String() string {
-	switch n {
-	case None:
-		return "None"
-	case Newton:
-		return "Newton"
-	}
-	panic("name undefined")
 }
 
 // TODO: if support free moment so pins is free
@@ -337,10 +319,10 @@ func (lc LoadCase) String() (out string) {
 	}
 
 	// output nonlinear buckling data
-	if len(lc.Nonlinear.Results) > 0 {
+	if 0 < len(lc.NonlinearNewton.Results) {
 		out += "\nNonlinear buckling result:\n"
-		out += fmt.Sprintf("Algorithm: %s\n", lc.Nonlinear.Algorithm)
-		for step, res := range lc.Nonlinear.Results {
+		out += "Algorithm by Newton nonlinear algorithm\n"
+		for step, res := range lc.NonlinearNewton.Results {
 			out += fmt.Sprintf("Step : %d\n%s\n", step, res)
 		}
 	}
@@ -354,7 +336,7 @@ func (lc *LoadCase) reset() {
 	lc.BeamForces = nil
 	lc.Reactions = nil
 	lc.LinearBuckling.Results = nil
-	lc.Nonlinear.Results = nil
+	lc.NonlinearNewton.Results = nil
 }
 
 // ModalCase is modal calculation case
@@ -707,20 +689,20 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 		}
 
 		// TODO : external function
-		if lc.Nonlinear.Algorithm != None {
+		if 0 < lc.NonlinearNewton.MaxIterations {
 
 			ddlast := make([]float64, len(d))
 
 			// loop
-			amount := lc.Nonlinear.Substep
-			maxiter := lc.Nonlinear.MaxIterations
+			amount := lc.NonlinearNewton.Substep
+			maxiter := lc.NonlinearNewton.MaxIterations
 			dp := make([]float64, len(p))
 			for i := range dp {
 				dp[i] = p[i] / float64(amount)
 			}
 			p = make([]float64, len(p))
 
-			results := &lc.Nonlinear.Results
+			results := &lc.NonlinearNewton.Results
 			iter := uint64(0)
 			for i := uint64(0); i < amount; i++ {
 				lc = new(LoadCase)
