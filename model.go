@@ -132,25 +132,28 @@ type LoadCase struct {
 	}
 
 	// Result of nonlinear buckling calculation
-	NonlinearBuckling bool
+	Nonlinear struct {
+		Algorithm     NonlinearAlgorithm // Algorithm of nonlinear analysis
+		MaxIterations uint64             // Allowable amount iterations
+		Substep       uint64             // Step is 1/Substep of Linear calculation
 
-	proto []Nonlinear
+		// Result of calculation
+		Results []*LoadCase
+	}
 }
 
-// TODO ??????????????//
-type Nonlinear struct {
-	// Newton
-	// Newton-Rafson
-	// Ньютон-Кантарович
-	// Arc method
-	Algorithm int
+type NonlinearAlgorithm uint
 
-	AmountSubSteps uint
-	Recorders      []*LoadCase
-}
+const (
+	None NonlinearAlgorithm = iota
+	Newton
+)
+
+// TODO: if support free moment so pins is free
 
 // calcDisplacement is calculate point displacement in global system
-func (lc *LoadCase) calcDisplacement(points int, d []float64) {
+func (lc *LoadCase) calcDisplacement(m *Model, d []float64) {
+	points := len(m.Points)
 	if len(lc.PointDisplacementGlobal) != points {
 		lc.PointDisplacementGlobal = make([][3]float64, points)
 	}
@@ -164,34 +167,8 @@ func (lc *LoadCase) calcDisplacement(points int, d []float64) {
 	}
 }
 
-// calculate reactions
-func (lc *LoadCase) calcReactions(d, p []float64, m *Model, k *sparse.Matrix) {
-	if len(lc.Reactions) != len(m.Points) {
-		lc.Reactions = make([][3]float64, len(m.Points))
-	}
-	for pt := 0; pt < len(m.Points); pt++ {
-		for i := 0; i < 3; i++ {
-			if !m.Supports[pt][i] {
-				// free support
-				continue
-			}
-			// fix support
-			react := -p[3*pt+i]
-
-			row := 3*pt + i
-			_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
-				if i == row {
-					react += x * d[j]
-				}
-				return true
-			})
-			lc.Reactions[pt][i] = react
-		}
-	}
-}
-
 // calculate beam internal force in local beam system
-func (lc *LoadCase) calcBeamForces(d []float64, m *Model) {
+func (lc *LoadCase) calcBeamForces(m *Model, d []float64) {
 	if len(lc.BeamForces) != len(m.Beams) {
 		lc.BeamForces = make([][6]float64, len(m.Beams))
 	}
@@ -221,6 +198,32 @@ func (lc *LoadCase) calcBeamForces(d []float64, m *Model) {
 		s := mat.NewDense(6, 1, lc.BeamForces[bi][:])
 		// calculate beam forces
 		s.Mul(kr, &z)
+	}
+}
+
+// calculate reactions
+func (lc *LoadCase) calcReactions(m *Model, d []float64, k *sparse.Matrix, p []float64) {
+	if len(lc.Reactions) != len(m.Points) {
+		lc.Reactions = make([][3]float64, len(m.Points))
+	}
+	for pt := 0; pt < len(m.Points); pt++ {
+		for i := 0; i < 3; i++ {
+			if !m.Supports[pt][i] {
+				// free support
+				continue
+			}
+			// fix support
+			react := -p[3*pt+i]
+
+			row := 3*pt + i
+			_, _ = sparse.Fkeep(k, func(i, j int, x float64) bool {
+				if i == row {
+					react += x * d[j]
+				}
+				return true
+			})
+			lc.Reactions[pt][i] = react
+		}
 	}
 }
 
@@ -311,6 +314,7 @@ func (lc *LoadCase) reset() {
 	lc.BeamForces = nil
 	lc.Reactions = nil
 	lc.LinearBuckling.Results = nil
+	lc.Nonlinear.Results = nil
 }
 
 // ModalCase is modal calculation case
@@ -541,13 +545,13 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 		// create result information
 
 		// calculate point displacement in global system
-		lc.calcDisplacement(len(m.Points), d)
+		lc.calcDisplacement(m, d)
 
 		// calculate beam internal force in local beam system
-		lc.calcBeamForces(d, m)
+		lc.calcBeamForces(m, d)
 
 		// calculate reactions
-		lc.calcReactions(d, p, m, k)
+		lc.calcReactions(m, d, k, p)
 
 		// TODO : external function
 		// TODO : split to specific function
@@ -663,24 +667,23 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 		}
 
 		// TODO : external function
-		if lc.NonlinearBuckling {
+		if lc.Nonlinear.Algorithm != None {
 
-			IterationMax := 600
 			ddlast := make([]float64, len(d))
 
 			// loop
-			amount := 10
+			amount := lc.Nonlinear.Substep
 			dp := make([]float64, len(p))
 			for i := range dp {
 				dp[i] = p[i] / float64(amount)
 			}
 			p = make([]float64, len(p))
 
-			for i := 0; i < amount; i++ {
+			for i := uint64(0); i < amount; i++ {
 				for i := range p {
 					p[i] += dp[i]
 				}
-				var iter int
+				var iter uint64
 
 				// solve by LU decomposition
 				d, err = lu.Solve(p)
@@ -691,16 +694,16 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 				// create result information
 
 				// calculate point displacement in global system
-				lc.calcDisplacement(len(m.Points), d)
+				lc.calcDisplacement(m, d)
 
 				// calculate beam internal force in local beam system
-				lc.calcBeamForces(d, m)
+				lc.calcBeamForces(m, d)
 
 				// calculate reactions
-				lc.calcReactions(d, p, m, k)
+				lc.calcReactions(m, d, k, p)
 
 				for ; ; iter++ {
-					if IterationMax < iter {
+					if lc.Nonlinear.MaxIterations < iter {
 						// TODO : add error handling
 						return fmt.Errorf("not enought iterations: %d", iter)
 					}
@@ -772,13 +775,13 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					}
 
 					// calculate point displacement in global system
-					lc.calcDisplacement(len(m.Points), d)
+					lc.calcDisplacement(m, d)
 
 					// calculate beam internal force in local beam system
-					lc.calcBeamForces(d, m)
+					lc.calcBeamForces(m, d)
 
 					// calculate reactions
-					lc.calcReactions(d, p, m, k)
+					lc.calcReactions(m, d, k, p)
 
 					ddlast = dd
 

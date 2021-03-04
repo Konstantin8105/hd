@@ -644,7 +644,9 @@ func G(isLinear bool) (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	if isLinear {
 		l.LinearBuckling.Amount = 1
 	} else {
-		l.NonlinearBuckling = true
+		l.Nonlinear.Algorithm = hd.Newton
+		l.Nonlinear.MaxIterations = 5000
+		l.Nonlinear.Substep = 10
 	}
 	lc = append([]hd.LoadCase{}, l)
 	return
