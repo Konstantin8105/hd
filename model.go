@@ -149,7 +149,38 @@ const (
 	Newton
 )
 
+func (n NonlinearAlgorithm) String() string {
+	switch n {
+	case None:
+		return "None"
+	case Newton:
+		return "Newton"
+	}
+	panic("name undefined")
+}
+
 // TODO: if support free moment so pins is free
+
+// calcNodeLoads is calculate LoadNodes
+func (lc *LoadCase) calcNodeLoads(m *Model, p []float64) {
+	lc.LoadNodes = make([]LoadNode, len(m.Points))
+	for i := range p {
+		npoint := i / 3
+		dir := i - npoint*3
+		lc.LoadNodes[npoint].N = npoint
+		lc.LoadNodes[npoint].Forces[dir] = p[i]
+	}
+	// remove empty loads
+again:
+	for i := range lc.LoadNodes {
+		if lc.LoadNodes[i].Forces[0] == 0.0 &&
+			lc.LoadNodes[i].Forces[1] == 0.0 &&
+			lc.LoadNodes[i].Forces[2] == 0.0 {
+			lc.LoadNodes = append(lc.LoadNodes[:i], lc.LoadNodes[i+1:]...)
+			goto again
+		}
+	}
+}
 
 // calcDisplacement is calculate point displacement in global system
 func (lc *LoadCase) calcDisplacement(m *Model, d []float64) {
@@ -303,6 +334,15 @@ func (lc LoadCase) String() (out string) {
 		out += "\nLinear buckling result: is not calculated\n"
 	} else {
 		out += "\nLinear buckling result: haven`t valid data. Probably all beams are tension\n"
+	}
+
+	// output nonlinear buckling data
+	if len(lc.Nonlinear.Results) > 0 {
+		out += "\nNonlinear buckling result:\n"
+		out += fmt.Sprintf("Algorithm: %s\n", lc.Nonlinear.Algorithm)
+		for step, res := range lc.Nonlinear.Results {
+			out += fmt.Sprintf("Step : %d\n%s\n", step, res)
+		}
 	}
 
 	return
@@ -673,17 +713,22 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 
 			// loop
 			amount := lc.Nonlinear.Substep
+			maxiter := lc.Nonlinear.MaxIterations
 			dp := make([]float64, len(p))
 			for i := range dp {
 				dp[i] = p[i] / float64(amount)
 			}
 			p = make([]float64, len(p))
 
+			results := &lc.Nonlinear.Results
+			iter := uint64(0)
 			for i := uint64(0); i < amount; i++ {
+				lc = new(LoadCase)
+				*results = append(*results, lc)
+
 				for i := range p {
 					p[i] += dp[i]
 				}
-				var iter uint64
 
 				// solve by LU decomposition
 				d, err = lu.Solve(p)
@@ -692,6 +737,9 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 				}
 
 				// create result information
+
+				// calculate loads
+				lc.calcNodeLoads(m, p)
 
 				// calculate point displacement in global system
 				lc.calcDisplacement(m, d)
@@ -703,9 +751,12 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 				lc.calcReactions(m, d, k, p)
 
 				for ; ; iter++ {
-					if lc.Nonlinear.MaxIterations < iter {
+					if maxiter < iter {
 						// TODO : add error handling
-						return fmt.Errorf("not enought iterations: %d", iter)
+						return fmt.Errorf("not enought iterations: %d of %d",
+							iter,
+							maxiter,
+						)
 					}
 
 					// assemble stiffness matrix with geometric nonlinearity
