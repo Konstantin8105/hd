@@ -74,6 +74,58 @@ Point               X               Y               M
     2     0.00000e+00     3.92396e-02     6.27485e-01
     3     0.00000e+00     0.00000e+00    -6.41123e-01
 
+Nonlinear buckling result by: Newton-Raphson method
+Step : 0
+
+Load case:
+Point           Fx, N           Fy, N          M, N*m
+    3    -70000.00000         0.00000         0.00000
+Point displacament in global system coordinate:
+Point           DX, m           DY, m     Angle, rad.
+    0     0.00000e+00     0.00000e+00     0.00000e+00
+    1    -5.34761e-05     0.00000e+00    -0.00000e+00
+    2    -1.24777e-04     0.00000e+00     0.00000e+00
+    3    -1.78254e-04     0.00000e+00     0.00000e+00
+Local force in beam:
+                                 START OF BEAM                                 END OF BEAM       
+               ------------------------------------          ------------------------------------
+Index           Fx, N           Fy, N          M, N*m           Fx, N           Fy, N          M, N*m
+    0     7.00000e+04     0.00000e+00     0.00000e+00    -7.00000e+04     0.00000e+00     0.00000e+00
+    1     7.00000e+04     0.00000e+00     0.00000e+00    -7.00000e+04     0.00000e+00     0.00000e+00
+    2     7.00000e+04     0.00000e+00     0.00000e+00    -7.00000e+04     0.00000e+00     0.00000e+00
+Reaction on support:
+Index           Fx, N           Fy, N          M, N*m
+    0     7.00000e+04     0.00000e+00     0.00000e+00
+
+Linear buckling result: is not calculated
+
+
+Nonlinear buckling result by: Newton–Kantorovich method
+Step : 0
+
+Load case:
+Point           Fx, N           Fy, N          M, N*m
+    3    -70000.00000         0.00000         0.00000
+Point displacament in global system coordinate:
+Point           DX, m           DY, m     Angle, rad.
+    0     0.00000e+00     0.00000e+00     0.00000e+00
+    1    -5.34761e-05     0.00000e+00    -0.00000e+00
+    2    -1.24777e-04     0.00000e+00     0.00000e+00
+    3    -1.78254e-04     0.00000e+00     0.00000e+00
+Local force in beam:
+                                 START OF BEAM                                 END OF BEAM       
+               ------------------------------------          ------------------------------------
+Index           Fx, N           Fy, N          M, N*m           Fx, N           Fy, N          M, N*m
+    0     7.00000e+04     0.00000e+00     0.00000e+00    -7.00000e+04     0.00000e+00     0.00000e+00
+    1     7.00000e+04     0.00000e+00     0.00000e+00    -7.00000e+04     0.00000e+00     0.00000e+00
+    2     7.00000e+04     0.00000e+00     0.00000e+00    -7.00000e+04     0.00000e+00     0.00000e+00
+Reaction on support:
+Index           Fx, N           Fy, N          M, N*m
+    0     7.00000e+04     0.00000e+00     0.00000e+00
+
+Linear buckling result: is not calculated
+
+
 
 
 

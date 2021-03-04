@@ -268,6 +268,22 @@ func TrussWithBuckling() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 			}{
 				Amount: 2,
 			},
+			NonlinearNR: struct {
+				MaxIterations uint64
+				Substep       uint64
+				Results       []*hd.LoadCase
+			}{
+				MaxIterations: 1000,
+				Substep:       1,
+			},
+			NonlinearNK: struct {
+				MaxIterations uint64
+				Substep       uint64
+				Results       []*hd.LoadCase
+			}{
+				MaxIterations: 1000,
+				Substep:       1,
+			},
 		},
 	}
 	return
@@ -644,8 +660,10 @@ func G(isLinear bool) (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	if isLinear {
 		l.LinearBuckling.Amount = 1
 	} else {
-		l.NonlinearNewton.MaxIterations = 5000
-		l.NonlinearNewton.Substep = 10
+		l.NonlinearNR.MaxIterations = 5000
+		l.NonlinearNR.Substep = 10
+		l.NonlinearNK.MaxIterations = 5000
+		l.NonlinearNK.Substep = 10
 	}
 	lc = append([]hd.LoadCase{}, l)
 	return

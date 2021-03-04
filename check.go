@@ -27,6 +27,7 @@ func (m *Model) checkInputData() error {
 	if err := m.checkPins(); err != nil {
 		_ = et.Add(err)
 	}
+	// TODO : add max/min elasticity or area <= 10e6
 
 	if !et.IsError() {
 		// graph checking

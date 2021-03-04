@@ -131,10 +131,19 @@ type LoadCase struct {
 		Results []BucklingResult
 	}
 
-	// Result of nonlinear buckling calculation by newton algorithm
-	NonlinearNewton struct {
+	// Result of nonlinear buckling calculation by Newton-Raphson method
+	NonlinearNR struct {
 		MaxIterations uint64 // Allowable amount iterations
-		Substep       uint64 // Step is 1/Substep of Linear calculation
+		Substep       uint64 // Step is 1/Substep of external load
+
+		// Result of calculation
+		Results []*LoadCase
+	}
+
+	// Result of nonlinear buckling calculation by Newton–Kantorovich method
+	NonlinearNK struct {
+		MaxIterations uint64 // Allowable amount iterations
+		Substep       uint64 // Step is 1/Substep of external load
 
 		// Result of calculation
 		Results []*LoadCase
@@ -319,11 +328,18 @@ func (lc LoadCase) String() (out string) {
 	}
 
 	// output nonlinear buckling data
-	if 0 < len(lc.NonlinearNewton.Results) {
-		out += "\nNonlinear buckling result:\n"
-		out += "Algorithm by Newton nonlinear algorithm\n"
-		for step, res := range lc.NonlinearNewton.Results {
-			out += fmt.Sprintf("Step : %d\n%s\n", step, res)
+	for _, n := range []struct {
+		name    string
+		Results []*LoadCase
+	}{
+		{name: "Newton-Raphson method", Results: lc.NonlinearNR.Results},
+		{name: "Newton–Kantorovich method", Results: lc.NonlinearNK.Results},
+	} {
+		if 0 < len(n.Results) {
+			out += fmt.Sprintf("\nNonlinear buckling result by: %s\n", n.name)
+			for step, res := range n.Results {
+				out += fmt.Sprintf("Step : %d\n%s\n", step, res)
+			}
 		}
 	}
 
@@ -336,7 +352,8 @@ func (lc *LoadCase) reset() {
 	lc.BeamForces = nil
 	lc.Reactions = nil
 	lc.LinearBuckling.Results = nil
-	lc.NonlinearNewton.Results = nil
+	lc.NonlinearNR.Results = nil
+	lc.NonlinearNK.Results = nil
 }
 
 // ModalCase is modal calculation case
@@ -689,20 +706,34 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 		}
 
 		// TODO : external function
-		if 0 < lc.NonlinearNewton.MaxIterations {
+		for _, n := range []struct {
+			withRecalcLU  bool
+			MaxIterations uint64 // Allowable amount iterations
+			Substep       uint64 // Step is 1/Substep of external load
+			Results       *[]*LoadCase
+		}{
+			{true, lc.NonlinearNR.MaxIterations, lc.NonlinearNR.Substep, &lc.NonlinearNR.Results},
+			{false, lc.NonlinearNK.MaxIterations, lc.NonlinearNK.Substep, &lc.NonlinearNK.Results},
+		} {
+			if n.MaxIterations == 0 {
+				continue
+			}
 
 			ddlast := make([]float64, len(d))
 
 			// loop
-			amount := lc.NonlinearNewton.Substep
-			maxiter := lc.NonlinearNewton.MaxIterations
+			amount := n.Substep
+			if amount == 0 {
+				amount = 1
+			}
+			maxiter := n.MaxIterations
 			dp := make([]float64, len(p))
 			for i := range dp {
 				dp[i] = p[i] / float64(amount)
 			}
 			p = make([]float64, len(p))
 
-			results := &lc.NonlinearNewton.Results
+			results := n.Results
 			iter := uint64(0)
 			for i := uint64(0); i < amount; i++ {
 				lc = new(LoadCase)
@@ -768,24 +799,26 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					}
 
 					// LU decomposition
-					var lu sparse.LU
-					err = lu.Factorize(summ,
-						// add support
-						append(ignore, m.addSupport()...)...)
-					if err != nil {
-						err = fmt.Errorf("LU error factorization: %v\n"+
-							"ignore = %v\n"+"supports = %v",
-							err,
-							ignore,
-							m.addSupport(),
-						)
-						return err
+					if n.withRecalcLU {
+						var lu sparse.LU
+						err = lu.Factorize(summ,
+							// add support
+							append(ignore, m.addSupport()...)...)
+						if err != nil {
+							err = fmt.Errorf("LU error factorization: %v\n"+
+								"ignore = %v\n"+"supports = %v",
+								err,
+								ignore,
+								m.addSupport(),
+							)
+							return err
+						}
 					}
 
 					// solve
 					dd, err := lu.Solve(delta)
 					if err != nil {
-						return fmt.Errorf("Linear Elastic calculation error: %v", err)
+						return fmt.Errorf("calculation error: %v", err)
 					}
 
 					// displacement increment
@@ -817,16 +850,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					lc.calcReactions(m, d, k, p)
 
 					ddlast = dd
-
-					// calculate load on beam
-
-					// find maximal of beam forces
-
-					// calculate reactions
-
-					// find maximal of reaction
 				}
-				// create result information
 			}
 		}
 	}
