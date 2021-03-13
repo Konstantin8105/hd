@@ -791,6 +791,11 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					if err != nil {
 						return err
 					}
+					for i := range plast {
+						if math.IsNaN(plast[i]) || math.IsInf(plast[i], 0) {
+							return fmt.Errorf("not valid node load %e", plast[i])
+						}
+					}
 
 					// calculate error
 					delta := make([]float64, len(p))
