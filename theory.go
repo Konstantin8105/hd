@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/Konstantin8105/sm"
 )
@@ -21,15 +22,21 @@ func cal(name, str string, view ...bool) string {
 		hide = !view[0]
 	}
 	if !hide {
-		fmt.Printf("\nName    : %s\n", name)
-		fmt.Printf("\nFormula : %s\n", str)
+		fmt.Fprintf(os.Stdout, "\nName    : %s\n", name)
+		fmt.Fprintf(os.Stdout, "\nFormula : %s\n", str)
 	}
-	val, err := sm.Sexpr(nil, str)
+	var val string
+	var err error
+	if hide {
+		val, err = sm.Sexpr(nil, str)
+	} else {
+		val, err = sm.Sexpr(os.Stdout, str)
+	}
 	if err != nil {
 		panic(err)
 	}
 	if !hide {
-		fmt.Printf("Value     : %s\n", val)
+		fmt.Fprintf(os.Stdout, "Value     : %s\n", val)
 	}
 	return val
 }
@@ -71,7 +78,7 @@ func bendBeam() {
 		Kg = cal("Kg", "N*integral( transpose("+dFdx+") * "+dFdx+",x,0,l);variable(x); constant(l);")
 	)
 
-	show := false
+	show := true // false
 
 	for matrixIndex, s := range []struct {
 		name string
@@ -80,12 +87,12 @@ func bendBeam() {
 		{"Matrix stiffnes", Ko},
 		{"Geometric matrix stiffness", Kg},
 	} {
-		fmt.Println("|***************************************************|")
+		fmt.Fprintln(os.Stdout, "|***************************************************|")
 		mK, ok := sm.ParseMatrix(s.K)
 		if !ok {
 			panic("not valid matrix")
 		}
-		fmt.Printf("Matrix K without free:\n%s\n", mK)
+		fmt.Fprintf(os.Stdout, "Matrix K without free:\n%s\n", mK)
 
 		// степень свободы
 		for _, freeIndex := range [][]int{
@@ -93,68 +100,72 @@ func bendBeam() {
 			{1},
 			{2},
 			{3},
-			// {0,1},
+			{1, 3},
 		} {
-			fmt.Println("|---------------------------------------------|")
-			fmt.Println("Name :", s.name, " with free ", freeIndex)
+			fmt.Fprintln(os.Stdout, "|---------------------------------------------|")
+			fmt.Fprintln(os.Stdout, "Name :", s.name, " with free ", freeIndex)
 			K := s.K
 
-			// wbend  = cal("displ", "matrix(v1, O1, v2, O2, 4,1)")
-			// MVbend = cal("MV load", Kbend+" * "+wbend)
-
-			// create vector with free dof
-			free := createMatrix(4, 1)
 			for _, f := range freeIndex {
+				// wbend  = cal("displ", "matrix(v1, O1, v2, O2, 4,1)")
+				// MVbend = cal("MV load", Kbend+" * "+wbend)
+
+				// create vector with free dof
+				free := createMatrix(4, 1)
 				free.Args[free.Position(f, 0)] = sm.CreateFloat(1.0)
-			}
-			// fmt.Printf("free:\n%s\n", free)
+				// fmt.Fprintf(os.Stdout,"free:\n%s\n", free)
 
-			gfactor := cal("gfactor", "( "+K+" * "+sm.AstToStr(free.Ast())+")", show)
+				gfactor := cal("gfactor", "( "+K+" * "+sm.AstToStr(free.Ast())+")", show)
 
-			for _, f := range freeIndex {
 				mG, ok := sm.ParseMatrix(gfactor)
 				if !ok {
 					panic("not valid matrix")
 				}
-				//fmt.Printf("Matrix gfactor:\n%s\n", mG)
+				if show {
+					fmt.Fprintf(os.Stdout, "Matrix gfactor:\n%s\n", mG)
+				}
 				minGfactor := sm.AstToStr(mG.Args[mG.Position(f, 0)])
+				if show {
+					fmt.Fprintln(os.Stdout, "minGfactor = ", minGfactor)
+				}
 				gfactor = cal("gfactor minimal", gfactor+"/(-1*("+minGfactor+"))", show)
-			}
 
-			mG, ok := sm.ParseMatrix(gfactor)
-			if !ok {
-				panic("not valid matrix")
-			}
-			//fmt.Printf("Matrix gfactor:\n%s\n", mG)
+				mG, ok = sm.ParseMatrix(gfactor)
+				if !ok {
+					panic("not valid matrix")
+				}
+				if show {
+					fmt.Fprintf(os.Stdout, "Matrix gfactor:\n%s\n", mG)
+				}
 
-			G := sm.CreateMatrix(4, 4)
-			for i := 0; i < 4; i++ {
-				G.Args[G.Position(i, i)] = sm.CreateFloat(1.0)
-			}
-			for i := 0; i < 4; i++ {
-				for _, f := range freeIndex {
+				G := sm.CreateMatrix(4, 4)
+				for i := 0; i < 4; i++ {
+					G.Args[G.Position(i, i)] = sm.CreateFloat(1.0)
+				}
+				for i := 0; i < 4; i++ {
 					G.Args[G.Position(f, i)] = mG.Args[mG.Position(i, 0)]
 				}
-			}
-			for _, f := range freeIndex {
 				G.Args[G.Position(f, f)] = sm.CreateFloat(0.0)
-			}
-			// fmt.Printf("Matrix G:\n%s\n", G)
+				if show {
+					fmt.Fprintf(os.Stdout, "Matrix G:\n%s\n", G)
+				}
 
-			KwithFree := cal("KwithFree", "transpose("+sm.AstToStr(G.Ast())+") * "+K+
-				" * "+sm.AstToStr(G.Ast()), show)
+				KwithFree := cal("KwithFree", "transpose("+sm.AstToStr(G.Ast())+") * "+K+
+					" * "+sm.AstToStr(G.Ast()), show)
 
-			mKF, ok := sm.ParseMatrix(KwithFree)
-			if !ok {
-				panic("not valid matrix")
-			}
-			if matrixIndex == 0 {
-				for _, f := range freeIndex {
+				K = KwithFree
+
+				mKF, ok := sm.ParseMatrix(KwithFree)
+				if !ok {
+					panic("not valid matrix")
+				}
+				if matrixIndex == 0 {
 					mKF.Args[mKF.Position(f, f)] = sm.CreateFloat(1.0)
 				}
+				fmt.Fprintf(os.Stdout, "K with free\n%s\n", mKF)
+
 			}
-			fmt.Printf("K with free\n%s\n", mKF)
 		}
-		fmt.Println("||||||==========================================||||||")
+		fmt.Fprintln(os.Stdout, "||||||==========================================||||||")
 	}
 }
