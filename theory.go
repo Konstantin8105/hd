@@ -27,11 +27,7 @@ func cal(name, str string, view ...bool) string {
 	}
 	var val string
 	var err error
-	if hide {
-		val, err = sm.Sexpr(nil, str)
-	} else {
-		val, err = sm.Sexpr(os.Stdout, str)
-	}
+	val, err = sm.Sexpr(nil, str)
 	if err != nil {
 		panic(err)
 	}
@@ -78,7 +74,7 @@ func bendBeam() {
 		Kg = cal("Kg", "N*integral( transpose("+dFdx+") * "+dFdx+",x,0,l);variable(x); constant(l);")
 	)
 
-	show := true // false
+	show := false
 
 	for matrixIndex, s := range []struct {
 		name string
@@ -100,7 +96,7 @@ func bendBeam() {
 			{1},
 			{2},
 			{3},
-			{1, 3},
+			{3, 1},
 		} {
 			fmt.Fprintln(os.Stdout, "|---------------------------------------------|")
 			fmt.Fprintln(os.Stdout, "Name :", s.name, " with free ", freeIndex)
