@@ -42,11 +42,7 @@ func createMatrix(r, c int) *sm.Matrix {
 }
 
 func bendBeam() {
-	// w    = cal("displ", "matrix(u1, v1, O1, u2, v2, O2, 6,1)")
-	// load = cal("load", "matrix( N1, V1, M1, N2, V2, M2, 6,1)")
-	// a    = cal("a", "matrix(a1,a2,a3,a4,a5,a6,6,1)")
-	// v    = cal("перемещения v", "transpose("+a+") * matrix(1,x,x*x,x*x*x, 0,0 , 6,1)")
-	// u    = cal("перемещения u", "transpose("+a+") * matrix(0,0,0,0,1,x, 6,1)")
+	show := false
 
 	var (
 		// матрица коэффициентов
@@ -57,24 +53,22 @@ func bendBeam() {
 			1,      l,    l*l, l*l*l,
 			0,     -1,   -2*l,-3*l*l,
 			4, 4)
-		`)
+		`, show)
 
 		// обратная матрица коэффициентов
-		invL = cal("[L]^-1", "inverse("+L+")")
+		invL = cal("[L]^-1", "inverse("+L+")", show)
 
 		// функция формы конечного элемента
-		Ψ      = cal("Ψbend", "matrix(1,x,x*x,x*x*x,1,4)*"+invL)
-		dFdx   = cal("dFdx", "d("+Ψ+", x); variable(x)")
-		d2Fdx2 = cal("d2Fdx2", "d("+dFdx+", x); variable(x); constant(l);")
+		Ψ      = cal("Ψbend", "matrix(1,x,x*x,x*x*x,1,4)*"+invL, show)
+		dFdx   = cal("dFdx", "d("+Ψ+", x); variable(x)", show)
+		d2Fdx2 = cal("d2Fdx2", "d("+dFdx+", x); variable(x); constant(l);", show)
 
 		// матрица жесткости
-		Ko = cal("Ko", "EJ*integral( transpose("+d2Fdx2+") * "+d2Fdx2+",x,0,l);variable(x); constant(l);")
+		Ko = cal("Ko", "EJ*integral( transpose("+d2Fdx2+") * "+d2Fdx2+",x,0,l);variable(x); constant(l);", show)
 
 		// геометрическая матрица жесткости
-		Kg = cal("Kg", "N*integral( transpose("+dFdx+") * "+dFdx+",x,0,l);variable(x); constant(l);")
+		Kg = cal("Kg", "N*integral( transpose("+dFdx+") * "+dFdx+",x,0,l);variable(x); constant(l);", show)
 	)
-
-	show := false
 
 	for matrixIndex, s := range []struct {
 		name string
@@ -88,7 +82,7 @@ func bendBeam() {
 		if !ok {
 			panic("not valid matrix")
 		}
-		fmt.Fprintf(os.Stdout, "Matrix K without free:\n%s\n", mK)
+		fmt.Fprintf(os.Stdout, "%s without free:\n%s\n", s.name, mK)
 
 		// степень свободы
 		for _, freeIndex := range [][]int{
@@ -159,7 +153,6 @@ func bendBeam() {
 					mKF.Args[mKF.Position(f, f)] = sm.CreateFloat(1.0)
 				}
 				fmt.Fprintf(os.Stdout, "K with free\n%s\n", mKF)
-
 			}
 		}
 		fmt.Fprintln(os.Stdout, "||||||==========================================||||||")
