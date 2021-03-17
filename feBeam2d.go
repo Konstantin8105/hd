@@ -200,7 +200,10 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 
 	defer func() {
 		//TODO : propably : minus axial force ??
-		kr.Scale(-axialForce, kr)
+		// if axialForce < 0 {
+		// 	axialForce = 0
+		// }
+		kr.Scale(axialForce, kr)
 	}()
 
 	length := m.distance(m.Beams[pos].N[0], m.Beams[pos].N[1])
