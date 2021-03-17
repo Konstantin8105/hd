@@ -1,6 +1,7 @@
 package hd
 
 import (
+	"fmt"
 	"math"
 
 	"github.com/Konstantin8105/pow"
@@ -199,110 +200,229 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 
 	defer func() {
 		//TODO : propably : minus axial force ??
-		kr.Scale(axialForce, kr)
+		kr.Scale(-axialForce, kr)
 	}()
 
 	length := m.distance(m.Beams[pos].N[0], m.Beams[pos].N[1])
 
-	// no pins
-	if !m.Pins[pos][2] && !m.Pins[pos][5] {
-		// for bending finite element :
-		//
-		// -0.03333 * (l * N)   : [ 1, 3]
-		// -0.03333 * (l * N)   : [ 3, 1]
-		//
-		// -0.09990 * N         : [ 0, 1]
-		// -0.09990 * N         : [ 1, 0]
-		// -0.09996 * N         : [ 0, 3]
-		// -0.09996 * N         : [ 3, 0]
-		// 0.09990 * N          : [ 1, 2]
-		// 0.09990 * N          : [ 2, 1]
-		// 0.09996 * N          : [ 2, 3]
-		// 0.09996 * N          : [ 3, 2]
-		//
-		// 0.13333 * (l * N)    : [ 1, 1]
-		// 0.13333 * (l * N)    : [ 3, 3]
-		//
-		// -1.19988 * N / l     : [ 0, 2]
-		// -1.19988 * N / l     : [ 2, 0]
-		// 1.19988 * N / l      : [ 0, 0]
-		// 1.19988 * N / l      : [ 2, 2]
+	var found bool
 
-		G1 := 6. / (5. * length)
-		kr.Set(1, 1, +G1)
-		kr.Set(4, 4, +G1)
-		kr.Set(1, 4, -G1)
-		kr.Set(4, 1, -G1)
+	// number conversion:
+	// 0 1 2 3 4 5  for full size finite element
+	//   0 1   2 3  for   bending finite element
+	for _, v := range []struct {
+		pins [4]bool
+		f    func()
+	}{
+		{
+			pins: [4]bool{false, false, false, false},
+			f: func() {
+				// -0.03333 * (l * N) : [ 1, 3] :
+				// -0.03333 * (l * N) : [ 3, 1] :
+				//
+				//  0.09990 * N       : [ 0, 1] :
+				//  0.09990 * N       : [ 1, 0] :
+				//  0.09996 * N       : [ 0, 3] :
+				//  0.09996 * N       : [ 3, 0] :
+				// -0.09990 * N       : [ 1, 2] :
+				// -0.09990 * N       : [ 2, 1] :
+				// -0.09996 * N       : [ 2, 3] :
+				// -0.09996 * N       : [ 3, 2] :
+				//
+				//  0.13333 * (l * N) : [ 1, 1] :
+				//  0.13333 * (l * N) : [ 3, 3] :
+				//
+				//  1.19988 * N / l   : [ 0, 0] :
+				//  1.19988 * N / l   : [ 2, 2] :
+				// -1.19988 * N / l   : [ 0, 2] :
+				// -1.19988 * N / l   : [ 2, 0] :
 
-		kr.Set(1, 2, +0.1)
-		kr.Set(2, 1, +0.1)
-		kr.Set(1, 5, +0.1)
-		kr.Set(5, 1, +0.1)
+				G := -length / 30.
+				kr.Set(5, 2, +G)
+				kr.Set(2, 5, +G)
 
-		kr.Set(2, 4, -0.1)
-		kr.Set(4, 2, -0.1)
-		kr.Set(5, 4, -0.1)
-		kr.Set(4, 5, -0.1)
+				G = 0.1
+				kr.Set(1, 2, +G)
+				kr.Set(2, 1, +G)
+				kr.Set(1, 5, +G)
+				kr.Set(5, 1, +G)
+				kr.Set(2, 4, -G)
+				kr.Set(4, 2, -G)
+				kr.Set(5, 4, -G)
+				kr.Set(4, 5, -G)
 
-		G2 := 2. * length / 15.
-		kr.Set(2, 2, +G2)
-		kr.Set(5, 5, +G2)
+				G = 2.0 / 15.0 * length
+				kr.Set(2, 2, +G)
+				kr.Set(5, 5, +G)
 
-		G3 := -length / 30.
-		kr.Set(5, 2, +G3)
-		kr.Set(2, 5, +G3)
+				G = 6.0 / 5.0 * length
+				kr.Set(1, 4, -G)
+				kr.Set(4, 1, -G)
+				kr.Set(1, 1, +G)
+				kr.Set(4, 4, +G)
+			},
+		},
+		{
+			pins: [4]bool{true, false, false, false},
+			f: func() {
+				// -0.04165 * (l * N) : [ 1, 3] :
+				// -0.04165 * (l * N) : [ 3, 1] :
+				//
+				// 0.12500 * (l * N)  : [ 3, 3] :
+				// 0.12501 * (l * N)  : [ 1, 1] :
+				G := 1.0 / 24.0 * length
+				kr.Set(2, 5, -G)
+				kr.Set(5, 2, -G)
 
-		return kr
+				G = 1.0 / 8.0 * length
+				kr.Set(2, 2, +G)
+				kr.Set(5, 5, +G)
+			},
+		},
+		{
+			pins: [4]bool{false, true, false, false},
+			f: func() {
+				// -0.12493 * N       : [ 0, 3] :  -0.125
+				// -0.12493 * N       : [ 3, 0] :  -0.125
+				//  0.12493 * N       : [ 2, 3] :   0.125
+				//  0.12493 * N       : [ 3, 2] :   0.125
+				//
+				// -1.12503 * (N / l) : [ 0, 2] :  -1.125 / l
+				// -1.12503 * (N / l) : [ 2, 0] :  -1.125 / l
+				//  1.12503 * (N / l) : [ 0, 0] :   1.125 / l
+				//  1.12503 * (N / l) : [ 2, 2] :   1.125 / l
+				//
+				// 0.12500 * (l * N)  : [ 3, 3] :   0.125 * l
+				//
+				// 0.00000            : [ 0, 1] :
+				// 0.00000            : [ 1, 0] :
+				// 0.00000            : [ 1, 1] :
+				// 0.00000            : [ 1, 2] :
+				// 0.00000            : [ 1, 3] :
+				// 0.00000            : [ 2, 1] :
+				// 0.00000            : [ 3, 1] :
+
+				// 0.12493 * N        : [ 0, 3] :
+				// 0.12493 * N        : [ 3, 0] :
+				// -0.12493 * N       : [ 2, 3] :
+				// -0.12493 * N       : [ 3, 2] :
+				//
+				// 0.12500 * (l * N)  : [ 3, 3] :
+				//
+				// -1.12503 * (N / l) : [ 0, 2] :
+				// -1.12503 * (N / l) : [ 2, 0] :
+				// 1.12503 * (N / l)  : [ 0, 0] :
+				// 1.12503 * (N / l)  : [ 2, 2] :
+
+				// pins at the begin of beam
+				G := 1.0 / 8.0
+				kr.Set(1, 5, +G)
+				kr.Set(5, 1, +G)
+				kr.Set(4, 5, -G)
+				kr.Set(5, 4, -G)
+
+				G = 9.0 / 8.0 * 1.0 / length
+				kr.Set(1, 4, -G)
+				kr.Set(4, 1, -G)
+				kr.Set(1, 1, +G)
+				kr.Set(4, 4, +G)
+
+				G = 1.0 / 8.0 * length
+				kr.Set(5, 5, +G)
+				// kr.Set(5, 5, length/5.0)
+				// TODO: why it is different матрица потенциала
+			},
+		},
+		{
+			pins: [4]bool{false, false, true, false},
+			f: func() {
+				// -0.04165 * (l * N) : [ 1, 3] :
+				// -0.04165 * (l * N) : [ 3, 1] :
+				//
+				// 0.12500 * (l * N)  : [ 3, 3] :
+				// 0.12501 * (l * N)  : [ 1, 1] :
+				G := 1.0 / 24.0 * length
+				kr.Set(2, 5, -G)
+				kr.Set(5, 2, -G)
+
+				G = 1.0 / 8.0 * length
+				kr.Set(5, 5, +G)
+				kr.Set(2, 2, +G)
+			},
+		},
+		{
+			pins: [4]bool{false, false, false, true},
+			f: func() {
+				// 0.12489 * N        : [ 0, 1] :
+				// 0.12489 * N        : [ 1, 0] :
+				// -0.12489 * N       : [ 1, 2] :
+				// -0.12489 * N       : [ 2, 1] :
+				//
+				// -1.12494 * (N / l) : [ 0, 2] :
+				// -1.12494 * (N / l) : [ 2, 0] :
+				// 1.12494 * (N / l)  : [ 0, 0] :
+				// 1.12494 * (N / l)  : [ 2, 2] :
+				//
+				// 0.12500 * (l * N)  : [ 1, 1] :
+
+				// pins at the end of beam
+				G := 0.125
+				kr.Set(1, 2, +G)
+				kr.Set(2, 1, +G)
+				kr.Set(2, 4, -G)
+				kr.Set(4, 2, -G)
+				// 	kr.Set(1, 2, +1./5.)
+				// 	kr.Set(2, 1, +1./5.)
+				// 	kr.Set(4, 2, -1./5.)
+				// 	kr.Set(2, 4, -1./5.)
+
+				G = 9.0 / 8.0 * 1.0 / length
+				kr.Set(1, 4, -G)
+				kr.Set(4, 1, -G)
+				kr.Set(1, 1, +G)
+				kr.Set(4, 4, +G)
+				// 	G1 := 6. / (5. * length)
+				// 	kr.Set(1, 1, +G1)
+				// 	kr.Set(4, 4, +G1)
+				// 	kr.Set(1, 4, -G1)
+				// 	kr.Set(4, 1, -G1)
+
+				G = 1.0 / 8.0 * length
+				kr.Set(2, 2, +G)
+				// 	kr.Set(2, 2, length/5.0)
+			},
+		},
+		{
+			pins: [4]bool{false, true, false, true},
+			f: func() {
+				// -1.00016 * (N / l) : [ 0, 2] :
+				// -1.00016 * (N / l) : [ 2, 0] :
+				// 1.00016 * (N / l)  : [ 0, 0] :
+				// 1.00016 * (N / l)  : [ 2, 2] :
+
+				// pins on the start and end of beam
+				G := 1.0 / length
+				kr.Set(1, 4, -G)
+				kr.Set(4, 1, -G)
+				kr.Set(1, 1, +G)
+				kr.Set(4, 4, +G)
+			},
+		},
+	} {
+		if (v.pins[0] == m.Pins[pos][1] &&
+			v.pins[1] == m.Pins[pos][2] &&
+			v.pins[2] == m.Pins[pos][4] &&
+			v.pins[3] == m.Pins[pos][5]) ||
+			(v.pins[1] == m.Pins[pos][2] &&
+				v.pins[3] == m.Pins[pos][5]) {
+			v.f()
+			found = true
+			break
+		}
+	}
+	if !found {
+		panic(fmt.Errorf("not found geometric matrix case: %v", m.Pins[pos]))
 	}
 
-	// pins at the begin of beam
-	if m.Pins[pos][2] && !m.Pins[pos][5] {
-		G1 := 6. / (5. * length)
-		kr.Set(1, 1, +G1)
-		kr.Set(4, 4, +G1)
-		kr.Set(1, 4, -G1)
-		kr.Set(4, 1, -G1)
-
-		kr.Set(1, 5, +1./5.)
-		kr.Set(5, 1, +1./5.)
-
-		kr.Set(4, 5, -1./5.)
-		kr.Set(5, 4, -1./5.)
-
-		kr.Set(5, 5, length/5.0)
-
-		return kr
-	}
-
-	// pins at the end of beam
-	if !m.Pins[pos][2] && m.Pins[pos][5] {
-		G1 := 6. / (5. * length)
-		kr.Set(1, 1, +G1)
-		kr.Set(4, 4, +G1)
-		kr.Set(1, 4, -G1)
-		kr.Set(4, 1, -G1)
-
-		kr.Set(1, 2, +1./5.)
-		kr.Set(2, 1, +1./5.)
-
-		kr.Set(4, 2, -1./5.)
-		kr.Set(2, 4, -1./5.)
-
-		kr.Set(2, 2, length/5.0)
-
-		return kr
-	}
-
-	// pins on the start and end of beam
-	if m.Pins[pos][2] && m.Pins[pos][5] {
-		kr.Set(1, 1, +1.0/length)
-		kr.Set(4, 4, +1.0/length)
-		kr.Set(1, 4, -1.0/length)
-		kr.Set(4, 1, -1.0/length)
-
-		return kr
-	}
-
-	// TODO: add implementation
-	panic("add implementation")
+	return kr
 }

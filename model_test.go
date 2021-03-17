@@ -519,7 +519,8 @@ func Example() {
 			{1.0, 0.0},
 		},
 		Beams: []hd.BeamProp{
-			{N: [2]int{0, 1}, A: 12e-4, J: 120e-6, E: 2.0e11},
+			// section 10B1 STO ASCH
+			{N: [2]int{0, 1}, A: 10.32e-4, J: 171e-8, E: 2.05e11},
 		},
 		Pins: [][6]bool{
 			{false, false, false, false, false, true},
@@ -532,8 +533,8 @@ func Example() {
 	lcs := []hd.LoadCase{
 		{
 			LoadNodes: []hd.LoadNode{
-				{N: 1, Forces: [3]float64{0, 2.3, 0}},
-				{N: 1, Forces: [3]float64{-10, 0, 0}},
+				{N: 1, Forces: [3]float64{0, 2.3e3, 0}},
+				{N: 1, Forces: [3]float64{-10e3, 0, 0}},
 			},
 			LinearBuckling: struct {
 				Amount  uint16
@@ -544,8 +545,8 @@ func Example() {
 		},
 		{ // test for 2 cases with different positions
 			LoadNodes: []hd.LoadNode{
-				{N: 1, Forces: [3]float64{-10, 0, 0}},
-				{N: 1, Forces: [3]float64{0, 2.3, 0}},
+				{N: 1, Forces: [3]float64{-10e3, 0, 0}},
+				{N: 1, Forces: [3]float64{0, 2.3e3, 0}},
 			},
 			LinearBuckling: struct {
 				Amount  uint16
@@ -567,7 +568,16 @@ func Example() {
 		return
 	}
 
-	expect, err := ioutil.ReadFile("./example/testdata/model.String")
+	filename := "./example/testdata/model.String"
+
+	if os.Getenv("UPDATE") != "" {
+		err := ioutil.WriteFile(filename, b.Bytes(), 0644)
+		if err != nil {
+			panic(fmt.Errorf("Cannot Update: %v", err))
+		}
+	}
+
+	expect, err := ioutil.ReadFile(filename)
 	if err != nil {
 		panic(fmt.Errorf("Cannot read file : %v", err))
 	}
@@ -612,9 +622,9 @@ func TestNonlinear(t *testing.T) {
 		dx = math.Sqrt(Lo*Lo - dy*dy)
 		θo = math.Atan(dy / dx)
 
-		C = 0.02 // EAL
+		C  = 0.02 // EAL
 		Lc = 10.0
-		Ac = C*Lc/E
+		Ac = C * Lc / E
 	)
 
 	m := hd.Model{
@@ -626,7 +636,7 @@ func TestNonlinear(t *testing.T) {
 			{dx * 4.0 / 6.0, dy * 4.0 / 6.0}, // 4
 			{dx * 5.0 / 6.0, dy * 5.0 / 6.0}, // 5
 			{dx, dy},                         // 6 Load point
-			{dx, dy-Lc},
+			{dx, dy - Lc},
 		},
 		Beams: []hd.BeamProp{
 			{N: [2]int{0, 1}, A: Ao, J: Jo, E: E},

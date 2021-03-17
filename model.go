@@ -523,7 +523,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 	// panic free. replace to stacktrace
 	defer func() {
 		if r := recover(); r != nil {
-			err = fmt.Errorf("stacktrace from panic: %s", debug.Stack())
+			err = fmt.Errorf("stacktrace from panic: %v\n%s", r, debug.Stack())
 		}
 	}()
 
@@ -671,10 +671,9 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 				if math.Abs(imag(v[i])) > 0 || real(v[i]) == 0 {
 					continue
 				}
-				if real(v[i]) < 0 {
-					// ignore imag value
-					v[i] = complex(real(v[i]), 0)
-				}
+
+				// ignore imag value
+				v[i] = complex(real(v[i]), 0)
 
 				// store the result
 				var lbr BucklingResult
