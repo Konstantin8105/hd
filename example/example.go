@@ -714,3 +714,128 @@ func Gframe() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	lc = append([]hd.LoadCase{}, l)
 	return
 }
+
+// book:
+//	Клейн Г.К., Рекач В.Г., Розенблат Г.И. Руководство к практическим занятиям
+//	по курсу строительной механики.–М.: Высш. шк.,1972.–320с
+// Example 16. Page 66.
+//
+// book:
+//	П.П. Гайджуров РАСЧЕТ СТЕРЖНЕВЫХ СИСТЕМ НА УСТОЙЧИВОСТЬ И КОЛЕБАНИЯ
+//	Учебное пособие
+// Example 1. Page 78.
+//
+// Figure:
+//	     | 50P             | 50P
+//	 P   V                 V
+//	---> *-----------------*
+//	     |                 |
+//	     |                 |
+//	     |                 |
+//	     |                 |
+//	     |                 |
+//	     |                 |
+//	    ===               ===
+func Pframe() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	J := 518e-8
+	A := 61.2e-4
+	E := 2.1e11
+	m = hd.Model{
+		Points: [][2]float64{
+			{0.0, 0.0}, // 0   ===
+			{0.0, 1.0}, // 1
+			{0.0, 2.0}, // 2
+			{0.0, 3.0}, // 3
+			{0.0, 4.0}, // 4
+			{0.0, 5.0}, // 5
+			{0.0, 6.0}, // 6
+			{0.0, 7.0}, // 7
+			{0.0, 8.0}, // 8   ***
+			{1.0, 8.0}, // 9
+			{2.0, 8.0}, // 10
+			{3.0, 8.0}, // 11
+			{4.0, 8.0}, // 12  ***
+			{4.0, 7.0}, // 13
+			{4.0, 6.0}, // 14
+			{4.0, 5.0}, // 15
+			{4.0, 4.0}, // 16
+			{4.0, 3.0}, // 17
+			{4.0, 2.0}, // 18
+			{4.0, 1.0}, // 19
+			{4.0, 0.0}, // 20  ===
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: A, J: J, E: E},
+			{N: [2]int{1, 2}, A: A, J: J, E: E},
+			{N: [2]int{2, 3}, A: A, J: J, E: E},
+			{N: [2]int{3, 4}, A: A, J: J, E: E},
+			{N: [2]int{4, 5}, A: A, J: J, E: E},
+			{N: [2]int{5, 6}, A: A, J: J, E: E},
+			{N: [2]int{6, 7}, A: A, J: J, E: E},
+			{N: [2]int{7, 8}, A: A, J: J, E: E},
+			{N: [2]int{8, 9}, A: A, J: J, E: E},
+			{N: [2]int{9, 10}, A: A, J: J, E: E},
+			{N: [2]int{10, 11}, A: A, J: J, E: E},
+			{N: [2]int{11, 12}, A: A, J: J, E: E},
+			{N: [2]int{12, 13}, A: A, J: J, E: E},
+			{N: [2]int{13, 14}, A: A, J: J, E: E},
+			{N: [2]int{14, 15}, A: A, J: J, E: E},
+			{N: [2]int{15, 16}, A: A, J: J, E: E},
+			{N: [2]int{16, 17}, A: A, J: J, E: E},
+			{N: [2]int{17, 18}, A: A, J: J, E: E},
+			{N: [2]int{18, 19}, A: A, J: J, E: E},
+			{N: [2]int{19, 20}, A: A, J: J, E: E},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{true, true, true},
+		},
+	}
+	P := 1000.0
+	l := hd.LoadCase{
+		LoadNodes: []hd.LoadNode{
+			{N: 8, Forces: [3]float64{P, 0, 0}},
+			{N: 8, Forces: [3]float64{0, -50 * P, 0}},
+			{N: 12, Forces: [3]float64{0, -50 * P, 0}},
+		},
+		LinearBuckling: struct {
+			Amount  uint16
+			Results []hd.BucklingResult
+		}{
+			Amount: 1,
+		},
+	}
+	l.NonlinearNR.MaxIterations = 50000
+	l.NonlinearNR.Substep = 5
+	lc = append([]hd.LoadCase{}, l)
+
+	// todo  --- result is not same
+	// reactions:
+	// V           N      M    in kN, kN*m
+	// -0.511	 48.452	 3.460
+	// -0.489	 51.549	 3.443
+	//
+	// deformation of top by X in meter:
+	// 0.052
+
+	return
+}

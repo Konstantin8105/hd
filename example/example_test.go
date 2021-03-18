@@ -77,6 +77,9 @@ func TestModelString(t *testing.T) {
 			}()
 		},
 		filename: "beam-dc-part2",
+	}, {
+		mf:       example.Pframe,
+		filename: "pframe",
 	}}
 	for _, m := range ms {
 		t.Run(m.filename, func(t *testing.T) {
