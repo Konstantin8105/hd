@@ -42,7 +42,7 @@ func createMatrix(r, c int) *sm.Matrix {
 }
 
 func bendBeam() {
-	show := false
+	show := true // false
 
 	var (
 		// матрица коэффициентов

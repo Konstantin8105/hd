@@ -240,9 +240,9 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 				// -1.19988 * N / l   : [ 0, 2] :
 				// -1.19988 * N / l   : [ 2, 0] :
 
-				G := -length / 30.
-				kr.Set(5, 2, +G)
-				kr.Set(2, 5, +G)
+				G := length / 30.
+				kr.Set(5, 2, -G)
+				kr.Set(2, 5, -G)
 
 				G = 0.1
 				kr.Set(1, 2, +G)
