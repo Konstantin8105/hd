@@ -926,7 +926,7 @@ func Pframe() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 func EFESTS10bar() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	L := 360e-3
 	A := 10e-6
-	E := 10e4
+	E := 10e10
 	P := 1000.0
 	J := 0.1
 	m = hd.Model{
@@ -976,25 +976,25 @@ func EFESTS10bar() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 			{N: 3, Forces: [3]float64{0, -P, 0}},
 			{N: 4, Forces: [3]float64{0, -P, 0}},
 		},
-// 		LinearBuckling: struct {
-// 			Amount  uint16
-// 			Results []hd.BucklingResult
-// 		}{
-// 			Amount: 1,
-// 		},
+		LinearBuckling: struct {
+			Amount  uint16
+			Results []hd.BucklingResult
+		}{
+			Amount: 1,
+		},
 	}
 // 	l.NonlinearNR.MaxIterations = 50000
 // 	l.NonlinearNR.Substep = 5
 	lc = append([]hd.LoadCase{}, l)
 
 	// todo  --- result is not same
-	// reactions:
-	// V           N      M    in kN, kN*m
-	// -0.511	 48.452	 3.460
-	// -0.489	 51.549	 3.443
-	//
-	// deformation of top by X in meter:
-	// 0.052
+	// deformation on point 2:
+	// linear      X  0.848     Y -3.795    - ok
+	// nonlinear   X  0.722     Y -3.757
+	// deformation on point 3:
+	// linear      X -0.952     Y -3.940    - ok
+	// nonlinear   X -1.035     Y -3.856
+
 
 	return
 }
