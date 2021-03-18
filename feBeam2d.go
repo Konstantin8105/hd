@@ -264,11 +264,11 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 				kr.Set(1, 1, +G)
 				kr.Set(4, 4, +G)
 
-			// G = 1.0 / length
-			// kr.Set(0, 0, +G)
-			// kr.Set(0, 0, +G)
-			// kr.Set(3, 0, -G)
-			// kr.Set(0, 3, -G)
+				G = 1.0 / length
+				kr.Set(0, 0, +G)
+				kr.Set(0, 0, +G)
+				kr.Set(3, 0, -G)
+				kr.Set(0, 3, -G)
 			},
 		},
 		{
