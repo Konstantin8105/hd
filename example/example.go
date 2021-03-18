@@ -934,9 +934,9 @@ func EFESTS10bar() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 			{0.00000, 0.}, // 0
 			{1.0 * L, 0.}, // 1
 			{2.0 * L, 0.}, // 2
-			{2.0 * L, -L},  // 3
-			{1.0 * L, -L},  // 4
-			{0.00000, -L},  // 5
+			{2.0 * L, -L}, // 3
+			{1.0 * L, -L}, // 4
+			{0.00000, -L}, // 5
 		},
 		Beams: []hd.BeamProp{
 			{N: [2]int{0, 1}, A: A, J: J, E: E},
@@ -983,8 +983,8 @@ func EFESTS10bar() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 			Amount: 1,
 		},
 	}
-// 	l.NonlinearNR.MaxIterations = 50000
-// 	l.NonlinearNR.Substep = 5
+	l.NonlinearNR.MaxIterations = 50000
+	l.NonlinearNR.Substep = 5
 	lc = append([]hd.LoadCase{}, l)
 
 	// todo  --- result is not same
@@ -994,7 +994,6 @@ func EFESTS10bar() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	// deformation on point 3:
 	// linear      X -0.952     Y -3.940    - ok
 	// nonlinear   X -1.035     Y -3.856
-
 
 	return
 }
