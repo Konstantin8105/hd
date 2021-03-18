@@ -792,7 +792,8 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					}
 					for i := range plast {
 						if math.IsNaN(plast[i]) || math.IsInf(plast[i], 0) {
-							return fmt.Errorf("not valid node load %e", plast[i])
+							return fmt.Errorf("not valid node load %e in %v",
+								plast[i], plast)
 						}
 					}
 
@@ -968,7 +969,7 @@ func (m *Model) assemblyNodeLoad(lc *LoadCase) (p []float64, err error) {
 	}
 	for i := range p {
 		if math.IsNaN(p[i]) || math.IsInf(p[i], 0) {
-			return nil, fmt.Errorf("not valid node load %e", p[i])
+			return nil, fmt.Errorf("not valid node load %e in %v", p[i], p)
 		}
 	}
 	return p, nil

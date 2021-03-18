@@ -917,3 +917,84 @@ func Pframe() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 //  // TODO: critical force ~ 8860 by book
 // 	return
 // }
+
+// created in according:
+//	EFESTS: Educational finite element software for truss structure –
+//	Part 3: Geometrically nonlinear static analysis
+//	Wenjie Zuo, Ke Huang and Fei Cheng
+//
+func EFESTS10bar() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+	L := 360e-3
+	A := 10e-6
+	E := 10e4
+	P := 1000.0
+	J := 0.1
+	m = hd.Model{
+		Points: [][2]float64{
+			{0.00000, 0.}, // 0
+			{1.0 * L, 0.}, // 1
+			{2.0 * L, 0.}, // 2
+			{2.0 * L, -L},  // 3
+			{1.0 * L, -L},  // 4
+			{0.00000, -L},  // 5
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: A, J: J, E: E},
+			{N: [2]int{4, 5}, A: A, J: J, E: E},
+			{N: [2]int{1, 2}, A: A, J: J, E: E},
+			{N: [2]int{3, 4}, A: A, J: J, E: E},
+			{N: [2]int{0, 4}, A: A, J: J, E: E},
+			{N: [2]int{1, 5}, A: A, J: J, E: E},
+			{N: [2]int{1, 3}, A: A, J: J, E: E},
+			{N: [2]int{2, 4}, A: A, J: J, E: E},
+			{N: [2]int{1, 4}, A: A, J: J, E: E},
+			{N: [2]int{2, 3}, A: A, J: J, E: E},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{false, false, false},
+			{true, true, true},
+		},
+		Pins: [][6]bool{
+			{false, true, true, false, true, true},
+			{false, true, true, false, true, true},
+			{false, true, true, false, true, true},
+			{false, true, true, false, true, true},
+			{false, true, true, false, true, true},
+			{false, true, true, false, true, true},
+			{false, true, true, false, true, true},
+			{false, true, true, false, true, true},
+			{false, true, true, false, true, true},
+			{false, true, true, false, true, true},
+		},
+	}
+	l := hd.LoadCase{
+		LoadNodes: []hd.LoadNode{
+			{N: 3, Forces: [3]float64{0, -P, 0}},
+			{N: 4, Forces: [3]float64{0, -P, 0}},
+		},
+// 		LinearBuckling: struct {
+// 			Amount  uint16
+// 			Results []hd.BucklingResult
+// 		}{
+// 			Amount: 1,
+// 		},
+	}
+// 	l.NonlinearNR.MaxIterations = 50000
+// 	l.NonlinearNR.Substep = 5
+	lc = append([]hd.LoadCase{}, l)
+
+	// todo  --- result is not same
+	// reactions:
+	// V           N      M    in kN, kN*m
+	// -0.511	 48.452	 3.460
+	// -0.489	 51.549	 3.443
+	//
+	// deformation of top by X in meter:
+	// 0.052
+
+	return
+}

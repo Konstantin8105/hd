@@ -83,6 +83,9 @@ func TestModelString(t *testing.T) {
 		// 	}, {
 		// 		mf:       example.Frame,
 		// 		filename: "frame",
+	}, {
+		mf:       example.EFESTS10bar,
+		filename: "EFESTS10bar",
 	},
 	}
 	for _, m := range ms {

@@ -1,0 +1,78 @@
+
+Point coordinates:
+                                         SUPPORT DIRECTION
+Index            X, m            Y, m    SX    SY    SM (0 - free, 1 - fixed)
+    0         0.00000         0.00000     1     1     1 
+    1         0.36000         0.00000     0     0     0 
+    2         0.72000         0.00000     0     0     0 
+    3         0.72000        -0.36000     0     0     0 
+    4         0.36000        -0.36000     0     0     0 
+    5         0.00000        -0.36000     1     1     1 
+Beam property:
+Index     Start point       End point       Area,sq.m Moment inertia,m4   Elasticity,Pa
+    0               0               1     1.00000e-05     1.00000e-01     1.00000e+05
+    1               4               5     1.00000e-05     1.00000e-01     1.00000e+05
+    2               1               2     1.00000e-05     1.00000e-01     1.00000e+05
+    3               3               4     1.00000e-05     1.00000e-01     1.00000e+05
+    4               0               4     1.00000e-05     1.00000e-01     1.00000e+05
+    5               1               5     1.00000e-05     1.00000e-01     1.00000e+05
+    6               1               3     1.00000e-05     1.00000e-01     1.00000e+05
+    7               2               4     1.00000e-05     1.00000e-01     1.00000e+05
+    8               1               4     1.00000e-05     1.00000e-01     1.00000e+05
+    9               2               3     1.00000e-05     1.00000e-01     1.00000e+05
+Pins of beam in local system coordinate:
+           START OF BEAM           END OF BEAM       
+           ------------------      ------------------
+Index       X       Y       M       X       Y       M
+    0   false    true    true   false    true    true
+    1   false    true    true   false    true    true
+    2   false    true    true   false    true    true
+    3   false    true    true   false    true    true
+    4   false    true    true   false    true    true
+    5   false    true    true   false    true    true
+    6   false    true    true   false    true    true
+    7   false    true    true   false    true    true
+    8   false    true    true   false    true    true
+    9   false    true    true   false    true    true
+
+Linear Elastic Analysis
+
+
+
+Load case:
+Point           Fx, N           Fy, N          M, N*m
+    3         0.00000     -1000.00000         0.00000
+    4         0.00000     -1000.00000         0.00000
+Point displacament in global system coordinate:
+Point           DX, m           DY, m     Angle, rad.
+    0     0.00000e+00     0.00000e+00     0.00000e+00
+    1     7.03314e+02    -1.67435e+03     0.00000e+00
+    2     8.47763e+02    -3.79513e+03     0.00000e+00
+    3    -9.52237e+02    -3.93957e+03     0.00000e+00
+    4    -7.36686e+02    -1.80212e+03     0.00000e+00
+    5     0.00000e+00     0.00000e+00     0.00000e+00
+Local force in beam:
+                                 START OF BEAM                                 END OF BEAM       
+               ------------------------------------          ------------------------------------
+Index           Fx, N           Fy, N          M, N*m           Fx, N           Fy, N          M, N*m
+    0    -1.95365e+03     0.00000e+00     0.00000e+00     1.95365e+03     0.00000e+00     0.00000e+00
+    1     2.04635e+03     0.00000e+00     0.00000e+00    -2.04635e+03     0.00000e+00     0.00000e+00
+    2    -4.01246e+02     0.00000e+00     0.00000e+00     4.01246e+02     0.00000e+00     0.00000e+00
+    3     5.98754e+02     0.00000e+00     0.00000e+00    -5.98754e+02     0.00000e+00     0.00000e+00
+    4    -1.47976e+03     0.00000e+00     0.00000e+00     1.47976e+03     0.00000e+00     0.00000e+00
+    5     1.34866e+03     0.00000e+00     0.00000e+00    -1.34866e+03     0.00000e+00     0.00000e+00
+    6    -8.46766e+02     0.00000e+00     0.00000e+00     8.46766e+02     0.00000e+00     0.00000e+00
+    7     5.67448e+02     0.00000e+00     0.00000e+00    -5.67448e+02     0.00000e+00     0.00000e+00
+    8    -3.54896e+02     0.00000e+00     0.00000e+00     3.54896e+02     0.00000e+00     0.00000e+00
+    9    -4.01246e+02     0.00000e+00     0.00000e+00     4.01246e+02     0.00000e+00     0.00000e+00
+Reaction on support:
+Index           Fx, N           Fy, N          M, N*m
+    0    -3.00000e+03     1.04635e+03    -0.00000e+00
+    5     3.00000e+03     9.53650e+02    -0.00000e+00
+
+Linear buckling result: is not calculated
+
+
+
+
+
