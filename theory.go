@@ -42,7 +42,7 @@ func createMatrix(r, c int) *sm.Matrix {
 }
 
 func bendBeam() {
-	show := true // false
+	show := false
 
 	var (
 		// матрица коэффициентов
@@ -91,6 +91,8 @@ func bendBeam() {
 			{2},
 			{3},
 			{3, 1},
+			{0, 1},
+			{2, 3},
 		} {
 			fmt.Fprintln(os.Stdout, "|---------------------------------------------|")
 			fmt.Fprintln(os.Stdout, "Name :", s.name, " with free ", freeIndex)

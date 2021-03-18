@@ -411,13 +411,35 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 				kr.Set(4, 4, +G)
 			},
 		},
+		{
+			pins: [4]bool{true, true, false, false},
+			f: func() {
+				G := 10.0 / 9.0 * length
+				kr.Set(5, 5, +G)
+			},
+		},
+		{
+			pins: [4]bool{false, false, true, true},
+			f: func() {
+				G := 10.0 / 9.0 * length
+				kr.Set(2, 2, +G)
+			},
+		},
+		// {
+		// 	pins: [4]bool{true, true, true, true},
+		// 	f: func() {
+		// 		// truss
+		// 		panic("not acceptable case")
+		// 	},
+		// },
 	} {
 		if (v.pins[0] == m.Pins[pos][1] &&
 			v.pins[1] == m.Pins[pos][2] &&
 			v.pins[2] == m.Pins[pos][4] &&
 			v.pins[3] == m.Pins[pos][5]) ||
-			(v.pins[1] == m.Pins[pos][2] &&
-				v.pins[3] == m.Pins[pos][5]) {
+			// truss
+			(m.Pins[pos][1] && m.Pins[pos][2] && m.Pins[pos][4] && m.Pins[pos][5] &&
+				!v.pins[0] && v.pins[1] && !v.pins[2] && v.pins[3]) {
 			v.f()
 			found = true
 			break
