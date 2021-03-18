@@ -25,11 +25,11 @@ func TestModelString(t *testing.T) {
 		mf:       example.GBeam,
 		filename: "g-beam",
 	}, {
-		mf:       example.ModalTruss,
-		filename: "truss-modal",
+		mf:       example.ModalBeam2,
+		filename: "beam-modal2",
 	}, {
-		mf:       example.ModalTrussRotate,
-		filename: "truss-modal-rotate",
+		mf:       example.ModalBeamRotate2,
+		filename: "beam-modal-rotate2",
 	}, {
 		mf:       example.ModalBeam,
 		filename: "beam-modal",
@@ -37,8 +37,8 @@ func TestModelString(t *testing.T) {
 		mf:       example.ModalBeamRotate,
 		filename: "beam-modal-rotate",
 	}, {
-		mf:       example.TrussWithBuckling,
-		filename: "truss-with-buckling",
+		mf:       example.BeamWithBuckling,
+		filename: "beam-with-buckling",
 	}, {
 		mf:       example.ModalBeam3mass,
 		filename: "beam-modal-3mass",

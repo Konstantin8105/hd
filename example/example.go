@@ -219,7 +219,7 @@ func Truss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	return
 }
 
-func TrussWithBuckling() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+func BeamWithBuckling() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	A := math.Pi * math.Pow(0.050, 2) / 4.0
 	J := math.Pi * math.Pow(0.050, 4) / 64.0
 	m = hd.Model{
@@ -289,7 +289,7 @@ func TrussWithBuckling() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	return
 }
 
-func ModalTruss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+func ModalBeam2() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	A := math.Pi * math.Pow(0.050, 2) / 4.0
 	J := math.Pi * math.Pow(0.050, 4) / 64.0
 	m = hd.Model{
@@ -328,7 +328,7 @@ func ModalTruss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	return
 }
 
-func ModalTrussRotate() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+func ModalBeamRotate2() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	A := math.Pi * math.Pow(0.050, 2) / 4.0
 	J := math.Pi * math.Pow(0.050, 4) / 64.0
 	m = hd.Model{
