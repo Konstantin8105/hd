@@ -839,3 +839,81 @@ func Pframe() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 
 	return
 }
+
+// book :
+//	И. Ф. Дьяков, С. А. Чернов, А. Н. Черный
+//	МЕТОД КОНЕЧНЫХ ЭЛЕМЕНТОВ
+//	В РАСЧЁТАХ СТЕРЖНЕВЫХ СИСТЕМ
+// page 121
+//	            | 0.8P       |P
+//	            V            V
+//	*-----------*------------*
+//	            |            |
+//	            |            |
+//	            |            |
+//	            |            |
+//	           ===          ===
+// TODO: check in 3D
+// func Frame() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
+// 	E := 2e11
+// 	m = hd.Model{
+// 		Points: [][2]float64{
+// 			{0.0, 4.0}, // 0
+// 			{2.0, 4.0}, // 1
+// 			{4.0, 4.0}, // 2
+// 			{4.0, 2.0}, // 3
+// 			{4.0, 0.0}, // 4
+// 			{6.0, 4.0}, // 5
+// 			{8.0, 4.0}, // 6
+// 			{8.0, 2.0}, // 7
+// 			{8.0, 0.0}, // 8
+// 		},
+// 		Beams: []hd.BeamProp{
+// 			{N: [2]int{0, 1}, A: 24e-4, J: 32e-8, E: E},
+// 			{N: [2]int{1, 2}, A: 24e-4, J: 32e-8, E: E},
+// 			{N: [2]int{2, 3}, A: 24e-4, J: 32e-8, E: E},
+// 			{N: [2]int{3, 4}, A: 24e-4, J: 32e-8, E: E},
+// 			{N: [2]int{2, 5}, A: 48e-4, J: 64e-8, E: E},
+// 			{N: [2]int{5, 6}, A: 48e-4, J: 64e-8, E: E},
+// 			{N: [2]int{6, 7}, A: 24e-4, J: 32e-8, E: E},
+// 			{N: [2]int{7, 8}, A: 24e-4, J: 32e-8, E: E},
+// 		},
+// 		Supports: [][3]bool{
+// 			{true, true, false},
+// 			{false, false, false},
+// 			{false, false, false},
+// 			{false, false, false},
+// 			{true, true, true},
+// 			{false, false, false},
+// 			{false, false, false},
+// 			{false, false, false},
+// 			{true, true, true},
+// 		},
+// 		Pins: [][6]bool{
+// 			{false, false, false, false, false, false},
+// 			{false, false, false, false, false, false},
+// 			{false, false, false, false, false, false},
+// 			{false, false, false, false, false, false},
+// 			{false, false, false, false, false, false},
+// 			{false, false, false, false, false, false},
+// 			{false, false, true, false, false, false},
+// 			{false, false, false, false, false, false},
+// 		},
+// 	}
+// 	P := 1.0
+// 	l := hd.LoadCase{
+// 		LoadNodes: []hd.LoadNode{
+// 			{N: 2, Forces: [3]float64{0, -0.8 * P, 0}},
+// 			{N: 6, Forces: [3]float64{0, -1.0 * P, 0}},
+// 		},
+// 		LinearBuckling: struct {
+// 			Amount  uint16
+// 			Results []hd.BucklingResult
+// 		}{
+// 			Amount: 1,
+// 		},
+// 	}
+// 	lc = append([]hd.LoadCase{}, l)
+//  // TODO: critical force ~ 8860 by book
+// 	return
+// }

@@ -80,7 +80,11 @@ func TestModelString(t *testing.T) {
 	}, {
 		mf:       example.Pframe,
 		filename: "pframe",
-	}}
+		// 	}, {
+		// 		mf:       example.Frame,
+		// 		filename: "frame",
+	},
+	}
 	for _, m := range ms {
 		t.Run(m.filename, func(t *testing.T) {
 			model, lcs, mcs := m.mf()
