@@ -991,9 +991,11 @@ func EFESTS10bar() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	// deformation on point 2:
 	// linear      X  0.848     Y -3.795    - ok
 	// nonlinear   X  0.722     Y -3.757
+	// nonlinear   X  0.743     Y -3.757
 	// deformation on point 3:
 	// linear      X -0.952     Y -3.940    - ok
 	// nonlinear   X -1.035     Y -3.856
+	// nonlinear   X -1.011     Y -3.858
 
 	return
 }
