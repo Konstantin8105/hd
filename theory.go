@@ -32,8 +32,8 @@ func cal(name, str string, view ...bool) string {
 	var val string
 	var err error
 	val, err = sm.Sexpr(
-		os.Stdout,
-		// nil,
+		// os.Stdout,
+		nil,
 		str)
 	if err != nil {
 		panic(err)
@@ -332,7 +332,7 @@ func Care() {
 	fmt.Println("C = ", C)
 	invC := cal("inverse C", "inverse("+C+")", show)
 
-	ai := cal("invC*q", invC+"*matrix(q1,q2,q3,q4,q5,q6,6,1)", show)
+	ai := cal("{a} = [invC]*{q}", invC+"*matrix(q1,q2,q3,q4,q5,q6,6,1)", show)
 
 	A1 := "matrix(1,x,0,0,0,0,6,1)"
 	u = cal("u new", "transpose("+A1+")*"+ai, show)
@@ -367,27 +367,44 @@ func Care() {
 		_ = K14
 	}
 	{
-		V := cal("Axial strain with added part",
-			"EA/2*integral(pow("+du+"+0.5*pow("+dw+",2),2),x,0,L)"+constants+
-				";constant(q1,q2,q3,q4,q5,q6);",
+		u := "a1 + a2*x"
+		w := "a3+a4*x+a5*x*x+a6*x*x*x"
+		du := cal("du", "d("+u+",x);variable(x)", show)
+		dw := cal("dw", "d("+w+",x);variable(x)", show)
+		ddw := cal("ddw", "d("+dw+",x);variable(x)", show)
+		V := cal("V", "EA/2*integral(pow("+du+" + 0.5*pow("+ddw+",2),2),x,0,L)+"+
+			"EJ/2+integral(pow("+ddw+",2),x,0,L);"+
+			"variable(x);constant(a1,a2,a3,a4,a5,a6,L);",
 			show)
-		// 		K1 := cal("K1",
-		// 			"d("+V+",q1);"+
-		// 				"constant(EA,L,x); variable(q1)",
-		// 			show)
-		// 		K11 := cal("K11",
-		// 			"integral(d("+K1+",q1),q1,0,q1)/q1;"+
-		// 				"constant(EA,L,x,q4); variable(q1)",
-		// 			show)
-		// 		K14 := cal("K14",
-		// 			"integral(d("+K1+",q4),q4,0,q4)/q4;"+
-		// 				"constant(EA,L,x,q1); variable(q4)",
-		// 			show)
+		Vfull := cal("Vfull", "EA/2*integral(pow("+du+" + 0.5*(pow("+du+",2)+pow("+ddw+",2)),2),x,0,L)+"+
+			"EJ/2+integral(pow("+ddw+",2),x,0,L);"+
+			"variable(x);constant(a1,a2,a3,a4,a5,a6,L);",
+			show)
 		_ = V
-		// 		_ = K1
-		// 		_ = K11
-		// 		_ = K14
+		_ = Vfull
 	}
+	// 	{
+	// 		V := cal("Axial strain with added part",
+	// 			"EA/2*integral(pow("+du+"+0.5*pow("+dw+",2),2),x,0,L)"+constants+
+	// 				";constant(q1,q2,q3,q4,q5,q6);",
+	// 			show)
+	// 		// 		K1 := cal("K1",
+	// 		// 			"d("+V+",q1);"+
+	// 		// 				"constant(EA,L,x); variable(q1)",
+	// 		// 			show)
+	// 		// 		K11 := cal("K11",
+	// 		// 			"integral(d("+K1+",q1),q1,0,q1)/q1;"+
+	// 		// 				"constant(EA,L,x,q4); variable(q1)",
+	// 		// 			show)
+	// 		// 		K14 := cal("K14",
+	// 		// 			"integral(d("+K1+",q4),q4,0,q4)/q4;"+
+	// 		// 				"constant(EA,L,x,q1); variable(q4)",
+	// 		// 			show)
+	// 		_ = V
+	// 		// 		_ = K1
+	// 		// 		_ = K11
+	// 		// 		_ = K14
+	// 	}
 
 	//	V := cal("V1", "EA/2*integral(pow(0.5*pow("+dw+",2),2),x,0,L)"+constants+
 	//		";constant(q1,q2,q3,q4,q5,q6);",
