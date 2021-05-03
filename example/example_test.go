@@ -86,7 +86,10 @@ func TestModelString(t *testing.T) {
 	}, {
 		mf:       example.EFESTS10bar,
 		filename: "EFESTS10bar",
-	},
+	},{
+		mf:       example.ConsoleBathe,
+		filename: "beamBathe",
+	}, 
 	}
 	for _, m := range ms {
 		t.Run(m.filename, func(t *testing.T) {

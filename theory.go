@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Konstantin8105/sm"
 )
@@ -39,7 +40,7 @@ func cal(name, str string, view ...bool) string {
 		panic(err)
 	}
 	if !hide {
-		fmt.Fprintf(os.Stdout, "Value     : %s\n", val)
+		fmt.Fprintf(os.Stdout, "Value   : %s\n", val)
 		if m, ok := sm.ParseMatrix(val); ok {
 			fmt.Fprintf(os.Stdout, "%s\n", m)
 		}
@@ -115,7 +116,7 @@ func bendBeam() {
 				// create vector with free dof
 				free := createMatrix(4, 1)
 				free.Args[free.Position(f, 0)] = sm.CreateFloat(1.0)
-				// fmt.Fprintf(os.Stdout,"free:\n%s\n", free)
+				fmt.Fprintf(os.Stdout, "free:\n%s\n", free)
 
 				gfactor := cal("gfactor", "( "+K+" * "+sm.AstToStr(free.Ast())+"); variable(x);constant(l)", show)
 
@@ -302,7 +303,7 @@ func Care() {
 	// e := cal("e", du+"+0.5*"+dw+constants, show)
 	// ro := cal("ro", "-("+ddw+")/pow("+"("+dw+")*("+dw+")"+",3/2)", show)
 
-	fmt.Println("The generalised displacements")
+	fmt.Fprintln(os.Stdout,"The generalised displacements")
 	q1 := cal("q1 =  u(0)", "inject("+u+",x,0)"+constants, show)
 	q2 := cal("q2 =  w(0)", "inject("+w+",x,0)"+constants, show)
 	q3 := cal("q3 = dw(0)", "inject("+dw+",x,0)"+constants, show)
@@ -311,14 +312,14 @@ func Care() {
 	q6 := cal("q5 = dw(L)", "inject("+dw+",x,L)"+constants, show)
 	q := []string{q1, q2, q3, q4, q5, q6}
 
-	fmt.Println("The unknown coefficients")
+	fmt.Fprintln(os.Stdout,"The unknown coefficients")
 	a := "matrix(a1,a2,a3,a4,a5,a6,6,1)"
 	am, _ := sm.ParseMatrix(a)
 
-	fmt.Println("The connectivity matrix")
+	fmt.Fprintln(os.Stdout,"The connectivity matrix")
 	C := "matrix("
 	for row := 0; row < 6; row++ {
-		fmt.Println("========= row ", row, " : ", q[row])
+		fmt.Fprintln(os.Stdout,"========= row ", row, " : ", q[row])
 		for col := 0; col < 6; col++ {
 			acol := sm.AstToStr(am.Args[col])
 			cij := cal(fmt.Sprintf("[%d,%d]", row, col),
@@ -329,60 +330,120 @@ func Care() {
 		}
 	}
 	C += "6,6)"
-	fmt.Println("C = ", C)
+	fmt.Fprintln(os.Stdout,"C = ", C)
 	invC := cal("inverse C", "inverse("+C+")", show)
 
 	ai := cal("{a} = [invC]*{q}", invC+"*matrix(q1,q2,q3,q4,q5,q6,6,1)", show)
+	_ = ai
 
-	A1 := "matrix(1,x,0,0,0,0,6,1)"
-	u = cal("u new", "transpose("+A1+")*"+ai, show)
-	A2 := "matrix(0,0,1,x,x*x,x*x*x,6,1)"
-	w = cal("w new", "transpose("+A2+")*"+ai, show)
-	du := cal("du new", "d("+u+",x)"+constants, show)
-	_ = du
-	dw = cal("dw new", "d("+w+",x)"+constants, show)
-	ddw := cal("ddw new", "d("+dw+",x)"+constants, show)
-	_ = ddw
-
-	{
-		V := cal("Axial strain classic",
-			"EA/2*integral(pow("+du+",2),x,0,L)"+constants+
-				";constant(q1,q2,q3,q4,q5,q6);",
-			show)
-		K1 := cal("K1",
-			"d("+V+",q1);"+
-				"constant(EA,L,x); variable(q1)",
-			show)
-		K11 := cal("K11",
-			"integral(d("+K1+",q1),q1,0,q1)/q1;"+
-				"constant(EA,L,x,q4); variable(q1)",
-			show)
-		K14 := cal("K14",
-			"integral(d("+K1+",q4),q4,0,q4)/q4;"+
-				"constant(EA,L,x,q1); variable(q4)",
-			show)
-		_ = V
-		_ = K1
-		_ = K11
-		_ = K14
-	}
 	{
 		u := "a1 + a2*x"
 		w := "a3+a4*x+a5*x*x+a6*x*x*x"
 		du := cal("du", "d("+u+",x);variable(x)", show)
 		dw := cal("dw", "d("+w+",x);variable(x)", show)
 		ddw := cal("ddw", "d("+dw+",x);variable(x)", show)
-		V := cal("V", "EA/2*integral(pow("+du+" + 0.5*pow("+ddw+",2),2),x,0,L)+"+
-			"EJ/2+integral(pow("+ddw+",2),x,0,L);"+
+		// V := cal("Axial strain classic",
+		// 	"EA/2*integral(pow("+du+",2),x,0,L)"+constants+
+		// 		";constant(q1,q2,q3,q4,q5,q6);",
+		// 	show)
+		V := cal("V classic Axial+Bend", "EA/2*integral(pow("+du+" + 0 ,2),x,0,L)+"+
+			"EJ/2*integral(pow("+ddw+",2),x,0,L);"+
 			"variable(x);constant(a1,a2,a3,a4,a5,a6,L);",
 			show)
-		Vfull := cal("Vfull", "EA/2*integral(pow("+du+" + 0.5*(pow("+du+",2)+pow("+ddw+",2)),2),x,0,L)+"+
-			"EJ/2+integral(pow("+ddw+",2),x,0,L);"+
-			"variable(x);constant(a1,a2,a3,a4,a5,a6,L);",
-			show)
+		// V := cal("V", "EA/2*integral(pow("+du+" + 0.5*pow("+ddw+",2),2),x,0,L)+"+
+		// 	"EJ/2*integral(pow("+ddw+",2),x,0,L);"+
+		// 	"variable(x);constant(a1,a2,a3,a4,a5,a6,L);",
+		// 	show)
+		// V := cal("Vfull", "EA/2*integral(pow("+du+" + 0.5*(pow("+du+",2)+pow("+ddw+",2)),2),x,0,L)+"+
+		// 	"EJ/2*integral(pow("+ddw+",2),x,0,L);"+
+		// 	"variable(x);constant(a1,a2,a3,a4,a5,a6,L);",
+		// 	show)
 		_ = V
-		_ = Vfull
+		_ = ddw
+
+		mAi, ok := sm.ParseMatrix(ai)
+		if !ok {
+			panic("not valid matrix")
+		}
+
+		for i := 1; i <= mAi.Rows; i++ {
+			V = strings.Replace(V,
+				fmt.Sprintf("a%d", i),
+				"("+sm.AstToStr(mAi.Args[i-1])+")",
+				-1)
+		}
+		// V = cal("V after inject", V, show)
+
+		for i := 1; i <= 6; i++ {
+			fmt.Fprintln(os.Stdout,"\n\nN = ", i)
+			KN := cal("KN", fmt.Sprintf("d(%s,q%d);constant(EA,EJ,L,x); variable(q%d)", V, i, i), show)
+			KN1 := cal("KN1",
+				"integral(d("+KN+",q1),q1,0,q1)/q1;"+
+					"constant(EA,EJ,L,x,q2,q3,q4,q5,q6); variable(q1)",
+				show)
+			KN2 := cal("KN2",
+				"integral(d("+KN+",q2),q2,0,q2)/q2;"+
+					"constant(EA,EJ,L,x,q1,q3,q4,q5,q6); variable(q2)",
+				show)
+			KN3 := cal("KN3",
+				"integral(d("+KN+",q3),q3,0,q3)/q3;"+
+					"constant(EA,EJ,L,x,q1,q2,q4,q5,q6); variable(q3)",
+				show)
+			KN4 := cal("KN4",
+				"integral(d("+KN+",q4),q4,0,q4)/q4;"+
+					"constant(EA,EJ,L,x,q1,q2,q3,q5,q6); variable(q4)",
+				show)
+			KN5 := cal("KN5",
+				"integral(d("+KN+",q5),q5,0,q5)/q5;"+
+					"constant(EA,EJ,L,x,q1,q2,q3,q4,q6); variable(q5)",
+				show)
+			KN6 := cal("KN6",
+				"integral(d("+KN+",q6),q6,0,q6)/q6;"+
+					"constant(EA,EJ,L,x,q1,q2,q3,q4,q5); variable(q6)",
+				show)
+			_ = KN
+			_ = KN1
+			_ = KN2
+			_ = KN3
+			_ = KN4
+			_ = KN5
+			_ = KN6
+		}
 	}
+
+
+	// 	A1 := "matrix(1,x,0,0,0,0,6,1)"
+	// 	u = cal("u new", "transpose("+A1+")*"+ai, show)
+	// 	A2 := "matrix(0,0,1,x,x*x,x*x*x,6,1)"
+	// 	w = cal("w new", "transpose("+A2+")*"+ai, show)
+	// 	du := cal("du new", "d("+u+",x)"+constants, show)
+	// 	_ = du
+	// 	dw = cal("dw new", "d("+w+",x)"+constants, show)
+	// 	ddw := cal("ddw new", "d("+dw+",x)"+constants, show)
+	// 	_ = ddw
+
+	// 	{
+	// 		V := cal("Axial strain classic",
+	// 			"EA/2*integral(pow("+du+",2),x,0,L)"+constants+
+	// 				";constant(q1,q2,q3,q4,q5,q6);",
+	// 			show)
+	// 		K1 := cal("K1",
+	// 			"d("+V+",q1);"+
+	// 				"constant(EA,L,x); variable(q1)",
+	// 			show)
+	// 		K11 := cal("K11",
+	// 			"integral(d("+K1+",q1),q1,0,q1)/q1;"+
+	// 				"constant(EA,L,x,q4); variable(q1)",
+	// 			show)
+	// 		K14 := cal("K14",
+	// 			"integral(d("+K1+",q4),q4,0,q4)/q4;"+
+	// 				"constant(EA,L,x,q1); variable(q4)",
+	// 			show)
+	// 		_ = V
+	// 		_ = K1
+	// 		_ = K11
+	// 		_ = K14
+	// 	}
 	// 	{
 	// 		V := cal("Axial strain with added part",
 	// 			"EA/2*integral(pow("+du+"+0.5*pow("+dw+",2),2),x,0,L)"+constants+
