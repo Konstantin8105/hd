@@ -267,7 +267,7 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 				//  TODO: is it oK?
 				G = 1.0 / length
 				kr.Set(0, 0, +G)
-				kr.Set(0, 0, +G)
+				kr.Set(3, 3, +G)
 				kr.Set(3, 0, -G)
 				kr.Set(0, 3, -G)
 			},
@@ -454,6 +454,16 @@ func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 	}
 	if !found {
 		panic(fmt.Errorf("not found geometric matrix case: %v", m.Pins[pos]))
+	}
+
+	// check symmetrical kr[6,6] -- data[36]
+	for r := 0; r < 6; r++ {
+		for c := 0; c < 6; c++ {
+			v1, v2 := data[r*6+c], data[c*6+r]
+			if v1 != v2 {
+				panic(fmt.Errorf("[%d,%d]-{%f,%f}", r, c, v1, v2))
+			}
+		}
 	}
 
 	return kr
