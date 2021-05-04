@@ -951,12 +951,12 @@ func EFESTS10bar() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 			{N: [2]int{2, 3}, A: A, J: J, E: E},
 		},
 		Supports: [][3]bool{
-			{true, true, true},
+			{true, true, false},
 			{false, false, false},
 			{false, false, false},
 			{false, false, false},
 			{false, false, false},
-			{true, true, true},
+			{true, true, false},
 		},
 		Pins: [][6]bool{
 			{false, true, true, false, true, true},

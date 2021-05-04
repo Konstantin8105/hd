@@ -2,12 +2,12 @@
 Point coordinates:
                                          SUPPORT DIRECTION
 Index            X, m            Y, m    SX    SY    SM (0 - free, 1 - fixed)
-    0         0.00000         0.00000     1     1     1 
+    0         0.00000         0.00000     1     1     0 
     1         0.36000         0.00000     0     0     0 
     2         0.72000         0.00000     0     0     0 
     3         0.72000        -0.36000     0     0     0 
     4         0.36000        -0.36000     0     0     0 
-    5         0.00000        -0.36000     1     1     1 
+    5         0.00000        -0.36000     1     1     0 
 Beam property:
 Index     Start point       End point       Area,sq.m Moment inertia,m4   Elasticity,Pa
     0               0               1     1.00000e-05     1.00000e-01     1.00000e+11
@@ -67,8 +67,8 @@ Index           Fx, N           Fy, N          M, N*m           Fx, N           
     9    -4.01246e+02     0.00000e+00     0.00000e+00     4.01246e+02     0.00000e+00     0.00000e+00
 Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
-    0    -3.00000e+03     1.04635e+03    -0.00000e+00
-    5     3.00000e+03     9.53650e+02    -0.00000e+00
+    0    -3.00000e+03     1.04635e+03     0.00000e+00
+    5     3.00000e+03     9.53650e+02     0.00000e+00
 
 Linear buckling result:
 Linear buckling factor:       135.34015
@@ -111,8 +111,8 @@ Index           Fx, N           Fy, N          M, N*m           Fx, N           
     9    -8.02675e+01     0.00000e+00     0.00000e+00     8.02675e+01     0.00000e+00     0.00000e+00
 Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
-    0    -6.00966e+02     2.09555e+02    -0.00000e+00
-    5     6.00840e+02     1.90982e+02    -0.00000e+00
+    0    -6.00966e+02     2.09555e+02     0.00000e+00
+    5     6.00840e+02     1.90982e+02     0.00000e+00
 
 Linear buckling result: is not calculated
 
@@ -146,8 +146,8 @@ Index           Fx, N           Fy, N          M, N*m           Fx, N           
     9    -1.60572e+02     0.00000e+00     0.00000e+00     1.60572e+02     0.00000e+00     0.00000e+00
 Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
-    0    -1.20388e+03     4.19684e+02    -0.00000e+00
-    5     1.20337e+03     3.82471e+02    -0.00000e+00
+    0    -1.20388e+03     4.19684e+02     0.00000e+00
+    5     1.20337e+03     3.82471e+02     0.00000e+00
 
 Linear buckling result: is not calculated
 
@@ -181,8 +181,8 @@ Index           Fx, N           Fy, N          M, N*m           Fx, N           
     9    -2.40913e+02     0.00000e+00     0.00000e+00     2.40913e+02     0.00000e+00     0.00000e+00
 Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
-    0    -1.80874e+03     6.30392e+02    -0.00000e+00
-    5     1.80760e+03     5.74470e+02    -0.00000e+00
+    0    -1.80874e+03     6.30392e+02     0.00000e+00
+    5     1.80760e+03     5.74470e+02     0.00000e+00
 
 Linear buckling result: is not calculated
 
@@ -216,8 +216,8 @@ Index           Fx, N           Fy, N          M, N*m           Fx, N           
     9    -3.21291e+02     0.00000e+00     0.00000e+00     3.21291e+02     0.00000e+00     0.00000e+00
 Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
-    0    -2.41559e+03     8.41684e+02    -0.00000e+00
-    5     2.41355e+03     7.66985e+02    -0.00000e+00
+    0    -2.41559e+03     8.41684e+02     0.00000e+00
+    5     2.41355e+03     7.66985e+02     0.00000e+00
 
 Linear buckling result: is not calculated
 
@@ -251,8 +251,8 @@ Index           Fx, N           Fy, N          M, N*m           Fx, N           
     9    -4.01706e+02     0.00000e+00     0.00000e+00     4.01706e+02     0.00000e+00     0.00000e+00
 Reaction on support:
 Index           Fx, N           Fy, N          M, N*m
-    0    -3.02442e+03     1.05356e+03    -0.00000e+00
-    5     3.02123e+03     9.60020e+02    -0.00000e+00
+    0    -3.02442e+03     1.05356e+03     0.00000e+00
+    5     3.02123e+03     9.60020e+02     0.00000e+00
 
 Linear buckling result: is not calculated
 
