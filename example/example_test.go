@@ -78,18 +78,25 @@ func TestModelString(t *testing.T) {
 		},
 		filename: "beam-dc-part2",
 	}, {
-		mf:       example.Pframe,
-		filename: "pframe",
-		// 	}, {
-		// 		mf:       example.Frame,
-		// 		filename: "frame",
+		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+			return example.Pframe(1.0)
+		},
+		filename: "pframe1.0",
+	}, {
+		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+			return example.Pframe(4.5)
+		},
+		filename: "pframe4.5",
 	}, {
 		mf:       example.EFESTS10bar,
 		filename: "EFESTS10bar",
-	},{
+	}, {
 		mf:       example.ConsoleBathe,
 		filename: "beamBathe",
-	}, 
+	},
+	// 	}, {
+	// 		mf:       example.Frame,
+	// 		filename: "frame",
 	}
 	for _, m := range ms {
 		t.Run(m.filename, func(t *testing.T) {
