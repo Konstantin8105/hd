@@ -34,7 +34,7 @@ func TestSplit(t *testing.T) {
 		example.GBeam,
 		example.Truss,
 		example.ModalBeam, example.ModalBeamRotate,
-		example.ModalTruss, example.ModalTrussRotate,
+		example.ModalBeam2, example.ModalBeamRotate2,
 	}
 	for mIndex := range models {
 		t.Run(fmt.Sprintf("Model%d", mIndex), func(t *testing.T) {

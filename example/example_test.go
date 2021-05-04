@@ -25,11 +25,11 @@ func TestModelString(t *testing.T) {
 		mf:       example.GBeam,
 		filename: "g-beam",
 	}, {
-		mf:       example.ModalTruss,
-		filename: "truss-modal",
+		mf:       example.ModalBeam2,
+		filename: "beam-modal2",
 	}, {
-		mf:       example.ModalTrussRotate,
-		filename: "truss-modal-rotate",
+		mf:       example.ModalBeamRotate2,
+		filename: "beam-modal-rotate2",
 	}, {
 		mf:       example.ModalBeam,
 		filename: "beam-modal",
@@ -37,8 +37,8 @@ func TestModelString(t *testing.T) {
 		mf:       example.ModalBeamRotate,
 		filename: "beam-modal-rotate",
 	}, {
-		mf:       example.TrussWithBuckling,
-		filename: "truss-with-buckling",
+		mf:       example.BeamWithBuckling,
+		filename: "beam-with-buckling",
 	}, {
 		mf:       example.ModalBeam3mass,
 		filename: "beam-modal-3mass",
@@ -48,6 +48,19 @@ func TestModelString(t *testing.T) {
 	}, {
 		mf:       example.BucklingBeam,
 		filename: "beam-buckling",
+	}, {
+		mf:       example.Gframe,
+		filename: "gframe",
+	}, {
+		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+			return example.G(true)
+		},
+		filename: "G-linear",
+	}, {
+		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+			return example.G(false)
+		},
+		filename: "G-nonlinear",
 	}, {
 		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
 			m, _, lc, _ := example.BeamDc()
@@ -64,7 +77,27 @@ func TestModelString(t *testing.T) {
 			}()
 		},
 		filename: "beam-dc-part2",
-	}}
+	}, {
+		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+			return example.Pframe(1.0)
+		},
+		filename: "pframe1.0",
+	}, {
+		mf: func() (hd.Model, []hd.LoadCase, []hd.ModalCase) {
+			return example.Pframe(4.5)
+		},
+		filename: "pframe4.5",
+	}, {
+		mf:       example.EFESTS10bar,
+		filename: "EFESTS10bar",
+	}, {
+		mf:       example.ConsoleBathe,
+		filename: "beamBathe",
+	},
+	// 	}, {
+	// 		mf:       example.Frame,
+	// 		filename: "frame",
+	}
 	for _, m := range ms {
 		t.Run(m.filename, func(t *testing.T) {
 			model, lcs, mcs := m.mf()

@@ -27,6 +27,7 @@ func (m *Model) checkInputData() error {
 	if err := m.checkPins(); err != nil {
 		_ = et.Add(err)
 	}
+	// TODO : add max/min elasticity or area <= 10e6
 
 	if !et.IsError() {
 		// graph checking
@@ -82,7 +83,7 @@ func (m *Model) graphCheck() (err error) {
 		presentBeam = presentBeam[:0]
 		// remove marked beams
 		for _, pr := range nextBeam {
-			if beamMark[pr] == true {
+			if beamMark[pr] {
 				continue
 			}
 			presentBeam = append(presentBeam, pr)
@@ -383,7 +384,7 @@ func (m *Model) checkPins() (err error) {
 	for beam := 0; beam < len(m.Pins); beam++ {
 		if m.Pins[beam][2] && m.Pins[beam][5] &&
 			!(m.Pins[beam][1] && m.Pins[beam][4]) {
-			et.Add(ErrorPin{
+			_ = et.Add(ErrorPin{
 				Beam: beam,
 				Err:  fmt.Errorf("Pins [1] and [4] in direction Y must be true"),
 			})
