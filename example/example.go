@@ -737,7 +737,7 @@ func Gframe() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 //	     |                 |
 //	    ===               ===
 func Pframe() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
-	J := 518e-8
+	J := 8950e-8
 	A := 61.2e-4
 	E := 2.1e11
 	m = hd.Model{
@@ -810,7 +810,7 @@ func Pframe() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 			{true, true, true},
 		},
 	}
-	P := 1000.0
+	P := 9.81998 * 1000.0 * 1.0 // T
 	l := hd.LoadCase{
 		LoadNodes: []hd.LoadNode{
 			{N: 8, Forces: [3]float64{P, 0, 0}},
