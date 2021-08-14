@@ -741,12 +741,15 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 				for i := range p {
 					p[i] += dp[i]
 				}
+				// fmt.Println(	">> p :", p)
 
 				// solve by LU decomposition
 				d, err = lu.Solve(p)
 				if err != nil {
 					return fmt.Errorf("Linear Elastic calculation error: %v", err)
 				}
+
+				// fmt.Println(	">  d :", d)
 
 				// create result information
 
@@ -779,6 +782,10 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 						return err
 					}
 
+					// fmt.Printf("K   = %#v\n", k)
+					// fmt.Printf("Geo = %#v\n", g)
+					// fmt.Println(	">>>>>>>> ignore : " , append(ignore, m.addSupport()...))
+
 					var summ *sparse.Matrix
 					summ, err = sparse.Add(k, g, 1.0, -1.0)
 					if err != nil {
@@ -796,6 +803,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 								plast[i], plast)
 						}
 					}
+					// fmt.Printf("Sum = %#v\n", summ)
 
 					// calculate error
 					delta := make([]float64, len(p))
@@ -804,21 +812,21 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					}
 
 					// LU decomposition
-					if n.withRecalcLU {
-						var lu sparse.LU
-						err = lu.Factorize(summ,
-							// add support
-							append(ignore, m.addSupport()...)...)
-						if err != nil {
-							err = fmt.Errorf("LU error factorization: %v\n"+
-								"ignore = %v\n"+"supports = %v",
-								err,
-								ignore,
-								m.addSupport(),
-							)
-							return err
-						}
+					// if n.withRecalcLU {
+					var lu sparse.LU
+					err = lu.Factorize(summ,
+						// add support
+						append(ignore, m.addSupport()...)...)
+					if err != nil {
+						err = fmt.Errorf("LU error factorization: %v\n"+
+							"ignore = %v\n"+"supports = %v",
+							err,
+							ignore,
+							m.addSupport(),
+						)
+						return err
 					}
+					// }
 
 					// solve
 					dd, err := lu.Solve(delta)
@@ -830,6 +838,8 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					for i := range d {
 						d[i] += dd[i]
 					}
+
+					// fmt.Printf("Defor = %#v\n", d)
 
 					// error
 					var e, max float64
@@ -853,6 +863,8 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 
 					// calculate reactions
 					lc.calcReactions(m, d, k, p)
+
+					// fmt.Println(">>>>", lc)
 
 					ddlast = dd
 				}
