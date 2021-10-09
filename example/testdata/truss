@@ -60,7 +60,14 @@ Index           Fx, N           Fy, N          M, N*m
     2     0.00000e+00    -4.45001e+04     0.00000e+00
     4     0.00000e+00    -5.12499e+04     0.00000e+00
 
-Linear buckling result: is not calculated
+Linear buckling result:
+Linear buckling factor:      1411.17727
+Point               X               Y               M
+    0     0.00000e+00     0.00000e+00     0.00000e+00
+    1    -9.33293e-01    -3.18235e-01     0.00000e+00
+    2    -2.88080e-02     0.00000e+00     0.00000e+00
+    3    -1.41341e-01     5.96880e-02     0.00000e+00
+    4    -5.76160e-02     0.00000e+00     0.00000e+00
 
 
 
