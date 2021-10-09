@@ -12,6 +12,7 @@ func Example() {
 	tcs := []func() (model hd.Model, lc hd.LoadCase, name string, isOk func(lc *hd.LoadCase) (tol []float64)){
 		MSA21,
 		MSA49,
+		MSA413,
 		MSA91,
 	}
 
@@ -44,6 +45,10 @@ func Example() {
 	// case  3:    0.00%
 	// case  4:    0.00%
 	// case  5:    0.06%
+	// Book: William McGuire, Richard H.Gallagher, Ronald D.Ziemian Matrix Structural Analysis EXAMPLE 4.13 Page 84
+	// case  0:    0.02%
+	// case  1:    0.02%
+	// case  2:    0.26%
 	// Book: William McGuire, Richard H.Gallagher, Ronald D.Ziemian Matrix Structural Analysis EXAMPLE 9.1 Page 247
 	// case  0:    5.05%
 	// case  1:    5.05%

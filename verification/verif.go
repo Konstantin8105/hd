@@ -6,6 +6,13 @@ import (
 	"github.com/Konstantin8105/hd"
 )
 
+func compareD(actual, expect [3]float64) (tol []float64) {
+	for i := range actual {
+		tol = append(tol, (actual[i]-expect[i])/expect[i]*100.0)
+	}
+	return
+}
+
 func MSA21() (model hd.Model, lc hd.LoadCase, name string, isOk func(lc *hd.LoadCase) (tol []float64)) {
 	name = `
 Book:
@@ -114,6 +121,58 @@ Page 80
 		tol = append(tol, (lc.Reactions[1][1]-expectReactYb)/expectReactYb*100.0)
 		tol = append(tol, (lc.PointDisplacementGlobal[2][1]-expectDXc)/expectDXc*100.0)
 		tol = append(tol, (lc.PointDisplacementGlobal[2][2]-expectDRc)/expectDRc*100.0)
+		return
+	}
+	return
+}
+
+func MSA413() (model hd.Model, lc hd.LoadCase, name string, isOk func(lc *hd.LoadCase) (tol []float64)) {
+	name = `
+Book:
+William McGuire, Richard H.Gallagher, Ronald D.Ziemian
+Matrix Structural Analysis
+
+EXAMPLE 4.13
+Page 84
+`
+	model = hd.Model{
+		Points: [][2]float64{
+			{0, 5},
+			{8, 5},
+			{8, 0},
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: 6000e-6, J: 200e6 * 1e-12, E: 200000e6},
+			{N: [2]int{1, 2}, A: 4000e-6, J: 50.e6 * 1e-12, E: 200000e6},
+		},
+		Pins: [][6]bool{
+			{false, false, false, false, false},
+			{false, false, false, false, false},
+		},
+		Supports: [][3]bool{
+			{true, true, true},
+			{false, false, false},
+			{true, true, true},
+		},
+	}
+	P := 100e3
+	a := 45.0 * math.Pi / 180.0
+	M := +50e3
+	lc = hd.LoadCase{
+		LoadNodes: []hd.LoadNode{
+			{N: 1, Forces: [3]float64{P * math.Sin(a), -P * math.Cos(a), M}},
+		},
+	}
+
+	isOk = func(lc *hd.LoadCase) (tol []float64) {
+		var (
+			expectDa = [3]float64{
+				+0.4414 / 1000.0,
+				-0.3998 / 1000.0,
+				+0.00169,
+			}
+		)
+		tol = append(tol, compareD(lc.PointDisplacementGlobal[1], expectDa)...)
 		return
 	}
 	return
