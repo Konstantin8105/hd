@@ -741,15 +741,12 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 				for i := range p {
 					p[i] += dp[i]
 				}
-				// fmt.Println(	">> p :", p)
 
 				// solve by LU decomposition
 				d, err = lu.Solve(p)
 				if err != nil {
 					return fmt.Errorf("Linear Elastic calculation error: %v", err)
 				}
-
-				// fmt.Println(	">  d :", d)
 
 				// create result information
 
@@ -775,7 +772,6 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 				for ; ; iter++ {
 					if maxiter < iter {
 						// TODO : add error handling
-						fmt.Println(">not enought iterations")
 						break
 						// return fmt.Errorf("not enought iterations: %d of %d",
 						// 	iter,
@@ -788,18 +784,12 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 						return m.getGeometricBeam2d(pos, lc)
 					})
 					if err != nil {
-						fmt.Println("geom error")
 						return err
 					}
-
-					// fmt.Printf("K   = %#v\n", k)
-					// fmt.Printf("Geo = %#v\n", g)
-					// fmt.Println(	">>>>>>>> ignore : " , append(ignore, m.addSupport()...))
 
 					var summ *sparse.Matrix
 					summ, err = sparse.Add(k, g, 1.0, -1.0)
 					if err != nil {
-						fmt.Println("add error")
 						return err
 					}
 					//g.Print(os.Stdout, false)
@@ -807,17 +797,14 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					plast := make([]float64, len(p))
 					err = sparse.Gaxpy(summ, d, plast)
 					if err != nil {
-						fmt.Println("gqxpy error")
 						return err
 					}
 					for i := range plast {
 						if math.IsNaN(plast[i]) || math.IsInf(plast[i], 0) {
-							fmt.Println("validation error")
 							return fmt.Errorf("not valid node load %e in %v",
 								plast[i], plast)
 						}
 					}
-					// fmt.Printf("Sum = %#v\n", summ)
 
 					// calculate error
 					delta := make([]float64, len(p))
@@ -838,7 +825,6 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 							ignore,
 							m.addSupport(),
 						)
-						fmt.Println("lu error")
 						return err
 					}
 					// }
@@ -846,7 +832,6 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					// solve
 					dd, err := lu.Solve(delta)
 					if err != nil {
-						fmt.Println("dd solve error")
 						return fmt.Errorf("calculation error: %v", err)
 					}
 
@@ -854,8 +839,6 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					for i := range d {
 						d[i] += dd[i]
 					}
-
-					// fmt.Printf("Defor = %#v\n", d)
 
 					// error
 					var e float64
@@ -877,8 +860,6 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					// // calculate reactions
 					// lc.calcReactions(m, d, summ, p)
 
-					// fmt.Println(">>>>", lc)
-
 					//if e/max < 1e-6
 					if e < 1e-6 {
 						break
@@ -886,7 +867,6 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 
 					ddlast = dd
 				}
-				// fmt.Println("iter = ", iter)
 			}
 		}
 	}

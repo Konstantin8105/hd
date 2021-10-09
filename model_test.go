@@ -606,11 +606,6 @@ func Example() {
 }
 
 func ExampleNonlinear() {
-
-	// 	d := 0.14
-	// 	E := 2.05e11
-	// 	J := math.Pow(d, 4) / 12
-	// 	A := d * d
 	m := hd.Model{
 		Points: [][2]float64{
 			{0.0, 4.0}, // a
@@ -638,155 +633,57 @@ func ExampleNonlinear() {
 			{N: 1, Forces: [3]float64{a * P, -P, 0}},
 		},
 	}
-	// 	if isLinear {
-	//		lc.LinearBuckling.Amount = 1
-	// 	} else {
+	lc.NonlinearNR.MaxIterations = 29000
+	lc.NonlinearNR.Substep = 50
+
 	lc.NonlinearNK.MaxIterations = 29000
-	lc.NonlinearNK.Substep = 40
-	// 	}
+	lc.NonlinearNK.Substep = 50.0
 
-	// fmt.Println(m)
+	// TODO: add arc-method
 
-	// var buf bytes.Buffer
-	err := hd.LinearStatic(os.Stdout, &m, &lc)
+	err := hd.LinearStatic(nil, &m, &lc)
 	if err != nil {
-		// panic(err)
-		fmt.Println(">>>>>>>>", err)
 		return
 	}
 
-	// fmt.Println(lc)
-	fmt.Println("> results :")
+	var (
+		expectD = 1692.0 / 1000.0
+		expectP = 340.0 * 1000.0
+	)
+	fmt.Fprintf(os.Stdout, "Expect : %10.5f , %10.2f\n", expectD, expectP)
+
 	for i := range lc.NonlinearNK.Results {
-		fmt.Printf("%12.5f, %10.3f\n",
-			lc.NonlinearNK.Results[i].PointDisplacementGlobal[1][0]*1000,
-			lc.NonlinearNK.Results[i].Reactions[2][1]/1000)
+		if i == 0 {
+			continue
+		}
+		lastD := lc.NonlinearNK.Results[i-1].PointDisplacementGlobal[1][0]
+		presD := lc.NonlinearNK.Results[i].PointDisplacementGlobal[1][0]
+		if lastD <= expectD && expectD <= presD {
+			lastP := lc.NonlinearNK.Results[i-1].Reactions[2][1]
+			presP := lc.NonlinearNK.Results[i].Reactions[2][1]
+			p := lastP + (presP-lastP)*(expectD-lastD)/(presD-lastD)
+			fmt.Fprintf(os.Stdout, "NK     : %10.5f , %10.2f - TOL = %10.3f%%\n",
+				expectD, p, math.Abs((p-expectP)/expectP)*100.0)
+		}
 	}
 
-	// 	lc = append([]hd.LoadCase{}, l)
-	// 	return
-
-	// 	// Test based on example from document:
-	// 	// Nonlinear Analysis of Structures
-	// 	// The Arc Length Method: Formulation, Implementation and Applications
-	// 	// Nikolaos Vasios
-	//
-	// 	var (
-	// 		EA = 1.0
-	// 		E  = 2.0e11
-	// 		Ao = EA / E
-	// 		Jo = 1.0e-8
-	//
-	// 		Lo = 10.0
-	// 		dy = 5.0
-	// 		dx = math.Sqrt(Lo*Lo - dy*dy)
-	// 		θo = math.Atan(dy / dx)
-	//
-	// 		C  = 0.02 // EAL
-	// 		Lc = 10.0
-	// 		Ac = C * Lc / E
-	// 	)
-	//
-	// 	m := hd.Model{
-	// 		Points: [][2]float64{
-	// 			{0.0, 0.0},                       // 0  Support
-	// 			{dx * 1.0 / 6.0, dy * 1.0 / 6.0}, // 1
-	// 			{dx * 2.0 / 6.0, dy * 2.0 / 6.0}, // 2
-	// 			{dx * 3.0 / 6.0, dy * 3.0 / 6.0}, // 3
-	// 			{dx * 4.0 / 6.0, dy * 4.0 / 6.0}, // 4
-	// 			{dx * 5.0 / 6.0, dy * 5.0 / 6.0}, // 5
-	// 			{dx, dy},                         // 6 Load point
-	// 			{dx, dy - Lc},
-	// 		},
-	// 		Beams: []hd.BeamProp{
-	// 			{N: [2]int{0, 1}, A: Ao, J: Jo, E: E},
-	// 			{N: [2]int{1, 2}, A: Ao, J: Jo, E: E},
-	// 			{N: [2]int{2, 3}, A: Ao, J: Jo, E: E},
-	// 			{N: [2]int{3, 4}, A: Ao, J: Jo, E: E},
-	// 			{N: [2]int{4, 5}, A: Ao, J: Jo, E: E},
-	// 			{N: [2]int{5, 6}, A: Ao, J: Jo, E: E},
-	// 			{N: [2]int{6, 7}, A: Ac, J: Jo, E: E},
-	// 		},
-	// 		// Pins: [][6]bool{
-	// 		// 	{false, true, true, false, false, false},
-	// 		// 	{false, false, false, false, false, false},
-	// 		// 	{false, false, false, false, false, false},
-	// 		// 	{false, false, false, false, false, false},
-	// 		// 	{false, false, false, false, false, false},
-	// 		// 	{false, false, false, false, true, true},
-	// 		// 	{false, true, true, false, true, true},
-	// 		// },
-	// 		Supports: [][3]bool{
-	// 			{true, true, false},
-	// 			{false, false, false},
-	// 			{false, false, false},
-	// 			{false, false, false},
-	// 			{false, false, false},
-	// 			{false, false, false},
-	// 			{true, false, false},
-	// 			{true, false, false},
-	// 		},
-	// 	}
-	//
-	// 	P := 1.4
-	//
-	// 	lc := hd.LoadCase{
-	// 		LoadNodes: []hd.LoadNode{
-	// 			{N: 7, Forces: [3]float64{0, -P / 2.0, 0}},
-	// 		},
-	// 		NonlinearNR: struct {
-	// 			MaxIterations uint64
-	// 			Substep       uint64
-	// 			Results       []*hd.LoadCase
-	// 		}{
-	// 			MaxIterations: 10000,
-	// 			Substep:       10,
-	// 		},
-	// 	}
-	//
-	// 	var buf bytes.Buffer
-	// 	err := hd.LinearStatic(&buf, &m, &lc)
-	// 	t.Log(err)
-	//
-	// 	k := E * Ao / Lo
-	// 	t.Logf("dx = %v", dx)
-	// 	t.Logf("dy = %v", dy)
-	// 	t.Logf("Lo = %v", Lo)
-	// 	t.Logf("k  = %v", k)
-	// 	t.Logf("θo = %v", θo)
-	// 	betta := E * Ao / Lo
-	// 	t.Logf("betta = E*A/L   = %.5f", betta)
-	// 	t.Logf("w     = betta/k = %.5f", betta/k)
-	//
-	// 	w := -lc.PointDisplacementGlobal[6][1]
-	// 	t.Logf("w    = %.4f displacement of %.4f", w, dy)
-	//
-	// 	λ := math.Abs(lc.Reactions[0][1] * 2 / (2.0 * k * Lo))
-	// 	a := math.Abs((-lc.PointDisplacementGlobal[6][1]) / Lo)
-	// 	L2 := (1.0/math.Sqrt(1-2*a*math.Sin(θo)+a*a) - 1) * (math.Sin(θo) - a)
-	// 	t.Logf("λ    = %.5f a = %.5f L2 = %.5f", λ, a, L2)
-	//
-	// 	// t.Logf("%s", m)
-	// 	// t.Logf("%s", lc)
-	// 	t.Logf("Force N\tDisplacement m")
-	// 	for _, v := range lc.NonlinearNR.Results {
-	// 		t.Logf(" %.4f\t%.4f\t%.f",
-	// 			v.LoadNodes[0].Forces[1],
-	// 			-v.PointDisplacementGlobal[6][1],
-	// 			-v.PointDisplacementGlobal[7][1],
-	// 		)
-	// 	}
-	//
-	// 	// Z := dy - w
-	// 	// t.Logf("P by research = %.4e", E*Ao*Z*(2*Z*w-w*w)/(2*Lo*Lo*Lo))
-	// 	// t.Logf("z             = %.4e %s", Z, " displacament")
-	// 	// t.Logf("P             = %.4e  %.4e", P, 2*k*Lo*L2)
-	// 	// t.Logf("L/Lo          = %f %f", math.Sqrt(1.0-2*w/Lo*math.Sin(θo)+math.Pow(w/Lo, 2.0)), ( math.Sqrt(dx*dx+Z*Z) )/Lo)
-	//
-	// 	// ArcLength(E, Ao, Lo, θo)
-	//
-	// 	// }
-	// 	// t.Log(buf.String())
+	for i := range lc.NonlinearNR.Results {
+		if i == 0 {
+			continue
+		}
+		lastD := lc.NonlinearNR.Results[i-1].PointDisplacementGlobal[1][0]
+		presD := lc.NonlinearNR.Results[i].PointDisplacementGlobal[1][0]
+		if lastD <= expectD && expectD <= presD {
+			lastP := lc.NonlinearNR.Results[i-1].Reactions[2][1]
+			presP := lc.NonlinearNR.Results[i].Reactions[2][1]
+			p := lastP + (presP-lastP)*(expectD-lastD)/(presD-lastD)
+			fmt.Fprintf(os.Stdout, "NR     : %10.5f , %10.2f - TOL = %10.3f%%\n",
+				expectD, p, math.Abs((p-expectP)/expectP)*100.0)
+		}
+	}
 
 	// Output:
+	// Expect :    1.69200 ,  340000.00
+	// NK     :    1.69200 ,  357170.70 - TOL =      5.050%
+	// NR     :    1.69200 ,  357170.70 - TOL =      5.050%
 }
