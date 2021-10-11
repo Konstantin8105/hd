@@ -13,6 +13,7 @@ func Example() {
 		MSA21,
 		MSA49,
 		MSA413,
+		MSA81,
 		MSA91,
 	}
 
@@ -24,7 +25,7 @@ func Example() {
 		fmt.Fprintf(os.Stdout, "%s\n", name)
 		err := hd.LinearStatic(nil, &model, &lc)
 		if err != nil {
-			fmt.Fprintf(os.Stdout, "%v\n", err)
+			fmt.Fprintf(os.Stdout, "%v\n%v\n", err, lc)
 			continue
 		}
 		tols := isOk(&lc)
@@ -49,6 +50,10 @@ func Example() {
 	// case  0:    0.02%
 	// case  1:    0.02%
 	// case  2:    0.26%
+	// Book: William McGuire, Richard H.Gallagher, Ronald D.Ziemian Matrix Structural Analysis EXAMPLE 8.1 Page 220
+	// case  0:    0.00%
+	// case  1:    8.17%
+	// case  2:    8.17%
 	// Book: William McGuire, Richard H.Gallagher, Ronald D.Ziemian Matrix Structural Analysis EXAMPLE 9.1 Page 247
 	// case  0:    5.05%
 	// case  1:    5.05%

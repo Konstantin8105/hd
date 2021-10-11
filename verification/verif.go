@@ -178,6 +178,127 @@ Page 84
 	return
 }
 
+// TODO: add MSA511
+// TODO: add Problem 6.12
+// TODO: add MSA74, MSA75, MSA76, MSA710
+
+func MSA81() (model hd.Model, lc hd.LoadCase, name string, isOk func(lc *hd.LoadCase) (tol []float64)) {
+	name = `
+Book:
+William McGuire, Richard H.Gallagher, Ronald D.Ziemian
+Matrix Structural Analysis
+
+EXAMPLE 8.1
+Page 220
+`
+	L := 4.0
+	// k = E*A/L
+	k := 1e3
+	Area := 1e-3
+	E := k * L / Area
+	model = hd.Model{
+		Points: [][2]float64{
+			{L, 0}, // a
+			{L, L}, // b
+			{0, L}, // c
+		},
+		Beams: []hd.BeamProp{
+			{N: [2]int{0, 1}, A: Area * 40, J: 1 * 40, E: E * 40}, // ab
+			{N: [2]int{1, 2}, A: Area, J: 1, E: E},                // bc
+		},
+		Pins: [][6]bool{
+			{false, true, true, false, true, true},
+			{false, false, false, false, false, false},
+		},
+		Supports: [][3]bool{
+			{true, true, false},
+			{false, false, false},
+			{true, false, true},
+		},
+	}
+	P := k * L
+	a := 0.1
+	lc = hd.LoadCase{
+		LoadNodes: []hd.LoadNode{
+			{N: 1, Forces: [3]float64{a * P, -P, 0}},
+		},
+	}
+	lc.LinearBuckling.Amount = 1
+
+	lc.NonlinearNR.MaxIterations = 29000
+	lc.NonlinearNR.Substep = 50
+
+	lc.NonlinearNK.MaxIterations = 29000
+	lc.NonlinearNK.Substep = 50.0
+
+	// TODO: add arc-method
+
+	isOk = func(lc *hd.LoadCase) (tol []float64) {
+		var (
+			expectLinearBucklingFactor = 1.0
+		)
+		tol = append(tol, (lc.LinearBuckling.Results[0].Factor-expectLinearBucklingFactor)/
+			expectLinearBucklingFactor*100.0)
+
+		var (
+			expectQ = math.Atan(math.Pow(a, 1.0/3.0))
+			expectD = L * math.Sin(expectQ)
+			expectP = k * L * math.Cos(expectQ) / (1.0 + a*1.0/math.Tan(expectQ))
+		)
+		// TODO for each steps
+		// TODO for arc method in point with Yc == 0
+
+		// for _, res := range lc.NonlinearNK.Results {
+		// 	d := res.PointDisplacementGlobal[1][0]
+		// 	p := res.Reactions[0][1]
+
+		// 	Q := math.Asin(d / L)
+		// 	expectP := k * L * math.Cos(Q) / (1.0 + a*1.0/math.Tan(Q))
+
+		// 	tol = append(tol, (p-expectP)/expectP*100.0)
+		// }
+		// for _, res := range lc.NonlinearNR.Results {
+		// 	d := res.PointDisplacementGlobal[1][0]
+		// 	p := res.Reactions[0][1]
+
+		// 	Q := math.Asin(d / L)
+		// 	expectP := k * L * math.Cos(Q) / (1.0 + a*1.0/math.Tan(Q))
+
+		// 	tol = append(tol, (p-expectP)/expectP*100.0)
+		// }
+
+		for i := range lc.NonlinearNK.Results {
+			if i == 0 {
+				continue
+			}
+			lastD := lc.NonlinearNK.Results[i-1].PointDisplacementGlobal[1][0]
+			presD := lc.NonlinearNK.Results[i].PointDisplacementGlobal[1][0]
+			if lastD <= expectD && expectD <= presD {
+				lastP := lc.NonlinearNK.Results[i-1].Reactions[0][1]
+				presP := lc.NonlinearNK.Results[i].Reactions[0][1]
+				p := lastP + (presP-lastP)*(expectD-lastD)/(presD-lastD)
+				tol = append(tol, (p-expectP)/expectP*100.0)
+			}
+		}
+
+		for i := range lc.NonlinearNR.Results {
+			if i == 0 {
+				continue
+			}
+			lastD := lc.NonlinearNR.Results[i-1].PointDisplacementGlobal[1][0]
+			presD := lc.NonlinearNR.Results[i].PointDisplacementGlobal[1][0]
+			if lastD <= expectD && expectD <= presD {
+				lastP := lc.NonlinearNR.Results[i-1].Reactions[0][1]
+				presP := lc.NonlinearNR.Results[i].Reactions[0][1]
+				p := lastP + (presP-lastP)*(expectD-lastD)/(presD-lastD)
+				tol = append(tol, (p-expectP)/expectP*100.0)
+			}
+		}
+
+		return
+	}
+	return
+}
 func MSA91() (model hd.Model, lc hd.LoadCase, name string, isOk func(lc *hd.LoadCase) (tol []float64)) {
 	name = `
 Book:
