@@ -247,23 +247,18 @@ Page 220
 		)
 		// TODO for each steps
 		// TODO for arc method in point with Yc == 0
-
 		// for _, res := range lc.NonlinearNK.Results {
 		// 	d := res.PointDisplacementGlobal[1][0]
 		// 	p := res.Reactions[0][1]
-
 		// 	Q := math.Asin(d / L)
 		// 	expectP := k * L * math.Cos(Q) / (1.0 + a*1.0/math.Tan(Q))
-
 		// 	tol = append(tol, (p-expectP)/expectP*100.0)
 		// }
 		// for _, res := range lc.NonlinearNR.Results {
 		// 	d := res.PointDisplacementGlobal[1][0]
 		// 	p := res.Reactions[0][1]
-
 		// 	Q := math.Asin(d / L)
 		// 	expectP := k * L * math.Cos(Q) / (1.0 + a*1.0/math.Tan(Q))
-
 		// 	tol = append(tol, (p-expectP)/expectP*100.0)
 		// }
 
@@ -299,6 +294,7 @@ Page 220
 	}
 	return
 }
+
 func MSA91() (model hd.Model, lc hd.LoadCase, name string, isOk func(lc *hd.LoadCase) (tol []float64)) {
 	name = `
 Book:
