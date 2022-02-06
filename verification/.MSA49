@@ -1,0 +1,15 @@
+name : 
+Book:
+William McGuire, Richard H.Gallagher, Ronald D.Ziemian
+Matrix Structural Analysis
+
+EXAMPLE 4.9
+Page 80
+
+react: -3.5355e+03 -3.6000e+03 :   -1.79%
+react: -3.3146e+03 -3.3000e+03 :    0.44%
+react: -8.8388e+03 -8.8000e+03 :    0.44%
+react: 6.8501e+03 6.8500e+03 :    0.00%
+defor: -1.9151e-02 -1.9150e-02 :    0.00%
+defor: -5.3033e-03 -5.3000e-03 :    0.06%
+
