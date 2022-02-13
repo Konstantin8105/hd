@@ -431,6 +431,17 @@ Page 247
 				str += fmt.Sprintf("P NR: %s", compare(p, expectP))
 			}
 		}
+		if len(lc.NonlinearNK.Results) != len(lc.NonlinearNR.Results) {
+			panic("not same")
+		}
+		str += fmt.Sprintf("%12s\t%12s\t%12s\t%12s\n", "D.NK", "P.NK", "D.NR", "P.NR")
+		for i := range lc.NonlinearNK.Results {
+			Dnk := lc.NonlinearNK.Results[i].PointDisplacementGlobal[1][0]
+			Dnr := lc.NonlinearNK.Results[i].PointDisplacementGlobal[1][0]
+			Pnk := lc.NonlinearNK.Results[i].Reactions[2][1]
+			Pnr := lc.NonlinearNR.Results[i].Reactions[2][1]
+			str += fmt.Sprintf("%12.4e\t%12.4e\t%12.4e\t%12.3e\n", Dnk, Pnk, Dnr, Pnr)
+		}
 		return
 	}
 	return
