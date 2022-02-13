@@ -396,7 +396,7 @@ Page 247
 	lc.NonlinearNR.Substep = 50
 
 	lc.NonlinearNK.MaxIterations = 29000
-	lc.NonlinearNK.Substep = 50.0
+	lc.NonlinearNK.Substep = 50
 
 	// TODO: add arc-method
 
@@ -418,7 +418,6 @@ Page 247
 				str += fmt.Sprintf("P NK: %s", compare(p, expectP))
 			}
 		}
-
 		for i := range lc.NonlinearNR.Results {
 			if i == 0 {
 				continue
@@ -429,7 +428,7 @@ Page 247
 				lastP := lc.NonlinearNR.Results[i-1].Reactions[2][1]
 				presP := lc.NonlinearNR.Results[i].Reactions[2][1]
 				p := lastP + (presP-lastP)*(expectD-lastD)/(presD-lastD)
-				str += fmt.Sprintf("P NK: %s", compare(p, expectP))
+				str += fmt.Sprintf("P NR: %s", compare(p, expectP))
 			}
 		}
 		return
