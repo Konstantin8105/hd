@@ -8,6 +8,13 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
+// Ke - elastic matrix stiffiner
+// Kg - geometric stiffness matrix
+// second-order elastic analysis: [Ke+Kg]*D=P
+// Km - plastic reduction matrix
+// first-order inelestic analysis: [Ke+Km]*D=P
+// second-order inelestic analysis: [Ke+Kg+Km]*D=P
+
 // distance between 2 point of beam
 func (m Model) distance(st, en int) (res float64) {
 	defer func() {

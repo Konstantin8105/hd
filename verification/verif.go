@@ -333,7 +333,7 @@ Page 220
 			compare(lc.PointDisplacementGlobal[1][0], expectD))
 		// 		for Q := 0.0; Q < math.Pi/2.0; Q += 0.01 {
 		// 			expectP = k * L * math.Cos(Q) / (1.0 + a*1.0/math.Tan(Q))
-		// 			fmt.Println(Q*180/3.1415, Q, expectP)
+		// 			Q*180/3.1415, Q, expectP
 		// 		}
 		// TODO for each steps
 		// TODO for arc method in point with Yc == 0
