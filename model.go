@@ -10,6 +10,7 @@ import (
 	"sort"
 
 	"github.com/Konstantin8105/errors"
+	"github.com/Konstantin8105/pow"
 	"github.com/Konstantin8105/sparse"
 	"gonum.org/v1/gonum/mat"
 )
@@ -825,66 +826,49 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 			{false, lc.NonlinearNK.MaxIterations, lc.NonlinearNK.Substep, &lc.NonlinearNK.Results},
 		} {
 			if n.MaxIterations == 0 {
+				// no need to calculate
 				continue
 			}
-
-			ddlast := make([]float64, len(d))
-
-			// loop
-			amount := n.Substep
-			if amount == 0 {
-				amount = 1
+			// amount substep can not by less 1
+			if n.Substep == 0 {
+				n.Substep = 1
 			}
-			maxiter := n.MaxIterations
+			// last iteration displacement
+			ddlast := make([]float64, len(d))
+			// TODO use lambda function
 			dp := make([]float64, len(p))
 			for i := range dp {
-				dp[i] = p[i] / float64(amount)
+				dp[i] = p[i] / float64(n.Substep)
 			}
 			p = make([]float64, len(p))
-
-			results := n.Results
+			// iterations by substeps
 			iter := uint64(0)
-			for i := uint64(0); i < amount; i++ {
+			for i := uint64(0); i < n.Substep; i++ {
 				lc = new(LoadCase)
-				*results = append(*results, lc)
-
+				*n.Results = append(*n.Results, lc)
+				// load increment
 				for i := range p {
 					p[i] += dp[i]
 				}
-
 				// solve by LU decomposition
 				d, err = lu.Solve(p)
 				if err != nil {
 					return fmt.Errorf("Linear Elastic calculation error: %v", err)
 				}
-
-				// create result information
-
+				// calculate result information
 				clc := func(k *sparse.Matrix) {
-
-					// calculate loads
-					lc.calcNodeLoads(m, p)
-
-					// calculate point displacement in global system
-					lc.calcDisplacement(m, d)
-
-					// calculate beam internal force in local beam system
-					lc.calcBeamForces(m, d)
-
-					// calculate reactions
-					lc.calcReactions(m, d, k, p)
+					lc.calcNodeLoads(m, p)       // loads
+					lc.calcDisplacement(m, d)    // point displacement in global system
+					lc.calcBeamForces(m, d)      // beam internal force in local beam system
+					lc.calcReactions(m, d, k, p) // reactions
 				}
-
 				clc(k)
 
-				//k.Print(os.Stdout, false)
-
 				for ; ; iter++ {
-					if maxiter < iter {
+					if n.MaxIterations < iter {
 						// TODO : add error handling
 						break
 					}
-
 					// assemble stiffness matrix with geometric nonlinearity
 					g, _, err := m.assemblyK(func(pos int) *mat.Dense {
 						return m.getGeometricBeam2d(pos, lc)
@@ -892,13 +876,12 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					if err != nil {
 						return err
 					}
-
+					// summary stiffness and geometric matrix
 					var summ *sparse.Matrix
 					summ, err = sparse.Add(k, g, 1.0, -1.0)
 					if err != nil {
 						return err
 					}
-					//g.Print(os.Stdout, false)
 
 					plast := make([]float64, len(p))
 					err = sparse.Gaxpy(summ, d, plast)
@@ -911,13 +894,11 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 								plast[i], plast)
 						}
 					}
-
 					// calculate error
 					delta := make([]float64, len(p))
 					for i := range p {
 						delta[i] = p[i] - plast[i]
 					}
-
 					// LU decomposition
 					// if n.withRecalcLU {
 					// var lu sparse.LU
@@ -940,34 +921,19 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 					if err != nil {
 						return fmt.Errorf("calculation error: %v", err)
 					}
-
 					// displacement increment
 					for i := range d {
 						d[i] += dd[i]
 					}
-
-					// error
-					var e float64
-					// max := math.Abs(dd[0])
-					for i := range dd {
-						// if v := math.Abs(dd[i]); max < v {
-						// 	max = v
-						// }
-						e += math.Pow((dd[i] - ddlast[i]), 2)
-					}
-					e = math.Sqrt(e)
-
+					// calculate result information
 					clc(summ)
-
-					// // calculate point displacement in global system
-					// lc.calcDisplacement(m, d)
-					// // calculate beam internal force in local beam system
-					// lc.calcBeamForces(m, d)
-					// // calculate reactions
-					// lc.calcReactions(m, d, summ, p)
-
-					//if e/max < 1e-6
-					if e < 1e-6 {
+					// error
+					if func() (e float64) {
+						for i := range dd {
+							e += pow.E2(dd[i] - ddlast[i])
+						}
+						return math.Sqrt(e)
+					}() < 1e-6 {
 						break
 					}
 
