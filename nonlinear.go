@@ -122,7 +122,7 @@ type solverFunc func(
 	Solve func(K interface{}, D Displacements) (Forces, error),
 	Update func(F Forces, D Displacements, K interface{}),
 	Mul func(K interface{}, dF Forces) (Displacements, error),
-	Stop func(iter int, dF Forces, dD Displacements) bool,
+	Stop func(iter int, dF Forces, dD Displacements) (bool, error),
 ) error
 
 func nr(
@@ -132,7 +132,7 @@ func nr(
 	Solve func(K interface{}, D Displacements) (Forces, error),
 	Update func(F Forces, D Displacements, K interface{}),
 	Mul func(K interface{}, dF Forces) (Displacements, error),
-	Stop func(iter int, dF Forces, dD Displacements) bool,
+	Stop func(iter int, dF Forces, dD Displacements) (bool, error),
 ) error {
 	// assemble stiffness matrix with geometric nonlinearity
 	K, err := Kstiff(Fo, Do)
@@ -170,8 +170,12 @@ func nr(
 		// update load case data
 		Update(Fo, Do, K)
 		// stop criteria
-		if Stop(iter, dD, dF) {
+		stop, err := Stop(iter, dD, dF)
+		if stop {
 			break
+		}
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -188,7 +192,7 @@ func nrs(
 		Solve func(K interface{}, D Displacements) (Forces, error),
 		Update func(F Forces, D Displacements, K interface{}),
 		Mul func(K interface{}, dF Forces) (Displacements, error),
-		Stop func(iter int, dF Forces, dD Displacements) bool,
+		Stop func(iter int, dF Forces, dD Displacements) (bool, error),
 	) error {
 		dF := make([]float64, len(Fo))
 		for i := range dF {

@@ -37,6 +37,39 @@ var nlCases = []struct {
 		De: Displacements([]float64{10.0}),
 		Fe: Forces([]float64{200.0}),
 	},
+	{
+		name: "parabola /\\ after top",
+		F: func(D Displacements) []float64 {
+			return []float64{-math.Pow(D[0], 2) + 30*D[0]}
+		},
+		K: func(F Forces, D Displacements) [][]float64 {
+			return [][]float64{{-2*D[0] + 30}}
+		},
+		De: Displacements([]float64{28.0}),
+		Fe: Forces([]float64{56.0}),
+	},
+	{
+		name: "curve before top",
+		F: func(D Displacements) []float64 {
+			return []float64{-0.06*math.Pow(D[0], 3) + 1.2*math.Pow(D[0], 2) + 3*D[0]}
+		},
+		K: func(F Forces, D Displacements) [][]float64 {
+			return [][]float64{{-0.06*3*math.Pow(D[0], 2) + 1.2*2*D[0] + 3}}
+		},
+		De: Displacements([]float64{10.0}),
+		Fe: Forces([]float64{90.0}),
+	},
+	{
+		name: "curve after top",
+		F: func(D Displacements) []float64 {
+			return []float64{-0.06*math.Pow(D[0], 3) + 1.2*math.Pow(D[0], 2) + 3*D[0]}
+		},
+		K: func(F Forces, D Displacements) [][]float64 {
+			return [][]float64{{-0.06*3*math.Pow(D[0], 2) + 1.2*2*D[0] + 3}}
+		},
+		De: Displacements([]float64{20.0}),
+		Fe: Forces([]float64{60.0}),
+	},
 }
 
 var nlSolvers = []struct {
@@ -129,15 +162,16 @@ func ExampleNonlinear() {
 			}
 			Update := func(F Forces, D Displacements, K interface{}) {
 			}
-			Stop := func(iter int, dF Forces, dD Displacements) bool {
+			Stop := func(iter int, dF Forces, dD Displacements) (stop bool, err error) {
 				if 1000 < iter {
-					return true
+					err = fmt.Errorf("Too much iterations")
+					return
 				}
 				if norm(dF) < 1e-3 {
-					return true
+					return true, nil
 				}
 				if norm(dD) < 1e-3 {
-					return true
+					return true, nil
 				}
 				am := func(dd []float64) (res float64) {
 					for _, d := range dd {
@@ -146,15 +180,17 @@ func ExampleNonlinear() {
 					return res
 				}
 				if 1000 < am(dF) {
-					return true
+					err = fmt.Errorf("Too much forces")
+					return
 				}
 				if 1000 < am(dD) {
-					return true
+					err = fmt.Errorf("Too much displacements")
+					return
 				}
-				return false
+				return
 			}
 			if err := s.solver(Do, Fo, c.Fe, Kstiff, Solve, Update, Mul, Stop); err != nil {
-				fmt.Fprintf(os.Stdout, "error: %v", err)
+				fmt.Fprintf(os.Stdout, "error: %v\n", err)
 				continue
 			}
 			// compare results
