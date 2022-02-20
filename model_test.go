@@ -604,4 +604,3 @@ func Example() {
 	// Output:
 	// same
 }
-
