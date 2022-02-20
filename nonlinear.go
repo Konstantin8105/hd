@@ -113,35 +113,34 @@ package hd
 type (
 	Displacements []float64
 	Forces        []float64
+	solverFunc    func(
+		Do Displacements,
+		Fo, Fe Forces,
+		Kstiff func(F Forces, D Displacements) (interface{}, error),
+		Solve func(K interface{}, F Forces) (Displacements, error),
+		Update func(F Forces, D Displacements, K interface{}),
+		Mul func(K interface{}, dD Displacements) (Forces, error),
+		Stop func(iter uint, dF Forces, dD Displacements) (bool, error),
+	) (iterations uint, err error)
 )
-
-type solverFunc func(
-	Do Displacements,
-	Fo, Fe Forces,
-	Kstiff func(F Forces, D Displacements) (interface{}, error),
-	Solve func(K interface{}, D Displacements) (Forces, error),
-	Update func(F Forces, D Displacements, K interface{}),
-	Mul func(K interface{}, dF Forces) (Displacements, error),
-	Stop func(iter int, dF Forces, dD Displacements) (bool, error),
-) error
 
 func nr(
 	Do Displacements,
 	Fo, Fe Forces,
 	Kstiff func(F Forces, D Displacements) (interface{}, error),
-	Solve func(K interface{}, D Displacements) (Forces, error),
+	Solve func(K interface{}, F Forces) (Displacements, error),
 	Update func(F Forces, D Displacements, K interface{}),
-	Mul func(K interface{}, dF Forces) (Displacements, error),
-	Stop func(iter int, dF Forces, dD Displacements) (bool, error),
-) error {
+	Mul func(K interface{}, dD Displacements) (Forces, error),
+	Stop func(iter uint, dF Forces, dD Displacements) (bool, error),
+) (iterations uint, err error) {
 	// assemble stiffness matrix with geometric nonlinearity
 	K, err := Kstiff(Fo, Do)
 	if err != nil {
-		return err
+		return
 	}
-	for iter := 0; ; iter++ {
+	size := len(Do)
+	for iterations = 0; ; iterations++ {
 		// load increment
-		size := len(Do)
 		dF := make([]float64, size)
 		for i := range Fo {
 			dF[i] = Fe[i] - Fo[i]
@@ -149,7 +148,7 @@ func nr(
 		// displacement increment
 		dD, err := Solve(K, dF)
 		if err != nil {
-			return err
+			return iterations, err
 		}
 		for i := range Do {
 			Do[i] += dD[i]
@@ -157,12 +156,12 @@ func nr(
 		// assemble stiffness matrix with geometric nonlinearity
 		K, err := Kstiff(Fe, Do)
 		if err != nil {
-			return err
+			return iterations, err
 		}
 		// update load
 		dF, err = Mul(K, dD)
 		if err != nil {
-			return err
+			return iterations, err
 		}
 		for i := range Do {
 			Fo[i] += dF[i]
@@ -170,15 +169,15 @@ func nr(
 		// update load case data
 		Update(Fo, Do, K)
 		// stop criteria
-		stop, err := Stop(iter, dD, dF)
+		stop, err := Stop(iterations, dF, dD)
 		if stop {
 			break
 		}
 		if err != nil {
-			return err
+			return iterations, err
 		}
 	}
-	return nil
+	return
 }
 
 func nrs(
@@ -189,11 +188,11 @@ func nrs(
 		Do Displacements,
 		Fo, Fe Forces,
 		Kstiff func(F Forces, D Displacements) (interface{}, error),
-		Solve func(K interface{}, D Displacements) (Forces, error),
+		Solve func(K interface{}, F Forces) (Displacements, error),
 		Update func(F Forces, D Displacements, K interface{}),
-		Mul func(K interface{}, dF Forces) (Displacements, error),
-		Stop func(iter int, dF Forces, dD Displacements) (bool, error),
-	) error {
+		Mul func(K interface{}, dD Displacements) (Forces, error),
+		Stop func(iter uint, dF Forces, dD Displacements) (bool, error),
+	) (iterations uint, err error) {
 		dF := make([]float64, len(Fo))
 		for i := range dF {
 			dF[i] = (Fe[i] - Fo[i]) / float64(substeps+1)
@@ -205,10 +204,12 @@ func nrs(
 			for j := range endF {
 				Fe[j] = endF[j] * float64(s+1) / float64(substeps+1)
 			}
-			if err := inF(Do, Fo, Fe, Kstiff, Solve, Update, Mul, Stop); err != nil {
-				return err
+			iter, err := inF(Do, Fo, Fe, Kstiff, Solve, Update, Mul, Stop)
+			iterations += iter
+			if err != nil {
+				return iterations, err
 			}
 		}
-		return nil
+		return
 	}
 }

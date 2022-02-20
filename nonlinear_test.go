@@ -89,6 +89,10 @@ var nlSolvers = []struct {
 		solver: nrs(10, nr),
 	},
 	{
+		name:   "NR method with 100 subteps",
+		solver: nrs(100, nr),
+	},
+	{
 		name:   "NR method with 1000 subteps",
 		solver: nrs(1000, nr),
 	},
@@ -99,6 +103,10 @@ func norm(dd []float64) (res float64) {
 		res = d * d
 	}
 	return math.Sqrt(res)
+}
+
+func ratio(e, o []float64) (res float64) {
+	return math.Abs(norm(e)-norm(o)) / math.Max(norm(e), norm(o))
 }
 
 func ExampleNonlinear() {
@@ -114,18 +122,18 @@ func ExampleNonlinear() {
 			Kstiff := func(F Forces, D Displacements) (interface{}, error) {
 				return c.K(F, D), nil
 			}
-			Mul := func(K interface{}, dF Forces) (Displacements, error) {
+			Mul := func(K interface{}, dD Displacements) (Forces, error) {
 				Kd := K.([][]float64)
 				ndof := len(Kd)
 				res := make([]float64, ndof)
 				for i := 0; i < ndof; i++ {
 					for k := 0; k < ndof; k++ {
-						res[k] += Kd[k][i] * dF[i]
+						res[k] += Kd[k][i] * dD[i]
 					}
 				}
 				return res, nil
 			}
-			Solve := func(K interface{}, dD Displacements) (Forces, error) {
+			Solve := func(K interface{}, dF Forces) (Displacements, error) {
 				Kd := K.([][]float64)
 				invKd := func(Kd [][]float64) (inv [][]float64) {
 					size := len(Kd)
@@ -154,23 +162,24 @@ func ExampleNonlinear() {
 					// TODO: divide by zero
 					return
 				}(Kd)
-				res, err := Mul(invKd, Forces(dD))
+				res, err := Mul(invKd, Displacements(dF))
 				if err != nil {
 					panic(err)
 				}
-				return Forces(res), nil
+				return Displacements(res), nil
 			}
 			Update := func(F Forces, D Displacements, K interface{}) {
 			}
-			Stop := func(iter int, dF Forces, dD Displacements) (stop bool, err error) {
+			Stop := func(iter uint, dF Forces, dD Displacements) (stop bool, err error) {
+				const tol = 1e-8
 				if 1000 < iter {
 					err = fmt.Errorf("Too much iterations")
 					return
 				}
-				if norm(dF) < 1e-3 {
+				if norm(dF) < tol {
 					return true, nil
 				}
-				if norm(dD) < 1e-3 {
+				if norm(dD) < tol {
 					return true, nil
 				}
 				am := func(dd []float64) (res float64) {
@@ -189,17 +198,29 @@ func ExampleNonlinear() {
 				}
 				return
 			}
-			if err := s.solver(Do, Fo, c.Fe, Kstiff, Solve, Update, Mul, Stop); err != nil {
-				fmt.Fprintf(os.Stdout, "error: %v\n", err)
+			iterations, err := s.solver(Do, Fo, c.Fe, Kstiff, Solve, Update, Mul, Stop)
+			if err != nil {
+				fmt.Fprintf(os.Stdout, "error  : %v\n", err)
+				continue
+			}
+			// big error
+			const tol = 1e-2
+			if r := ratio(Do, c.De); tol < r {
+				fmt.Fprintf(os.Stdout, "error  : tolerance displacements %.3e\n", r)
+				continue
+			}
+			if r := ratio(Fo, c.Fe); tol < r {
+				fmt.Fprintf(os.Stdout, "error  : tolerance forces %.3e\n", r)
 				continue
 			}
 			// compare results
+			fmt.Fprintf(os.Stdout, "iters   = %d\n", iterations)
 			fmt.Fprintf(os.Stdout, "Do      = %.5f\n", Do)
 			fmt.Fprintf(os.Stdout, "De      = %.5f\n", c.De)
-			fmt.Fprintf(os.Stdout, "norm(D) = %.2e\n", math.Abs(norm(c.De)-norm(Do))/norm(c.De))
+			fmt.Fprintf(os.Stdout, "norm(D) = %.2e\n", ratio(Do, c.De))
 			fmt.Fprintf(os.Stdout, "Fo      = %.5f\n", Fo)
 			fmt.Fprintf(os.Stdout, "Fe      = %.5f\n", c.Fe)
-			fmt.Fprintf(os.Stdout, "norm(F) = %.2e\n", math.Abs(norm(c.Fe)-norm(Fo))/norm(c.Fe))
+			fmt.Fprintf(os.Stdout, "norm(F) = %.2e\n", ratio(Fo, c.Fe))
 		}
 	}
 
