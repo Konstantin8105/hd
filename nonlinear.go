@@ -80,8 +80,9 @@ type (
 )
 
 type matrix interface {
-	Solve(F Forces) (Displacements, error)
+	Solve(dF Forces) (Displacements, error)
 	Mul(dD Displacements) (Forces, error)
+	// Middle(K1, K2 matrix) (matrix, error)
 }
 
 // nr is non-linear solution by "The Newton-Raphson method"(Load control):
@@ -212,18 +213,3 @@ func nrs(
 		return
 	}
 }
-
-// 		K = func() interface{} {
-// 			Kd := K.([][]float64)
-// 			Kod := Ko.([][]float64)
-// 			res := make([][]float64,size)
-// 			for i := 0;i<size;i++{
-// 				res[i] = make([]float64,size)
-// 			}
-// 			for i := 0;i<size;i++{
-// 				for j:=0;j<size;j++{
-// 					res[i][j] = (Kd[i][j] + Kod[i][j])/2.0
-// 				}
-// 			}
-// 			return res
-// 		}()

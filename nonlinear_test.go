@@ -76,10 +76,12 @@ var nlSolvers = []struct {
 	name   string
 	solver solverFunc
 }{
+	// NR
 	{
 		name:   "The Newton-Raphson method(Load control)",
 		solver: nr,
 	},
+	// NR substep
 	{
 		name:   "NR method with 2 subteps",
 		solver: nrs(2, nr),
@@ -158,6 +160,23 @@ func (K DS) Solve(dF Forces) (Displacements, error) {
 		panic(err)
 	}
 	return Displacements(res), nil
+}
+
+func (_ DS) Middle(K1, K2 matrix) (matrix, error) {
+	K1d := K1.(DS)
+	K2d := K2.(DS)
+	size := len(K1d.value)
+	var mid DS
+	mid.value = make([][]float64, size)
+	for i := 0; i < size; i++ {
+		mid.value[i] = make([]float64, size)
+	}
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			mid.value[i][j] = 0.5*K1d.value[i][j] + 0.5*K2d.value[i][j]
+		}
+	}
+	return mid, nil
 }
 
 func ExampleNonlinear() {
