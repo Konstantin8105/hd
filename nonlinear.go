@@ -34,49 +34,6 @@ package hd
 //	   Fe - generate new loads
 //	   Go to step 1.
 //
-// Taylor Series:
-//	f(x) = f(a)+f`(a)/1!*(x-a)+f``(a)/2!*(x-a)^2+f```(a)/3!*(x-a)^3+...
-//
-// Non-linear solution by "The Newton-Raphson method"(Load control):
-//	0. Theory:
-//	   base formula:
-//	   f(x) = f(a)+f`(a)/1!*(x-a)+f``(a)/2!*(x-a)^2
-//	   avoid factorial:
-//	   f(x) = f(a)+f`(a)*(x-a)+1/2*f``(a)*(x-a)^2
-//	   find f(b) by f(a):
-//	   f(b) = f(a)+f`(a)*(b-a)+1/2*f``(a)*(b-a)^2
-//	   find f(c) by f(b):
-//	   f(c) = f(b)+f`(b)*(c-b)+1/2*f``(b)*(c-b)^2
-//	   find f(c) by f(a):
-//	   f(c) = f(a)+f`(a)*(b-a)+1/2*f``(a)*(b-a)^2 +
-//	              +f`(b)*(c-b)+1/2*f``(b)*(c-b)^2
-//	   avoid f``:
-//	   f(c) = f(a)+f`(a)*(b-a)+f`(b)*(c-b)
-//	   use infinite formula
-//	   f(c) = f(a)+f`(a)*(b-a)+f`(b)*(c-b)+...
-//	   Problems:
-//	   * with negative f`(x)
-//	   * f`(x) = 0
-//	   * f`(x) = infinite
-//	   * Snap-Through under load control
-//	   * Snap-Through under displacement control
-//	1. Do, Fo - initialize displacement, load
-//	   De, Fe - result displacement, load
-//	   i = 0
-//	   D_(i) = Do
-//	   F_(i) = Fe
-//	2. Substep for D_(i), F_(i)
-//	3. Ki = dFi/dDi for (Di,Fi)
-//	4. Solve : Ki*dDi = Fe
-//	   invert(Ki)*Fe  = dDi
-//	   dD_(i) = invert(Ki)*Fe
-//	5. D_(i+1) = D_(i)+dD_(i)
-//	   D_(i+1) = D_(i)+invert(Ki)*Fe
-//	6. Break criteria by (D_(i+1), amount steps)
-//	7. Next step:
-//	   i = i+1
-//	   Go to step 2.
-//
 // Non-linear solution by "The `spherical arc-lenght` method":
 // 0. Theory:
 //	Based on research
@@ -116,22 +73,66 @@ type (
 	solverFunc    func(
 		Do Displacements,
 		Fo, Fe Forces,
-		Kstiff func(F Forces, D Displacements) (interface{}, error),
-		Solve func(K interface{}, F Forces) (Displacements, error),
-		Update func(F Forces, D Displacements, K interface{}),
-		Mul func(K interface{}, dD Displacements) (Forces, error),
-		Stop func(iter uint, dF Forces, dD Displacements) (bool, error),
+		Kstiff func(F Forces, D Displacements) (matrix, error),
+		Update func(F Forces, D Displacements, K matrix),
+		Stop func(iter uint, dF, F Forces, dD, D Displacements) (bool, error),
 	) (iterations uint, err error)
 )
 
+type matrix interface {
+	Solve(F Forces) (Displacements, error)
+	Mul(dD Displacements) (Forces, error)
+}
+
+// nr is non-linear solution by "The Newton-Raphson method"(Load control):
+//
+// Taylor Series:
+//	f(x) = f(a)+f`(a)/1!*(x-a)+f``(a)/2!*(x-a)^2+f```(a)/3!*(x-a)^3+...
+//
+//	0. Theory:
+//	   base formula:
+//	   f(x) = f(a)+f`(a)/1!*(x-a)+f``(a)/2!*(x-a)^2
+//	   avoid factorial:
+//	   f(x) = f(a)+f`(a)*(x-a)+1/2*f``(a)*(x-a)^2
+//	   find f(b) by f(a):
+//	   f(b) = f(a)+f`(a)*(b-a)+1/2*f``(a)*(b-a)^2
+//	   find f(c) by f(b):
+//	   f(c) = f(b)+f`(b)*(c-b)+1/2*f``(b)*(c-b)^2
+//	   find f(c) by f(a):
+//	   f(c) = f(a)+f`(a)*(b-a)+1/2*f``(a)*(b-a)^2 +
+//	              +f`(b)*(c-b)+1/2*f``(b)*(c-b)^2
+//	   avoid f``:
+//	   f(c) = f(a)+f`(a)*(b-a)+f`(b)*(c-b)
+//	   use infinite formula
+//	   f(c) = f(a)+f`(a)*(b-a)+f`(b)*(c-b)+...
+//	   Problems:
+//	   * with negative f`(x)
+//	   * f`(x) = 0
+//	   * f`(x) = infinite
+//	   * Snap-Through under load control
+//	   * Snap-Through under displacement control
+//	1. Do, Fo - initialize displacement, load
+//	   De, Fe - result displacement, load
+//	   i = 0
+//	   D_(i) = Do
+//	   F_(i) = Fe
+//	2. Substep for D_(i), F_(i)
+//	3. Ki = dFi/dDi for (Di,Fi)
+//	4. Solve : Ki*dDi = Fe
+//	   invert(Ki)*Fe  = dDi
+//	   dD_(i) = invert(Ki)*Fe
+//	5. D_(i+1) = D_(i)+dD_(i)
+//	   D_(i+1) = D_(i)+invert(Ki)*Fe
+//	6. Break criteria by (D_(i+1), amount steps)
+//	7. Next step:
+//	   i = i+1
+//	   Go to step 2.
 func nr(
 	Do Displacements,
 	Fo, Fe Forces,
-	Kstiff func(F Forces, D Displacements) (interface{}, error),
-	Solve func(K interface{}, F Forces) (Displacements, error),
-	Update func(F Forces, D Displacements, K interface{}),
-	Mul func(K interface{}, dD Displacements) (Forces, error),
-	Stop func(iter uint, dF Forces, dD Displacements) (bool, error),
+	Kstiff func(F Forces, D Displacements) (matrix, error),
+	Update func(F Forces, D Displacements, K matrix),
+	Stop func(iter uint, dF, F Forces, dD, D Displacements) (bool, error),
 ) (iterations uint, err error) {
 	// assemble stiffness matrix with geometric nonlinearity
 	K, err := Kstiff(Fo, Do)
@@ -146,7 +147,7 @@ func nr(
 			dF[i] = Fe[i] - Fo[i]
 		}
 		// displacement increment
-		dD, err := Solve(K, dF)
+		dD, err := K.Solve(dF)
 		if err != nil {
 			return iterations, err
 		}
@@ -154,12 +155,12 @@ func nr(
 			Do[i] += dD[i]
 		}
 		// assemble stiffness matrix with geometric nonlinearity
-		K, err := Kstiff(Fe, Do)
+		K, err = Kstiff(Fe, Do)
 		if err != nil {
 			return iterations, err
 		}
 		// update load
-		dF, err = Mul(K, dD)
+		dF, err = K.Mul(dD)
 		if err != nil {
 			return iterations, err
 		}
@@ -169,7 +170,7 @@ func nr(
 		// update load case data
 		Update(Fo, Do, K)
 		// stop criteria
-		stop, err := Stop(iterations, dF, dD)
+		stop, err := Stop(iterations, dF, Fo, dD, Do)
 		if stop {
 			break
 		}
@@ -187,11 +188,9 @@ func nrs(
 	return func(
 		Do Displacements,
 		Fo, Fe Forces,
-		Kstiff func(F Forces, D Displacements) (interface{}, error),
-		Solve func(K interface{}, F Forces) (Displacements, error),
-		Update func(F Forces, D Displacements, K interface{}),
-		Mul func(K interface{}, dD Displacements) (Forces, error),
-		Stop func(iter uint, dF Forces, dD Displacements) (bool, error),
+		Kstiff func(F Forces, D Displacements) (matrix, error),
+		Update func(F Forces, D Displacements, K matrix),
+		Stop func(iter uint, dF, F Forces, dD, D Displacements) (bool, error),
 	) (iterations uint, err error) {
 		dF := make([]float64, len(Fo))
 		for i := range dF {
@@ -204,7 +203,7 @@ func nrs(
 			for j := range endF {
 				Fe[j] = endF[j] * float64(s+1) / float64(substeps+1)
 			}
-			iter, err := inF(Do, Fo, Fe, Kstiff, Solve, Update, Mul, Stop)
+			iter, err := inF(Do, Fo, Fe, Kstiff, Update, Stop)
 			iterations += iter
 			if err != nil {
 				return iterations, err
@@ -213,3 +212,18 @@ func nrs(
 		return
 	}
 }
+
+// 		K = func() interface{} {
+// 			Kd := K.([][]float64)
+// 			Kod := Ko.([][]float64)
+// 			res := make([][]float64,size)
+// 			for i := 0;i<size;i++{
+// 				res[i] = make([]float64,size)
+// 			}
+// 			for i := 0;i<size;i++{
+// 				for j:=0;j<size;j++{
+// 					res[i][j] = (Kd[i][j] + Kod[i][j])/2.0
+// 				}
+// 			}
+// 			return res
+// 		}()
