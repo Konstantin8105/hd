@@ -277,6 +277,18 @@ func ExampleNonlinear() {
 				if norm(dD) < tol {
 					return true, nil
 				}
+				for i := range D {
+					if 1e6 < math.Abs(D[i]) {
+						err = fmt.Errorf("Too big displacement %.e", D[i])
+						return
+					}
+				}
+				for i := range F {
+					if 1e6 < math.Abs(F[i]) {
+						err = fmt.Errorf("Too big force %.e", F[i])
+						return
+					}
+				}
 				if norm(c.Fe) < norm(F) && norm(c.De) < norm(D) {
 					return true, nil
 				}

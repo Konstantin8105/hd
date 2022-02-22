@@ -39,23 +39,6 @@ import (
 //	   Fe - generate new loads
 //	   Go to step 1.
 //
-// Non-linear solution by "The `spherical arc-lenght` method":
-// 0. Theory:
-//	Based on research
-//			Nonlinear Analysis of Structures
-//			The Arc Length Method: Formulation, Implementation and Applications
-//			Nikolaos Vasios
-//	   Formula (2.12). (∆u + δu)T*(∆u + δu) + ψ^2*(∆λ + δλ)^2*(𝐪T * 𝐪) = ∆l^2
-//	   Formula (2.14). δu = δū + δλ*δut
-//	                   δū = -invert[KT](uo+Δu) * (Fint*(uo+Δu)-(λo+Δλ)*𝐪)
-//	                   δut = invert[KT](uo+Δu) * 𝐪
-//	   Formula (2.15). 𝛼1*δλ^2 + 𝛼2*δλ + 𝛼3 = 0
-//	                   𝛼1 = δutT*δut + ψ^2*(𝐪T * 𝐪)
-//	                   𝛼2 = 2*(∆u+δū)*δut+2*ψ^2*∆λ*(𝐪T * 𝐪)
-//	                   𝛼3 = (∆u + δū)T*(∆u + δū)+ψ^2*∆λ^2*(𝐪T * 𝐪)-∆l^2
-//	1. Do, Fo - initialize displacement, load
-//	   λo     - initialize load proportionality factor
-//	   i = 0
 //
 //
 // TODO: cylinder arc-lenght method
@@ -232,11 +215,6 @@ func nrs(
 	}
 }
 
-// type row struct {
-// 	lambda float64
-// 	u      []float64
-// }
-
 type arc struct {
 	// Hyperellipsoid ratio
 	Ksi float64
@@ -244,17 +222,23 @@ type arc struct {
 	Radius float64
 }
 
-// func DefaultConfig() *Config {
-// 	c := Config{
-// 		Ksi:    1.0,
-// 		Radius: 1e-3,
-// 	}
-// 	return &c
-// }
-
-// Arc Length Parameters
-// TODO : dfcn, 𝐪  dependens of u
-// TODO : Uo - initialization deformation
+// Non-linear solution by "The `spherical arc-lenght` method":
+// 0. Theory:
+//	Based on research
+//			Nonlinear Analysis of Structures
+//			The Arc Length Method: Formulation, Implementation and Applications
+//			Nikolaos Vasios
+//	   Formula (2.12). (∆u + δu)T*(∆u + δu) + ψ^2*(∆λ + δλ)^2*(𝐪T * 𝐪) = ∆l^2
+//	   Formula (2.14). δu = δū + δλ*δut
+//	                   δū = -invert[KT](uo+Δu) * (Fint*(uo+Δu)-(λo+Δλ)*𝐪)
+//	                   δut = invert[KT](uo+Δu) * 𝐪
+//	   Formula (2.15). 𝛼1*δλ^2 + 𝛼2*δλ + 𝛼3 = 0
+//	                   𝛼1 = δutT*δut + ψ^2*(𝐪T * 𝐪)
+//	                   𝛼2 = 2*(∆u+δū)*δut+2*ψ^2*∆λ*(𝐪T * 𝐪)
+//	                   𝛼3 = (∆u + δū)T*(∆u + δū)+ψ^2*∆λ^2*(𝐪T * 𝐪)-∆l^2
+//	1. Do, Fo - initialize displacement, load
+//	   λo     - initialize load proportionality factor
+//	   i = 0
 func (s arc) solver(
 	Do Displacements,
 	Fo, Fe Forces,
@@ -262,13 +246,6 @@ func (s arc) solver(
 	iUpdate func(F Forces, D Displacements, K matrix),
 	iStop func(iter uint, dF, F Forces, dD, D Displacements) (bool, error),
 ) (iterations uint, err error) {
-	// 	Kstiff func([]float64) [][]float64, 𝐪 []float64,
-	// 	stopStep func(step int, λ float64, u []float64) bool,
-	// 	stopSubstep func(substep int, fcheck float64) bool,
-	// 	c *Config,
-	// ) (data []row) {
-	// TODO : add error handling
-
 	// move point (Do, Fo) to (0,0)
 	Kstiff := func(F Forces, D Displacements) (matrix, error) {
 		return iKstiff(summa(F, Fo), summa(D, Do))
@@ -310,9 +287,8 @@ func (s arc) solver(
 		err = fmt.Errorf("Radius %.5e is not valid", Δl)
 		return
 	}
-
+	// prepare output data
 	defer func() {
-		// correct output date
 		for i := range Do {
 			Do[i] += u[i]
 		}
@@ -320,13 +296,7 @@ func (s arc) solver(
 			Fo[i] = λ * Fe[i]
 		}
 	}()
-
-	// TODO
-	// data = append(data, row{
-	// 	lambda: λ,
-	// 	u:      u,
-	// })
-
+	// iteration
 	for iterations = 1; ; iterations++ {
 		// 		if stopStep(iterations, λ, u) {
 		// 			break
@@ -443,7 +413,7 @@ func (s arc) solver(
 		finish := func() {
 			Δu = summa(Δu, δu)
 			Δλ = Δλ + δλ
-			fcheck = math.Max(linalgnorm(δu), math.Abs(δλ))
+			fcheck = math.Max(norm(δu), math.Abs(δλ))
 		}
 		finish()
 
@@ -470,12 +440,8 @@ func (s arc) solver(
 				}
 			} else {
 				// Formula (2.16):
-				//
-				DOT1 := dot(summa(Δu, δu1), Δu) +
-					math.Pow(𝜓, 2)*Δλ*(Δλ+δλ1)*dot(𝐪, 𝐪)
-				DOT2 := dot(summa(Δu, δu2), Δu) +
-					math.Pow(𝜓, 2)*Δλ*(Δλ+δλ2)*dot(𝐪, 𝐪)
-
+				DOT1 := dot(summa(Δu, δu1), Δu) + math.Pow(𝜓, 2)*Δλ*(Δλ+δλ1)*dot(𝐪, 𝐪)
+				DOT2 := dot(summa(Δu, δu2), Δu) + math.Pow(𝜓, 2)*Δλ*(Δλ+δλ2)*dot(𝐪, 𝐪)
 				if DOT1 > DOT2 {
 					δu, δλ = δu1, δλ1
 				} else {
@@ -494,7 +460,6 @@ func (s arc) solver(
 		// store values
 		u = summa(u, Δu)
 		λ += Δλ
-		// TODO  log.Println("la ", u, scale(λ, Fe))
 		// renaming
 		dD, D := Δu, u
 		dF, F := scale(Δλ, Fe), scale(λ, Fe)
@@ -528,10 +493,6 @@ func dotm(m [][]float64, a []float64) []float64 {
 	return res
 }
 
-func linalgnorm(v []float64) float64 {
-	return math.Sqrt(dot(v, v))
-}
-
 func dot(a, b []float64) float64 {
 	var res float64
 	for i := range a {
@@ -552,7 +513,7 @@ func scale(f float64, a []float64) []float64 {
 func norm(a []float64) float64 {
 	var res float64
 	for _, v := range a {
-		res = v * v
+		res += v * v
 	}
 	return math.Sqrt(res)
 }
