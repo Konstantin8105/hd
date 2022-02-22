@@ -49,7 +49,7 @@ var nlCases = []struct {
 		Fe: Forces([]float64{56.0}),
 	},
 	{
-		name: "curve before top",
+		name: "curve _/ before top",
 		F: func(D Displacements) []float64 {
 			return []float64{-0.06*math.Pow(D[0], 3) + 1.2*math.Pow(D[0], 2) + 3*D[0]}
 		},
@@ -60,7 +60,7 @@ var nlCases = []struct {
 		Fe: Forces([]float64{90.0}),
 	},
 	{
-		name: "curve after top",
+		name: "curve _/ after top",
 		F: func(D Displacements) []float64 {
 			return []float64{-0.06*math.Pow(D[0], 3) + 1.2*math.Pow(D[0], 2) + 3*D[0]}
 		},
@@ -69,6 +69,23 @@ var nlCases = []struct {
 		},
 		De: Displacements([]float64{20.0}),
 		Fe: Forces([]float64{60.0}),
+	},
+	{
+		name: "2 unknown curve",
+		F: func(D Displacements) []float64 {
+			return []float64{
+				10*D[0] + 0.4*math.Pow(D[1], 3) - 5*math.Pow(D[1], 2),
+				0.4*math.Pow(D[0], 3) - 3*math.Pow(D[0], 2) + 10*D[1],
+			}
+		},
+		K: func(F Forces, D Displacements) [][]float64 {
+			return [][]float64{
+				{10, 1.2*math.Pow(D[1], 2) - 10*D[1]},
+				{1.2*math.Pow(D[0], 2) - 6*D[0], 10},
+			}
+		},
+		De: Displacements([]float64{2.340759528952, 1.593101851107}),
+		Fe: Forces([]float64{40, 15}),
 	},
 }
 
@@ -98,14 +115,44 @@ var nlSolvers = []struct {
 		name:   "NR method with 100000 subteps",
 		solver: nrs(100000, nr),
 	},
+	// Arc method
+	{
+		name:   "Arc method",
+		solver: arc{Ksi: 1.0, Radius: 0.01}.solver,
+	},
 }
 
-func norm(dd []float64) (res float64) {
-	for _, d := range dd {
-		res = d * d
-	}
-	return math.Sqrt(res)
-}
+// func printData(data []row, filename string,
+// 	q []float64,
+// 	Kt func(a []float64) (df [][]float64),
+// 	F func(x []float64, lambda float64) []float64) {
+// 	// gnuplot graph
+// 	// plot "data.txt" using 2:1 title "rotation", \
+// 	//      "data.txt" using 3:1 title "vertical disp"
+// 	var buf bytes.Buffer
+// 	yintegral := make([]float64, len(q))
+// 	for index, r := range data {
+// 		fmt.Fprintf(&buf, "%.12f", r.lambda)
+// 		for i := range r.u {
+// 			fmt.Fprintf(&buf, " %.12f", r.u[i])
+// 		}
+// 		if F != nil {
+// 			ys := F(r.u, 0) // r.lambda)
+// 			if 0 < index {
+// 				yintegral = summa(
+// 					yintegral,
+// 					dotm(Kt(r.u), summa(data[index].u, scale(-1, data[index-1].u))))
+// 			}
+// 			for i := range ys {
+// 				fmt.Fprintf(&buf, " %.12f %.12f", yintegral[i], ys[i])
+// 			}
+// 		}
+// 		fmt.Fprintf(&buf, "\n")
+// 	}
+// 	if err := os.WriteFile(filename, buf.Bytes(), 0644); err != nil {
+// 		panic(err)
+// 	}
+// }
 
 func ratio(e, o []float64) (res float64) {
 	return math.Abs(norm(e)-norm(o)) / math.Max(norm(e), norm(o))
@@ -126,6 +173,24 @@ func (K DS) Mul(dD Displacements) (Forces, error) {
 	return res, nil
 }
 
+func (K DS) Determinant() (float64, error) {
+	size := len(K.value)
+	switch size {
+	case 1:
+		return K.value[0][0], nil
+	case 2:
+		var (
+			a = K.value[0][0]
+			b = K.value[0][1]
+			c = K.value[1][0]
+			d = K.value[1][1]
+		)
+		return (a*d - b*c), nil
+	}
+	panic("")
+}
+
+// TODO gonum Dense
 func (K DS) Solve(dF Forces) (Displacements, error) {
 	invKd := func(Kd [][]float64) (inv [][]float64) {
 		size := len(Kd)
@@ -196,6 +261,11 @@ func ExampleNonlinear() {
 			Update := func(F Forces, D Displacements, K matrix) {
 			}
 			Stop := func(iter uint, dF, F Forces, dD, D Displacements) (stop bool, err error) {
+				defer func() {
+					if err != nil {
+						err = fmt.Errorf("%v. Last coordinate: D=%.3e,F=%.3e", err, D, F)
+					}
+				}()
 				const tol = 1e-8
 				if 100000 < iter {
 					err = fmt.Errorf("Too much iterations")
