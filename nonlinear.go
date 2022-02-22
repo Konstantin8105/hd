@@ -482,17 +482,6 @@ func (s arc) solver(
 	return
 }
 
-func dotm(m [][]float64, a []float64) []float64 {
-	size := len(a)
-	res := make([]float64, size)
-	for i := 0; i < size; i++ {
-		for k := 0; k < size; k++ {
-			res[k] += m[k][i] * a[i]
-		}
-	}
-	return res
-}
-
 func dot(a, b []float64) float64 {
 	var res float64
 	for i := range a {
@@ -523,15 +512,6 @@ func summa(a, b []float64) []float64 {
 	res := make([]float64, size)
 	for i := 0; i < size; i++ {
 		res[i] = a[i] + b[i]
-	}
-	return res
-}
-
-func minus(a, b []float64) []float64 {
-	size := len(a)
-	res := make([]float64, size)
-	for i := 0; i < size; i++ {
-		res[i] = a[i] - b[i]
 	}
 	return res
 }
