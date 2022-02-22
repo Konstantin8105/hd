@@ -4,7 +4,23 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"testing"
 )
+
+func TestNonlinearCases(t *testing.T) {
+	for i := range nlCases {
+		t.Run(nlCases[i].name, func(t *testing.T) {
+			tol := 1e-8
+			dif := make([]float64, len(nlCases[i].De))
+			for h := range dif {
+				dif[h] = nlCases[i].Fe[h] - nlCases[i].F(nlCases[i].De)[h]
+			}
+			if tol < norm(dif) {
+				t.Errorf("Big diffirence: %.e", dif)
+			}
+		})
+	}
+}
 
 // Do: 0.0,
 // Fo: 0.0,
