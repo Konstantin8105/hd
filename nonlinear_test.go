@@ -4,23 +4,22 @@ import (
 	"fmt"
 	"math"
 	"os"
-	"testing"
 )
 
-func TestNonlinearCases(t *testing.T) {
-	for i := range nlCases {
-		t.Run(nlCases[i].name, func(t *testing.T) {
-			tol := 1e-8
-			dif := make([]float64, len(nlCases[i].De))
-			for h := range dif {
-				dif[h] = nlCases[i].Fe[h] - nlCases[i].F(nlCases[i].De)[h]
-			}
-			if tol < norm(dif) {
-				t.Errorf("Big diffirence: %.e", dif)
-			}
-		})
-	}
-}
+// func TestNonlinearCases(t *testing.T) {
+// 	for i := range nlCases {
+// 		t.Run(nlCases[i].name, func(t *testing.T) {
+// 			tol := 1e-8
+// 			dif := make([]float64, len(nlCases[i].De))
+// 			for h := range dif {
+// 				dif[h] = nlCases[i].Fe[h] - nlCases[i].F(nlCases[i].De)[h]
+// 			}
+// 			if tol < norm(dif) {
+// 				t.Errorf("Big diffirence: %.e", dif)
+// 			}
+// 		})
+// 	}
+// }
 
 // Do: 0.0,
 // Fo: 0.0,
@@ -338,4 +337,218 @@ func ExampleNonlinear() {
 	}
 
 	// Output:
+	// Solver : The Newton-Raphson method(Load control)
+	// Case   : parabola /\
+	// iters   = 8
+	// error  : tolerance displacements 3.769e-01
+	//
+	// Solver : NR method with 2 subteps
+	// Case   : parabola /\
+	// iters   = 16
+	// error  : tolerance displacements 1.435e-01
+	//
+	// Solver : NR method with 10 subteps
+	// Case   : parabola /\
+	// iters   = 47
+	// error  : tolerance displacements 4.439e-02
+	//
+	// Solver : NR method with 1000 subteps
+	// Case   : parabola /\
+	// iters   = 3003
+	// Do      = [7.50389]
+	// De      = [7.50000]
+	// norm(D) = 5.19e-04
+	// Fo      = [168.75000]
+	// Fe      = [168.75000]
+	// norm(F) = 0.00e+00
+	//
+	// Solver : NR method with 100000 subteps
+	// Case   : parabola /\
+	// iters   = 200002
+	// Do      = [7.50004]
+	// De      = [7.50000]
+	// norm(D) = 5.20e-06
+	// Fo      = [168.75000]
+	// Fe      = [168.75000]
+	// norm(F) = 0.00e+00
+	//
+	// Solver : Arc method
+	// Case   : parabola /\
+	// iters   = 16893
+	// Do      = [7.50022]
+	// De      = [7.50000]
+	// norm(D) = 2.98e-05
+	// Fo      = [168.75681]
+	// Fe      = [168.75000]
+	// norm(F) = 4.04e-05
+	//
+	// Solver : The Newton-Raphson method(Load control)
+	// Case   : parabola /\ near top
+	// iters   = 5
+	// error  : tolerance displacements 7.028e-01
+	//
+	// Solver : NR method with 2 subteps
+	// Case   : parabola /\ near top
+	// iters   = 17
+	// error  : tolerance displacements 8.748e-01
+	//
+	// Solver : NR method with 10 subteps
+	// Case   : parabola /\ near top
+	// iters   = 50
+	// error  : tolerance displacements 9.846e-02
+	//
+	// Solver : NR method with 1000 subteps
+	// Case   : parabola /\ near top
+	// iters   = 3003
+	// Do      = [10.01098]
+	// De      = [10.00000]
+	// norm(D) = 1.10e-03
+	// Fo      = [200.00000]
+	// Fe      = [200.00000]
+	// norm(F) = 0.00e+00
+	//
+	// Solver : NR method with 100000 subteps
+	// Case   : parabola /\ near top
+	// iters   = 200002
+	// Do      = [10.00011]
+	// De      = [10.00000]
+	// norm(D) = 1.10e-05
+	// Fo      = [200.00000]
+	// Fe      = [200.00000]
+	// norm(F) = 0.00e+00
+	//
+	// Solver : Arc method
+	// Case   : parabola /\ near top
+	// iters   = 20028
+	// Do      = [10.00002]
+	// De      = [10.00000]
+	// norm(D) = 1.52e-06
+	// Fo      = [200.00563]
+	// Fe      = [200.00000]
+	// norm(F) = 2.82e-05
+	//
+	// Solver : The Newton-Raphson method(Load control)
+	// Case   : parabola /\ after top
+	// iters   = 5
+	// error  : tolerance displacements 9.237e-01
+	//
+	// Solver : NR method with 2 subteps
+	// Case   : parabola /\ after top
+	// iters   = 12
+	// error  : tolerance displacements 9.268e-01
+	//
+	// Solver : NR method with 10 subteps
+	// Case   : parabola /\ after top
+	// iters   = 44
+	// error  : tolerance displacements 9.281e-01
+	//
+	// Solver : NR method with 1000 subteps
+	// Case   : parabola /\ after top
+	// iters   = 3003
+	// error  : tolerance displacements 9.286e-01
+	//
+	// Solver : NR method with 100000 subteps
+	// Case   : parabola /\ after top
+	// iters   = 200002
+	// error  : tolerance displacements 9.286e-01
+	//
+	// Solver : Arc method
+	// Case   : parabola /\ after top
+	// iters   = 39627
+	// Do      = [28.00030]
+	// De      = [28.00000]
+	// norm(D) = 1.07e-05
+	// Fo      = [56.03242]
+	// Fe      = [56.00000]
+	// norm(F) = 5.79e-04
+	//
+	// Solver : The Newton-Raphson method(Load control)
+	// Case   : curve _/ before top
+	// iters   = 1
+	// error  : tolerance displacements 6.667e-01
+	//
+	// Solver : NR method with 2 subteps
+	// Case   : curve _/ before top
+	// iters   = 13
+	// error  : tolerance displacements 9.928e-02
+	//
+	// Solver : NR method with 10 subteps
+	// Case   : curve _/ before top
+	// error  : Too big force 5e+09. Last coordinate: D=[-2.951e+03],F=[4.654e+09]
+	//
+	// Solver : NR method with 1000 subteps
+	// Case   : curve _/ before top
+	// iters   = 3003
+	// error  : tolerance displacements 7.216e-01
+	//
+	// Solver : NR method with 100000 subteps
+	// Case   : curve _/ before top
+	// iters   = 200002
+	// error  : tolerance displacements 7.215e-01
+	//
+	// Solver : Arc method
+	// Case   : curve _/ before top
+	// iters   = 9061
+	// error  : tolerance forces 8.182e-01
+	//
+	// Solver : The Newton-Raphson method(Load control)
+	// Case   : curve _/ after top
+	// iters   = 3
+	// error  : tolerance displacements 7.148e-01
+	//
+	// Solver : NR method with 2 subteps
+	// Case   : curve _/ after top
+	// error  : Too big displacement -2e+06. Last coordinate: D=[-1.543e+06],F=[6.612e+17]
+	//
+	// Solver : NR method with 10 subteps
+	// Case   : curve _/ after top
+	// iters   = 51
+	// error  : tolerance displacements 7.581e-01
+	//
+	// Solver : NR method with 1000 subteps
+	// Case   : curve _/ after top
+	// iters   = 3009
+	// error  : tolerance displacements 7.383e-01
+	//
+	// Solver : NR method with 100000 subteps
+	// Case   : curve _/ after top
+	// iters   = 201168
+	// error  : tolerance displacements 7.382e-01
+	//
+	// Solver : Arc method
+	// Case   : curve _/ after top
+	// iters   = 16774
+	// error  : tolerance forces 3.336e-01
+	//
+	// Solver : The Newton-Raphson method(Load control)
+	// Case   : 2 unknown curve
+	// iters   = 2
+	// error  : tolerance displacements 8.287e-01
+	//
+	// Solver : NR method with 2 subteps
+	// Case   : 2 unknown curve
+	// error  : Too big force -3e+17. Last coordinate: D=[-8.477e+05 -6.093e+05],F=[-2.715e+17 -7.310e+17]
+	//
+	// Solver : NR method with 10 subteps
+	// Case   : 2 unknown curve
+	// error  : Too big force -1e+07. Last coordinate: D=[-3.055e+02 -1.972e+02],F=[-9.700e+06 -3.512e+07]
+	//
+	// Solver : NR method with 1000 subteps
+	// Case   : 2 unknown curve
+	// error  : Too big force -5e+06. Last coordinate: D=[-2.093e+02 -1.553e+02],F=[-4.793e+06 -1.140e+07]
+	//
+	// Solver : NR method with 100000 subteps
+	// Case   : 2 unknown curve
+	// iters   = 204415
+	// error  : tolerance displacements 1.910e-02
+	//
+	// Solver : Arc method
+	// Case   : 2 unknown curve
+	// iters   = 1374
+	// Do      = [2.34856 1.59900]
+	// De      = [2.34076 1.59310]
+	// norm(D) = 3.44e-03
+	// Fo      = [12.34909 4.63091]
+	// Fe      = [12.34160 4.62810]
+	// norm(F) = 6.07e-04
 }

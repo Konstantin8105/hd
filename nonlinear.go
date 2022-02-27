@@ -298,10 +298,7 @@ func (s arc) solver(
 	}()
 	// iteration
 	for iterations = 1; ; iterations++ {
-		// 		if stopStep(iterations, λ, u) {
-		// 			break
-		// 		}
-		//
+		// prepare new data for next iteration
 		var (
 			Δu = make([]float64, dof)
 
@@ -310,7 +307,7 @@ func (s arc) solver(
 
 			det    float64
 			Δλ     float64
-			fcheck float64
+			fcheck float64 = 1.0 // any default positive value
 
 			δλ       float64
 			δλ1, δλ2 float64
@@ -318,14 +315,34 @@ func (s arc) solver(
 			Kt matrix
 		)
 
-		begin := func(isFirst bool) (err error) {
+		begin := func() (err error) {
+			Kt, err = Kstiff(scale(λ, 𝐪), summa(u, Δu))
+			if err != nil {
+				return err
+			}
 			// For formula (2.14):
 			// δū = -invert[KT](uo+Δu) * (Fint*(uo+Δu)-(λo+Δλ)*𝐪)
 			// value of Fint is precision value and for we cannot find them
 			// only by Jacobi matrix.
 			// Fint*(uo+Δu)-(λo+Δλ)*𝐪 is equal R(uo+Δu), but
 			// theoretically R(uo+Δu) = 0, then vector is zero always:
-			δū := make([]float64, dof) // TODO  main problem find this
+			// if Kt == nil {
+			// Kt, err = Kstiff(scale(λ, 𝐪), u)
+			// if err != nil {
+			// 	return err
+			// }
+			// }
+			δū := make([]float64, dof)
+			// δū, err = Kt.Solve(summa(scale(λ+Δλ, 𝐪), scale(-1, scale(λ+Δλ, 𝐪))))
+			//
+			// δū, err = Kt.Solve(scale(Δλ, 𝐪))
+			// if err != nil {
+			// 	return err
+			// }
+			// δū = summa(δū, scale(-1, Δu))
+			// δū = scale(-1.0, δū)
+			// log.Println(δū)
+			// -np.dot(dfinv,f) //  TODO  main problem find this
 			// TODO : find the solution
 			δut, err := Kt.Solve(𝐪)
 			if err != nil {
@@ -375,8 +392,8 @@ func (s arc) solver(
 			} else {
 				δλ1 = -𝛼2 / (2.0 * 𝛼1)
 				δλ2 = -𝛼2 / (2.0 * 𝛼1)
-				panic((fmt.Errorf("not implemented: (%e,%e,%e) - %e",
-					𝛼1, 𝛼2, 𝛼3, D)))
+				// panic((fmt.Errorf("not implemented: (%e,%e,%e) - %e",
+				// 	𝛼1, 𝛼2, 𝛼3, D)))
 				// TODO : check coverage for that part of code : D < 0.0
 			}
 			// After checking - acceptable swap the results, but no need
@@ -384,23 +401,17 @@ func (s arc) solver(
 
 			// Formula (2.14):
 			// δu = δū + δλ*δut
-			//
 			δu1 = summa(δū, scale(δλ1, δut))
 			δu2 = summa(δū, scale(δλ2, δut))
 
 			// calculate determinant matrix of stiffiners
-			//
 			det, err = Kt.Determinant()
 			if err != nil {
 				return err
 			}
 			return nil
 		}
-		Kt, err = Kstiff(scale(λ, 𝐪), summa(u, Δu))
-		if err != nil {
-			return iterations, err
-		}
-		if err = begin(true); err != nil {
+		if err = begin(); err != nil {
 			return iterations, err
 		}
 
@@ -414,20 +425,16 @@ func (s arc) solver(
 			Δu = summa(Δu, δu)
 			Δλ = Δλ + δλ
 			fcheck = math.Max(norm(δu), math.Abs(δλ))
+			// log.Printf("%.3e %v\n", fcheck, fcheck < 1e-6)
+			// log.Println(δu, δλ)
 		}
 		finish()
-
-		// Run substeps
-		// 		for substep := 1; ; substep++ {
-		// 			if stopSubstep(substep, fcheck) {
-		// 				break
-		// 			}
-		for {
-			Kt, err = Kstiff(scale(λ, 𝐪), summa(u, Δu))
-			if err != nil {
-				return iterations, err
-			}
-			if err = begin(false); err != nil {
+		// substeps
+		// log.Printf("%.3e %v\n", fcheck, fcheck < 1e-6)
+		// log.Println(δu, δλ)
+		for 1e-6 < fcheck {
+			// log.Println(";;;;;;;")
+			if err = begin(); err != nil {
 				return iterations, err
 			}
 
@@ -439,7 +446,7 @@ func (s arc) solver(
 					δu, δλ = δu2, δλ2
 				}
 			} else {
-				// Formula (2.16):
+				// Formula (2.16)
 				DOT1 := dot(summa(Δu, δu1), Δu) + math.Pow(𝜓, 2)*Δλ*(Δλ+δλ1)*dot(𝐪, 𝐪)
 				DOT2 := dot(summa(Δu, δu2), Δu) + math.Pow(𝜓, 2)*Δλ*(Δλ+δλ2)*dot(𝐪, 𝐪)
 				if DOT1 > DOT2 {
@@ -451,11 +458,9 @@ func (s arc) solver(
 			if δλ1 == δλ2 {
 				δu, δλ = δu1, δλ1
 			}
-
+			// log.Println("SUBSTEP: ", δu, δλ)
+			// log.Println("daomag : ", daomag)
 			finish()
-			if fcheck < 1e-6 { // TODO
-				break
-			}
 		}
 		// store values
 		u = summa(u, Δu)
@@ -473,12 +478,7 @@ func (s arc) solver(
 		if stop {
 			break
 		}
-		// 		data = append(data, row{
-		// 			lambda: λ,
-		// 			u:      u,
-		// 		})
 	}
-
 	return
 }
 
