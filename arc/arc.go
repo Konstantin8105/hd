@@ -122,7 +122,7 @@ func main() {
 	//     if (converged)
 	// %      disp
 	//       if(loadStep == 1)
-	//          Ds = sqrt(Du'*Du + loadfactor*loadfactor*Fext'*Fext);
+	//          Ds = math.Sqrt(Du'*Du + loadfactor*loadfactor*Fext'*Fext);
 	//
 	//          DsMax = Ds;
 	//          DsMin = Ds/1024.0;
@@ -274,7 +274,7 @@ func GeomExactBeam_2D() {
 	//
 	// dx = x0(2) - x0(1);
 	// dy = y0(2) - y0(1);
-	// h0 = sqrt(dx*dx+dy*dy);
+	// h0 = math.Sqrt(dx*dx+dy*dy);
 	//
 	// cth0 = dx/h0;
 	// sth0 = dy/h0;
@@ -438,32 +438,32 @@ func GeomExactBeam_2D() {
 	//
 }
 
-func get_Gauss_points() {
+func get_Gauss_points(nGP int) (gp, gw []float64) {
 	// function [gp, gw] = get_Gauss_points(nGP)
-	//
-	// %%%%%%%%%%%%%%%%%%%%%%%
-	// %%%%%%%%%%%%%%%%%%%%%%%
-	// if(nGP == 1)
-	//     gp=0.0;
-	//     gw=2.0;
-	// elseif(nGP == 2)
-	//     %%% 2 Point quadrature rule
-	//     gp=[-0.577350269,0.577350269];
-	//     gw=[1.0,1.0];
-	// elseif(nGP == 3)
-	//     %%% 3 Point quadrature rule
-	//     gp=[-sqrt(3/5),0,sqrt(3/5)];
-	//     gw=[5/9,8/9,5/9];
-	// elseif(nGP == 4)
-	//     %%% 4 Point quadrature rule
-	//     gp = [-0.861136311594953, -0.339981043584856, 0.339981043584856, 0.861136311594953];
-	//     gw = [0.347854845137454, 0.652145154862546, 0.652145154862546, 0.347854845137454];
-	// else
-	//     %%% 5 Point quadrature rule
-	//     gp=[-0.9061798459,-0.5384693101,0,0.5384693101,0.9061798459];
-	//     gw=[0.2369268851,0.4786286705,0.5688888889,0.4786286705,0.2369268851];
-	// end% create and assemble element matrices
-	//
+	switch nGP {
+	case 1: // if(nGP == 1)
+		gp = []float64{0.0}
+		gw = []float64{2.0}
+	case 2: // elseif(nGP == 2)
+		//     %%% 2 Point quadrature rule
+		gp = []float64{-0.577350269, 0.577350269}
+		gw = []float64{1.0, 1.0}
+	case 3: // elseif(nGP == 3)
+		//     %%% 3 Point quadrature rule
+		gp = []float64{-math.Sqrt(3 / 5), 0, math.Sqrt(3 / 5)}
+		gw = []float64{5 / 9, 8 / 9, 5 / 9}
+	case 4: // elseif(nGP == 4)
+		//     %%% 4 Point quadrature rule
+		gp = []float64{-0.861136311594953, -0.339981043584856, 0.339981043584856, 0.861136311594953}
+		gw = []float64{0.347854845137454, 0.652145154862546, 0.652145154862546, 0.347854845137454}
+	case 5: // else
+		//     %%% 5 Point quadrature rule
+		gp = []float64{-0.9061798459, -0.5384693101, 0, 0.5384693101, 0.9061798459}
+		gw = []float64{0.2369268851, 0.4786286705, 0.5688888889, 0.4786286705, 0.2369268851}
+		// end
+		// % create and assemble element matrices
+	}
+	return
 }
 
 func get_global_matrix_vector() {
@@ -847,7 +847,7 @@ func solve_arclength_split() {
 	//     R = Rglobal(assy4r);
 	//
 	//     rNorm = norm(R,2);
-	//     rNorm = sqrt(rNorm*rNorm + A*A);
+	//     rNorm = math.Sqrt(rNorm*rNorm + A*A);
 	//
 	//     fprintf(' rNorm : %5d ...  %12.6E \n', iter, rNorm);
 	//     du = R*0.0;
@@ -1144,7 +1144,7 @@ func Truss_2D_model1() {
 	//     dx = X2 - X1;
 	//     dy = Y2 - Y1;
 	//
-	//     L0 = sqrt(dx*dx+dy*dy);
+	//     L0 = math.Sqrt(dx*dx+dy*dy);
 	//
 	//     x1 = X1 + disp(1);
 	//     y1 = Y1 + disp(2);
@@ -1154,7 +1154,7 @@ func Truss_2D_model1() {
 	//     dx = x2 - x1;
 	//     dy = y2 - y1;
 	//
-	//     L = sqrt(dx*dx+dy*dy);
+	//     L = math.Sqrt(dx*dx+dy*dy);
 	//
 	//     B0 = zeros(4,1);
 	//     B(1) = -dx;   B(2) = -dy;   B(3) =  dx;   B(4) =  dy;
@@ -1216,7 +1216,7 @@ func Truss_2D_model2() {
 	//     dx = X2 - X1;
 	//     dy = Y2 - Y1;
 	//
-	//     L0 = sqrt(dx*dx+dy*dy);
+	//     L0 = math.Sqrt(dx*dx+dy*dy);
 	//
 	//     x1 = X1 + disp(1);
 	//     y1 = Y1 + disp(2);
@@ -1226,7 +1226,7 @@ func Truss_2D_model2() {
 	//     dx = x2 - x1;
 	//     dy = y2 - y1;
 	//
-	//     L = sqrt(dx*dx+dy*dy);
+	//     L = math.Sqrt(dx*dx+dy*dy);
 	//
 	//     B0 = zeros(4,1);
 	//     B(1) = -dx;   B(2) = -dy;   B(3) =  dx;   B(4) =  dy;
@@ -1297,7 +1297,7 @@ func Truss_3D_model2() {
 	//     dy = Y2 - Y1;
 	//     dz = Z2 - Z1;
 	//
-	//     L0 = sqrt(dx*dx+dy*dy+dz*dz);
+	//     L0 = math.Sqrt(dx*dx+dy*dy+dz*dz);
 	//
 	//     x1 = X1 + disp(1);
 	//     y1 = Y1 + disp(2);
@@ -1311,7 +1311,7 @@ func Truss_3D_model2() {
 	//     dy = y2 - y1;
 	//     dz = z2 - z1;
 	//
-	//     L = sqrt(dx*dx+dy*dy+dz*dz);
+	//     L = math.Sqrt(dx*dx+dy*dy+dz*dz);
 	//
 	//     B0 = zeros(6,1);
 	//     B(1) = -dx;   B(2) = -dy;   B(3) = -dz;
