@@ -5,9 +5,9 @@ clc;
 more off;
 format long;
 
-%fname = "input_Truss_2D_3members_model1.txt";
+fname = "input_Truss_2D_3members_model1.txt";
 %fname = "input_Truss_3D_2members.txt";
-fname = "input_Truss_3D_12members.txt";
+%fname = "input_Truss_3D_12members.txt";
 
 %fname = "input_LeeFrame-nelem20.txt";
 %fname = "input_arch-215deg.txt";
