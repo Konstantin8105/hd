@@ -14,7 +14,6 @@ func main() {
 	// %fname = "input_Truss_2D_3members_model1.txt";
 	// %fname = "input_Truss_3D_2members.txt";
 	// fname = "input_Truss_3D_12members.txt";
-	//
 	// %fname = "input_LeeFrame-nelem20.txt";
 	// %fname = "input_arch-215deg.txt";
 	// %fname = "input_Arch_semicircle-nelem50-sym.txt";
@@ -30,10 +29,8 @@ func main() {
 	// dispPrev3 = disp;
 	// dispPrev4 = disp;
 	//
-	//
 	// Kglobal = zeros(neq,neq);
 	// Rglobal = zeros(neq,1);
-	//
 	//
 	// bf=[0.0 0.0];
 	//
@@ -80,14 +77,12 @@ func main() {
 	//           if(ndof == 2) % Truss element
 	//             for e = 1:nelem
 	//                 [Klocal, Flocal] = Truss_2D_model1(elemData, elemConn, e, coords, disp, bf);
-	//
 	//                 Kglobal = Assembly_Matrix(Kglobal,Klocal,LM,e);
 	//                 Rglobal = Assembly_Vector(Rglobal,Flocal,LM,e);
 	//             end
 	//           else % Beam element
 	//             for e = 1:nelem
 	//                 [Klocal, Flocal] = GeomExactBeam_2D(elemData, elemConn, e, coords, disp, bf);
-	//
 	//                 Kglobal = Assembly_Matrix(Kglobal,Klocal,LM,e);
 	//                 Rglobal = Assembly_Vector(Rglobal,Flocal,LM,e);
 	//             end
@@ -96,7 +91,6 @@ func main() {
 	//           if(ndof == 3) % Truss element
 	//             for e = 1:nelem
 	//                 [Klocal, Flocal] = Truss_3D_model2(elemData, elemConn, e, coords, disp, bf);
-	//
 	//                 Kglobal = Assembly_Matrix(Kglobal,Klocal,LM,e);
 	//                 Rglobal = Assembly_Vector(Rglobal,Flocal,LM,e);
 	//             end
@@ -123,7 +117,6 @@ func main() {
 	// %      disp
 	//       if(loadStep == 1)
 	//          Ds = math.Sqrt(Du'*Du + loadfactor*loadfactor*Fext'*Fext);
-	//
 	//          DsMax = Ds;
 	//          DsMin = Ds/1024.0;
 	//       end
@@ -192,24 +185,17 @@ func main() {
 	// % axis([0,10,-10,10])
 	//
 	// fileID = fopen('solution.dat','w');
-	//
 	// for ii=1:size(dispFull,1)
 	//     fprintf(fileID,'%12.8f \n', dispFull(ii));
 	// end
-	//
 	// fclose(fileID)
-	//
 	//
 	// fileID = fopen('path.dat','w');
-	//
 	// for ii=1:size(llist,1)
-	//     fprintf(fileID,'%12.8f \t %12.8f \t %12.8f \n', llist(ii), output(1,ii), output(2,ii));
+	//      fprintf(fileID,'%12.8f \t %12.8f \t %12.8f \n', llist(ii), output(1,ii), output(2,ii));
 	// %    fprintf(fileID,'%12.8f \t %12.8f \t %12.8f \t %12.8f \n', llist(ii), output(1,ii), output(2,ii), output(3,ii));
 	// end
-	//
 	// fclose(fileID)
-	//
-	//
 }
 
 func Assembly_Matrix() {
@@ -360,7 +346,6 @@ func GeomExactBeam_2D() {
 	//     GAdv  = GA * fact1;
 	//     EIdv  = EI * fact1;
 	//
-	//
 	//     B(1,1) = (1.0+dux) * dN_dx(1);
 	//     B(1,2) = duz * dN_dx(1);
 	//     B(1,3) = 0.0;
@@ -419,7 +404,6 @@ func GeomExactBeam_2D() {
 	//             Klocal(TIp1,TJp2) = Klocal(TIp1,TJp2)  + (fact4 + dN_dx(ii)*fact2*N(jj) );
 	//             Klocal(TIp2,TJ)   = Klocal(TIp2,TJ)    + (fact3 + N(ii)*fact1*dN_dx(jj) );
 	//             Klocal(TIp2,TJp1) = Klocal(TIp2,TJp1)  + (fact4 + N(ii)*fact2*dN_dx(jj) );
-	//
 	//             Klocal(TIp2,TJp2) = Klocal(TIp2,TJp2)  + (N(ii)*(-SF*G-BM*dbt*fact)*N(jj) - dN_dx(ii)*BM*G*N(jj) - N(ii)*BM*G*dN_dx(jj)) * af;
 	//         end
 	//     end
@@ -477,14 +461,9 @@ func get_global_matrix_vector() {
 	//
 	// for e = 1:nelem
 	//     [Klocal, Flocal] = GeomExactBeam_2D(elemData, elemConn, e, coords, td, disp, veloCur, acceCur, bf);
-	//
 	//     Kglobal = Assembly_Matrix(Kglobal,Klocal,LM,e);
 	//     Fglobal = Assembly_Vector(Fglobal,Flocal,LM,e);
 	// end
-	//
-	// endfunction
-	//
-	//
 }
 
 func processfile() {
@@ -543,12 +522,10 @@ func processfile() {
 	// line=fgets(fid);
 	// linestr = strsplit(line, ",");
 	// nelemData = int32(str2num(linestr{1,2}))
-	//
 	// elemData = zeros(nelemData, 10);
 	// for i=1:nelemData
 	//     line = fgets(fid);
 	//     linestr = strsplit(line, ",");
-	//
 	//     for j=1:10
 	//       elemData(i,j) = double(str2num(linestr{1,j+1}));
 	//     end
@@ -564,7 +541,6 @@ func processfile() {
 	// for i=1:nelem
 	//     line = fgets(fid);
 	//     linestr = strsplit(line, ",");
-	//
 	//     elemConn(i,1) = int32(str2num(linestr{1,2}));
 	//     elemConn(i,2) = int32(str2num(linestr{1,3}));
 	//     elemConn(i,3) = int32(str2num(linestr{1,4}));
@@ -582,7 +558,6 @@ func processfile() {
 	// for i=1:nDBC
 	//     line = fgets(fid);
 	//     linestr = strsplit(line, ",");
-	//
 	//     n1 = int32(str2num(linestr{1,1}));
 	//     n2 = int32(str2num(linestr{1,2}));
 	// %    dbclist(i,3) = double(str2num(linestr{1,3}));
@@ -597,17 +572,14 @@ func processfile() {
 	// linestr = strsplit(line, ",");
 	// nFBC    = int32(str2num(linestr{1,2}))
 	// fbclist = zeros(nFBC, 3);
-	//
 	// dof_force = zeros(nFBC, 1, "int32");
 	// Fext = zeros(neq, 1);
 	// for i=1:nFBC
 	//     line = fgets(fid);
 	//     linestr = strsplit(line, ",");
-	//
 	//     n1 = int32(str2num(linestr{1,1}));
 	//     n2 = int32(str2num(linestr{1,2}));
 	//     ind = (n1-1)*ndof + n2;
-	//
 	//     dof_force(i) = ind;
 	//     Fext(ind) = double(str2num(linestr{1,3}));
 	// end
@@ -618,14 +590,11 @@ func processfile() {
 	// linestr = strsplit(line, ",");
 	// nOutput = int32(str2num(linestr{1,2}))
 	// outputlist = zeros(nOutput, 1, "int32");
-	//
 	// for i=1:nOutput
 	//     line = fgets(fid);
 	//     linestr = strsplit(line, ",");
-	//
 	//     n1 = int32(str2num(linestr{1,1}));
 	//     n2 = int32(str2num(linestr{1,2}));
-	//
 	//     outputlist(i,1) = (n1-1)*ndof+n2;
 	// end
 	//
@@ -662,9 +631,6 @@ func processfile() {
 	//     end
 	//     count = count - 1;
 	// end
-	//
-	//
-	//
 }
 
 func shape_functions_Lagrange_1D(NodeNums []int, XX [][]float64, p int, xi float64) (
@@ -783,7 +749,8 @@ func shape_functions_Lagrange_1D(NodeNums []int, XX [][]float64, p int, xi float
 }
 
 func solve_arclength() {
-	// function  [converged, du, dl] = solve_arclength(timeStep, neq, iter, Kglobal, Fglobal, dof_force, Fext, assy4r, Du, Dl, ds)
+	// function  [converged, du, dl] = solve_arclength(timeStep, neq, iter, \
+	//                 Kglobal, Fglobal, dof_force, Fext, assy4r, Du, Dl, ds)
 	//
 	//     if(timeStep > 1)
 	//         dummy = Du'*Du + Dl*Dl - ds*ds;
@@ -833,7 +800,6 @@ func solve_arclength_split() {
 	//     FtF = Fext'*Fext;
 	//     if(timeStep > 1)
 	//         A = Du'*Du + psi*Dl*Dl*FtF - ds*ds;
-	//
 	//         a = 2.0*Du(assy4r)';
 	//         b = 2.0*psi*Dl*FtF;
 	//     else
@@ -865,7 +831,6 @@ func solve_arclength_split() {
 	//     %% solve the matrix system
 	//     duu = L\(P*FextReduced);
 	//     du1 = U\duu;
-	//
 	//     duu = L\(P*R);
 	//     du2 = U\duu;
 	//     du2 = -du2; % this is because the Residual is added to the RHS
@@ -876,242 +841,241 @@ func solve_arclength_split() {
 	// end
 }
 
-func timeSteppingParameters_Solid() {
-	// function td = timeSteppingParameters_Solid(tis, rho, dt)
-	//
-	// td = zeros(100,1);
-	//
-	// switch tis
-	//    case 0
-	//      alpf = 1.0;
-	//      alpm = 1.0;
-	//      gamm = 1.0;
-	//
-	//      td(1)  = alpm;
-	//      td(2)  = alpf;
-	//      td(3)  = alpm;
-	//      td(4)  = gamm;
-	//      td(7)  = alpf;
-	//
-	//             % velocity is used as the primary variable for
-	//             % solid dynamics problem
-	//             % td[10] is the multiplication when converting from
-	//             % displacement based formulation to velocity based formulation
-	//             % It is set to ONE for static problem
-	//
-	//       td(10) = 1.0;
-	//
-	//     case 2 % Backward-Euler
-	//
-	//        alpf = 1.0;
-	//        alpm = 1.0;
-	//        gamm = 1.0;
-	//
-	//        td(1)  = alpm;
-	//        td(2)  = alpf;
-	//        td(3)  = alpm;
-	//        td(4)  = gamm;
-	//
-	//        td(5)  = 1.0/dt/dt;
-	//        td(6)  = 1.0/dt;
-	//        td(7)  = alpf;
-	//
-	//        %displacement as the primary variable
-	//        %v_{n+1}  = td(10)*d_{n+1} + td(11)*d_n + td(12)*v_n + td(13)*a_n + td(14)*ddot_n;
-	//        %a_{n+1}  = td(15)*d_{n+1} + td(16)*d_n + td(17)*v_n + td(18)*a_n + td(19)*ddot_n;
-	//
-	//        td(10) = 1.0/dt;    % d_{n+1}
-	//        td(11) = -td(10);   % d_n
-	//        td(12) = 0.0;       % v_n
-	//        td(13) = 0.0;       % a_n
-	//        td(14) = 0.0;       % ddot_n
-	//
-	//        td(15) = 1.0/dt/dt; % d_{n+1}
-	//        td(16) = -td(15);   % d_n
-	//        td(17) = -1.0/dt;   % vn
-	//        td(18) = 0.0;       % an
-	//        td(19) = 0.0;       % ddot_n
-	//
-	//        %velocity as the primary variable
-	//        %d_{n+1}  = td(20)*v_{n+1} + td(21)*d_n + td(22)*v_n + td(23)*a_n + td(24)*ddot_n ;
-	//        %a_{n+1}  = td(25)*v_{n+1} + td(26)*d_n + td(27)*v_n + td(28)*a_n + td(29)*ddot_n ;
-	//
-	//        td(40) = dt;        % v_{n+1}
-	//        td(41) = 1.0;       % d_n
-	//        td(42) = 0.0;       % v_n
-	//        td(43) = 0.0;       % a_n
-	//        td(44) = 0.0;       % ddot_n
-	//
-	//        td(45) = 1.0/dt;    % v_{n+1}
-	//        td(46) = 0.0;       % d_n
-	//        td(47) = -td(45);   % v_n
-	//        td(48) = 0.0;       % a_n
-	//        td(49) = 0.0;       % ddot_n
-	//
-	//    case 3 % CH-aplha
-	//
-	//        alpm = (2.0-rho)/(rho+1.0);
-	//        alpf = 1.0/(rho+1.0);
-	//
-	//        gamm = 0.5 + alpm - alpf;
-	//        beta = 0.25*(1.0+alpm-alpf)*(1.0+alpm-alpf);
-	//
-	//        td(1)  = alpm;
-	//        td(2)  = alpf;
-	//        td(3)  = alpm;
-	//        td(4)  = gamm;
-	//
-	//        td(5)  = alpm/beta/dt/dt;
-	//        td(6)  = alpf*gamm/beta/dt;
-	//        td(7)  = alpf;
-	//
-	//        %displacement as the primary variable
-	//        %v_{n+1}  = td(10)*d_{n+1} + td(11)*d_n + td(12)*v_n + td(13)*a_n + td(14)*ddot_n;
-	//        %a_{n+1}  = td(15)*d_{n+1} + td(16)*d_n + td(17)*v_n + td(18)*a_n + td(19)*ddot_n;
-	//
-	//        td(10) = gamm/beta/dt;           % d_{n+1}
-	//        td(11) = -td(10);                % d_n
-	//        td(12) = 1.0-gamm/beta;          % v_n
-	//        td(13) = dt*(1.0-gamm/2.0/beta); % a_n
-	//        td(14) = 0.0;                    % ddot_n
-	//
-	//        td(15) = 1.0/beta/dt/dt;         % d_{n+1}
-	//        td(16) = -td(15);                % d_n
-	//        td(17) = -1.0/beta/dt;           % v_n
-	//        td(18) = 1.0-1.0/2.0/beta;       % a_n
-	//        td(19) = 0.0;                    % ddot_n
-	//
-	//        %velocity as the primary variable
-	//        %d_{n+1}  = td(20)*v_{n+1} + td(21)*d_n + td(22)*v_n + td(23)*a_n + td(24)*ddot_n ;
-	//        %a_{n+1}  = td(25)*v_{n+1} + td(26)*d_n + td(27)*v_n + td(28)*a_n + td(29)*ddot_n ;
-	//
-	//        td(40) = dt*beta/gamm;                     % v_{n+1}
-	//        td(41) = 1.0;                              % d_n
-	//        td(42) = dt*(gamm-beta)/gamm;              % v_n
-	//        td(43) = dt*dt*(gamm-2.0*beta)/(2.0*gamm); % a_n
-	//        td(44) = 0.0;                              % ddot_n
-	//
-	//        td(45) = 1.0/(gamm*dt);                    % v_{n+1}
-	//        td(46) = 0.0;                              % d_n
-	//        td(47) = -td(45);                          % v_n
-	//        td(48) = (gamm-1.0)/gamm;                  % a_n
-	//        td(49) = 0.0;                              % ddot_n
-	//
-	//    case 4 % JHW-alpha or KDP-alpha
-	//
-	//        alpf = 1.0/(1.0 + rho);
-	//        alpm = 0.5*(3.0 - rho)/(1.0 + rho);
-	//
-	//        gamm = 0.5 + alpm - alpf;
-	//
-	//        td(1)  = alpm;
-	//        td(2)  = alpf;
-	//        td(3)  = alpm;
-	//        td(4)  = gamm;
-	//
-	//        td(5)  = (alpm*alpm)/(alpf*gamm*gamm*dt*dt);
-	//        td(6)  = alpm/gamm/dt;
-	//        td(7)  = alpf;
-	//
-	//        %displacement as the primary variable
-	//        %v_{n+1}    = td(10)*d_{n+1} + td(11)*d_n + td(12)*v_n + td(13)*a_n + td(14)*ddot_n;
-	//        %a_{n+1}    = td(15)*d_{n+1} + td(16)*d_n + td(17)*v_n + td(18)*a_n + td(19)*ddot_n;
-	//        %ddot_{n+1} = td(20)*d_{n+1} + td(21)*d_n + td(22)*v_n + td(23)*a_n + td(24)*ddot_n;
-	//
-	//        td(10) = alpm/(alpf*gamm*dt);             % d_{n+1}
-	//        td(11) = -td(10);                         % d_n
-	//        td(12) = (alpf-1.0)/alpf;                 % v_n
-	//        td(13) = 0.0;                             % a_n
-	//        td(14) = (gamm-alpm)/alpf/gamm;           % ddot_n
-	//
-	//        td(15) = alpm/(alpf*gamm*gamm*dt*dt);     % d_{n+1}
-	//        td(16) = -td(15);                         % d_n
-	//        td(17) = -1.0/(alpf*gamm*dt);             % v_n
-	//        td(18) = (gamm-1.0)/gamm;                 % a_n
-	//        td(19) = (gamm-alpm)/(alpf*gamm*gamm*dt); % ddot_n
-	//
-	//        td(20) = 1.0/(gamm*dt);                   % d_{n+1}
-	//        td(21) = -td(20);                         % d_n
-	//        td(22) = 0.0;                             % v_n
-	//        td(23) = 0.0;                             % a_n
-	//        td(24) = (gamm-1.0)/gamm;                 % ddot_n
-	//
-	//        %velocity as the primary variable
-	//        %d_{n+1}    = td(20)*v_{n+1} + td(21)*d_n + td(22)*v_n + td(23)*a_n + td(24)*ddot_n ;
-	//        %a_{n+1}    = td(25)*v_{n+1} + td(26)*d_n + td(27)*v_n + td(28)*a_n + td(29)*ddot_n ;
-	//        %ddot_{n+1} = td(30)*v_{n+1} + td(31)*d_n + td(32)*v_n + td(33)*a_n + td(34)*ddot_n;
-	//
-	//        td(40) = alpf*gamm*dt/alpm;           % v_{n+1}
-	//        td(41) = 1.0;                         % d_n
-	//        td(42) = (1.0-alpf)*gamm*dt/alpm;     % v_n
-	//        td(43) = 0.0;                         % a_n
-	//        td(44) = (alpm-gamm)*dt/alpm;        % ddot_n
-	//
-	//        td(45) = 1.0/gamm/dt;                 % v_{n+1}
-	//        td(46) = 0.0;                         % d_n
-	//        td(47) = -td(45);                     % v_n
-	//        td(48) = 1.0-1.0/gamm;                % v_n
-	//        td(49) = 0.0;                         % ddot_n
-	//
-	//        td(50) = alpf/alpm;                   % v_{n+1}
-	//        td(51) = 0.0;                         % d_n
-	//        td(52) = (1.0-alpf)/alpm;             % v_n
-	//        td(53) = 0.0;                         % a_n
-	//        td(54) = (alpm-1.0)/alpm;             % ddot_n
-	//
-	//    case 5 %% Newmark-beta method
-	//
-	//        alpm = 1.0;
-	//        alpf = 1.0;
-	//
-	//        td(1)  = alpm;
-	//        td(2)  = alpf;
-	//        td(3)  = alpm;
-	//        td(4)  = gamm;
-	//
-	//        td(5)  = alpm/beta/dt/dt;
-	//        td(6)  = alpf*gamm/beta/dt;
-	//        td(7)  = alpf;
-	//
-	//        %displacement as the primary variable
-	//        %v_{n+1}  = td(10)*d_{n+1} + td(11)*d_n + td(12)*v_n + td(13)*a_n + td(14)*ddot_n;
-	//        %a_{n+1}  = td(15)*d_{n+1} + td(16)*d_n + td(17)*v_n + td(18)*a_n + td(19)*ddot_n;
-	//
-	//        td(10) = gamm/beta/dt;           % d_{n+1}
-	//        td(11) = -td(10);                % d_n
-	//        td(12) = 1.0-gamm/beta;          % v_n
-	//        td(13) = dt*(1.0-gamm/2.0/beta); % a_n
-	//        td(14) = 0.0;                    % ddot_n
-	//
-	//        td(15) = 1.0/beta/dt/dt;         % d_{n+1}
-	//        td(16) = -td(15);                % d_n
-	//        td(17) = -1.0/beta/dt;           % v_n
-	//        td(18) = 1.0-1.0/2.0/beta;       % a_n
-	//        td(19) = 0.0;                    % ddot_n
-	//
-	//        %velocity as the primary variable
-	//        %d_{n+1}  = td(20)*v_{n+1} + td(21)*d_n + td(22)*v_n + td(23)*a_n + td(24)*ddot_n ;
-	//        %a_{n+1}  = td(25)*v_{n+1} + td(26)*d_n + td(27)*v_n + td(28)*a_n + td(29)*ddot_n ;
-	//
-	//        td(40) = dt*beta/gamm;                     % v_{n+1}
-	//        td(41) = 1.0;                              % d_n
-	//        td(42) = dt*(gamm-beta)/gamm;              % v_n
-	//        td(43) = dt*dt*(gamm-2.0*beta)/(2.0*gamm); % a_n
-	//        td(44) = 0.0;                              % ddot_n
-	//
-	//        td(45) = 1.0/(gamm*dt);                    % v_{n+1}
-	//        td(46) = 0.0;                              % d_n
-	//        td(47) = -td(45);                          % v_n
-	//        td(48) = (gamm-1.0)/gamm;                  % a_n
-	//        td(49) = 0.0;                              % ddot_n
-	//
-	//     otherwise
-	//        printf('tis error\n');
-	//        printf('This time integration scheme is not available yet!');
-	// end
-	//
-	//
-}
+// TODO : NO NEED FUNCTION
+// func timeSteppingParameters_Solid() {
+// function td = timeSteppingParameters_Solid(tis, rho, dt)
+//
+// td = zeros(100,1);
+//
+// switch tis
+//    case 0
+//      alpf = 1.0;
+//      alpm = 1.0;
+//      gamm = 1.0;
+//
+//      td(1)  = alpm;
+//      td(2)  = alpf;
+//      td(3)  = alpm;
+//      td(4)  = gamm;
+//      td(7)  = alpf;
+//
+//             % velocity is used as the primary variable for
+//             % solid dynamics problem
+//             % td[10] is the multiplication when converting from
+//             % displacement based formulation to velocity based formulation
+//             % It is set to ONE for static problem
+//
+//       td(10) = 1.0;
+//
+//     case 2 % Backward-Euler
+//
+//        alpf = 1.0;
+//        alpm = 1.0;
+//        gamm = 1.0;
+//
+//        td(1)  = alpm;
+//        td(2)  = alpf;
+//        td(3)  = alpm;
+//        td(4)  = gamm;
+//
+//        td(5)  = 1.0/dt/dt;
+//        td(6)  = 1.0/dt;
+//        td(7)  = alpf;
+//
+//        %displacement as the primary variable
+//        %v_{n+1}  = td(10)*d_{n+1} + td(11)*d_n + td(12)*v_n + td(13)*a_n + td(14)*ddot_n;
+//        %a_{n+1}  = td(15)*d_{n+1} + td(16)*d_n + td(17)*v_n + td(18)*a_n + td(19)*ddot_n;
+//
+//        td(10) = 1.0/dt;    % d_{n+1}
+//        td(11) = -td(10);   % d_n
+//        td(12) = 0.0;       % v_n
+//        td(13) = 0.0;       % a_n
+//        td(14) = 0.0;       % ddot_n
+//
+//        td(15) = 1.0/dt/dt; % d_{n+1}
+//        td(16) = -td(15);   % d_n
+//        td(17) = -1.0/dt;   % vn
+//        td(18) = 0.0;       % an
+//        td(19) = 0.0;       % ddot_n
+//
+//        %velocity as the primary variable
+//        %d_{n+1}  = td(20)*v_{n+1} + td(21)*d_n + td(22)*v_n + td(23)*a_n + td(24)*ddot_n ;
+//        %a_{n+1}  = td(25)*v_{n+1} + td(26)*d_n + td(27)*v_n + td(28)*a_n + td(29)*ddot_n ;
+//
+//        td(40) = dt;        % v_{n+1}
+//        td(41) = 1.0;       % d_n
+//        td(42) = 0.0;       % v_n
+//        td(43) = 0.0;       % a_n
+//        td(44) = 0.0;       % ddot_n
+//
+//        td(45) = 1.0/dt;    % v_{n+1}
+//        td(46) = 0.0;       % d_n
+//        td(47) = -td(45);   % v_n
+//        td(48) = 0.0;       % a_n
+//        td(49) = 0.0;       % ddot_n
+//
+//    case 3 % CH-aplha
+//
+//        alpm = (2.0-rho)/(rho+1.0);
+//        alpf = 1.0/(rho+1.0);
+//
+//        gamm = 0.5 + alpm - alpf;
+//        beta = 0.25*(1.0+alpm-alpf)*(1.0+alpm-alpf);
+//
+//        td(1)  = alpm;
+//        td(2)  = alpf;
+//        td(3)  = alpm;
+//        td(4)  = gamm;
+//
+//        td(5)  = alpm/beta/dt/dt;
+//        td(6)  = alpf*gamm/beta/dt;
+//        td(7)  = alpf;
+//
+//        %displacement as the primary variable
+//        %v_{n+1}  = td(10)*d_{n+1} + td(11)*d_n + td(12)*v_n + td(13)*a_n + td(14)*ddot_n;
+//        %a_{n+1}  = td(15)*d_{n+1} + td(16)*d_n + td(17)*v_n + td(18)*a_n + td(19)*ddot_n;
+//
+//        td(10) = gamm/beta/dt;           % d_{n+1}
+//        td(11) = -td(10);                % d_n
+//        td(12) = 1.0-gamm/beta;          % v_n
+//        td(13) = dt*(1.0-gamm/2.0/beta); % a_n
+//        td(14) = 0.0;                    % ddot_n
+//
+//        td(15) = 1.0/beta/dt/dt;         % d_{n+1}
+//        td(16) = -td(15);                % d_n
+//        td(17) = -1.0/beta/dt;           % v_n
+//        td(18) = 1.0-1.0/2.0/beta;       % a_n
+//        td(19) = 0.0;                    % ddot_n
+//
+//        %velocity as the primary variable
+//        %d_{n+1}  = td(20)*v_{n+1} + td(21)*d_n + td(22)*v_n + td(23)*a_n + td(24)*ddot_n ;
+//        %a_{n+1}  = td(25)*v_{n+1} + td(26)*d_n + td(27)*v_n + td(28)*a_n + td(29)*ddot_n ;
+//
+//        td(40) = dt*beta/gamm;                     % v_{n+1}
+//        td(41) = 1.0;                              % d_n
+//        td(42) = dt*(gamm-beta)/gamm;              % v_n
+//        td(43) = dt*dt*(gamm-2.0*beta)/(2.0*gamm); % a_n
+//        td(44) = 0.0;                              % ddot_n
+//
+//        td(45) = 1.0/(gamm*dt);                    % v_{n+1}
+//        td(46) = 0.0;                              % d_n
+//        td(47) = -td(45);                          % v_n
+//        td(48) = (gamm-1.0)/gamm;                  % a_n
+//        td(49) = 0.0;                              % ddot_n
+//
+//    case 4 % JHW-alpha or KDP-alpha
+//
+//        alpf = 1.0/(1.0 + rho);
+//        alpm = 0.5*(3.0 - rho)/(1.0 + rho);
+//
+//        gamm = 0.5 + alpm - alpf;
+//
+//        td(1)  = alpm;
+//        td(2)  = alpf;
+//        td(3)  = alpm;
+//        td(4)  = gamm;
+//
+//        td(5)  = (alpm*alpm)/(alpf*gamm*gamm*dt*dt);
+//        td(6)  = alpm/gamm/dt;
+//        td(7)  = alpf;
+//
+//        %displacement as the primary variable
+//        %v_{n+1}    = td(10)*d_{n+1} + td(11)*d_n + td(12)*v_n + td(13)*a_n + td(14)*ddot_n;
+//        %a_{n+1}    = td(15)*d_{n+1} + td(16)*d_n + td(17)*v_n + td(18)*a_n + td(19)*ddot_n;
+//        %ddot_{n+1} = td(20)*d_{n+1} + td(21)*d_n + td(22)*v_n + td(23)*a_n + td(24)*ddot_n;
+//
+//        td(10) = alpm/(alpf*gamm*dt);             % d_{n+1}
+//        td(11) = -td(10);                         % d_n
+//        td(12) = (alpf-1.0)/alpf;                 % v_n
+//        td(13) = 0.0;                             % a_n
+//        td(14) = (gamm-alpm)/alpf/gamm;           % ddot_n
+//
+//        td(15) = alpm/(alpf*gamm*gamm*dt*dt);     % d_{n+1}
+//        td(16) = -td(15);                         % d_n
+//        td(17) = -1.0/(alpf*gamm*dt);             % v_n
+//        td(18) = (gamm-1.0)/gamm;                 % a_n
+//        td(19) = (gamm-alpm)/(alpf*gamm*gamm*dt); % ddot_n
+//
+//        td(20) = 1.0/(gamm*dt);                   % d_{n+1}
+//        td(21) = -td(20);                         % d_n
+//        td(22) = 0.0;                             % v_n
+//        td(23) = 0.0;                             % a_n
+//        td(24) = (gamm-1.0)/gamm;                 % ddot_n
+//
+//        %velocity as the primary variable
+//        %d_{n+1}    = td(20)*v_{n+1} + td(21)*d_n + td(22)*v_n + td(23)*a_n + td(24)*ddot_n ;
+//        %a_{n+1}    = td(25)*v_{n+1} + td(26)*d_n + td(27)*v_n + td(28)*a_n + td(29)*ddot_n ;
+//        %ddot_{n+1} = td(30)*v_{n+1} + td(31)*d_n + td(32)*v_n + td(33)*a_n + td(34)*ddot_n;
+//
+//        td(40) = alpf*gamm*dt/alpm;           % v_{n+1}
+//        td(41) = 1.0;                         % d_n
+//        td(42) = (1.0-alpf)*gamm*dt/alpm;     % v_n
+//        td(43) = 0.0;                         % a_n
+//        td(44) = (alpm-gamm)*dt/alpm;        % ddot_n
+//
+//        td(45) = 1.0/gamm/dt;                 % v_{n+1}
+//        td(46) = 0.0;                         % d_n
+//        td(47) = -td(45);                     % v_n
+//        td(48) = 1.0-1.0/gamm;                % v_n
+//        td(49) = 0.0;                         % ddot_n
+//
+//        td(50) = alpf/alpm;                   % v_{n+1}
+//        td(51) = 0.0;                         % d_n
+//        td(52) = (1.0-alpf)/alpm;             % v_n
+//        td(53) = 0.0;                         % a_n
+//        td(54) = (alpm-1.0)/alpm;             % ddot_n
+//
+//    case 5 %% Newmark-beta method
+//
+//        alpm = 1.0;
+//        alpf = 1.0;
+//
+//        td(1)  = alpm;
+//        td(2)  = alpf;
+//        td(3)  = alpm;
+//        td(4)  = gamm;
+//
+//        td(5)  = alpm/beta/dt/dt;
+//        td(6)  = alpf*gamm/beta/dt;
+//        td(7)  = alpf;
+//
+//        %displacement as the primary variable
+//        %v_{n+1}  = td(10)*d_{n+1} + td(11)*d_n + td(12)*v_n + td(13)*a_n + td(14)*ddot_n;
+//        %a_{n+1}  = td(15)*d_{n+1} + td(16)*d_n + td(17)*v_n + td(18)*a_n + td(19)*ddot_n;
+//
+//        td(10) = gamm/beta/dt;           % d_{n+1}
+//        td(11) = -td(10);                % d_n
+//        td(12) = 1.0-gamm/beta;          % v_n
+//        td(13) = dt*(1.0-gamm/2.0/beta); % a_n
+//        td(14) = 0.0;                    % ddot_n
+//
+//        td(15) = 1.0/beta/dt/dt;         % d_{n+1}
+//        td(16) = -td(15);                % d_n
+//        td(17) = -1.0/beta/dt;           % v_n
+//        td(18) = 1.0-1.0/2.0/beta;       % a_n
+//        td(19) = 0.0;                    % ddot_n
+//
+//        %velocity as the primary variable
+//        %d_{n+1}  = td(20)*v_{n+1} + td(21)*d_n + td(22)*v_n + td(23)*a_n + td(24)*ddot_n ;
+//        %a_{n+1}  = td(25)*v_{n+1} + td(26)*d_n + td(27)*v_n + td(28)*a_n + td(29)*ddot_n ;
+//
+//        td(40) = dt*beta/gamm;                     % v_{n+1}
+//        td(41) = 1.0;                              % d_n
+//        td(42) = dt*(gamm-beta)/gamm;              % v_n
+//        td(43) = dt*dt*(gamm-2.0*beta)/(2.0*gamm); % a_n
+//        td(44) = 0.0;                              % ddot_n
+//
+//        td(45) = 1.0/(gamm*dt);                    % v_{n+1}
+//        td(46) = 0.0;                              % d_n
+//        td(47) = -td(45);                          % v_n
+//        td(48) = (gamm-1.0)/gamm;                  % a_n
+//        td(49) = 0.0;                              % ddot_n
+//
+//     otherwise
+//        printf('tis error\n');
+//        printf('This time integration scheme is not available yet!');
+// end
+// }
 
 func Truss_2D_model1() {
 	// function [Klocal, Flocal]=Truss_2D_model1(elmDat, IEN, e, XX, soln, bf)
@@ -1122,7 +1086,6 @@ func Truss_2D_model1() {
 	// rho0 = elmDat(IEN(e,1),2);
 	// A0   = elmDat(IEN(e,1),3);
 	// E    = elmDat(IEN(e,1),4);
-	//
 	//
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	//
@@ -1180,9 +1143,6 @@ func Truss_2D_model1() {
 	//     Klocal = Klocal + ((E*A0*B')*B)/L^3 ;
 	//     Klocal = Klocal + ((N/L)*H);
 	// end
-	//
-	//
-	//
 }
 
 func Truss_2D_model2() {
@@ -1209,7 +1169,6 @@ func Truss_2D_model2() {
 	// disp(2) = soln(ndof*(IEN(e,3)-1)+2);
 	// disp(3) = soln(ndof*(IEN(e,4)-1)+1);
 	// disp(4) = soln(ndof*(IEN(e,4)-1)+2);
-	//
 	//
 	// % compute the orientation of the element
 	//
@@ -1252,12 +1211,6 @@ func Truss_2D_model2() {
 	//     % stiffness
 	//     Klocal = Klocal + ((E*A0*L0*B')*B) ;
 	//     Klocal = Klocal + ((N/L0)*H);
-	//
-	// endfunction
-	//
-	//
-	//
-
 }
 
 func Truss_3D_model2() {
@@ -1269,7 +1222,6 @@ func Truss_3D_model2() {
 	// rho0 = elmDat(2);
 	// A0   = elmDat(3);
 	// E    = elmDat(4);
-	//
 	//
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	//
@@ -1343,5 +1295,4 @@ func Truss_3D_model2() {
 	//     Klocal = Klocal + ((N/L0)*H);
 	//
 	// end
-
 }
