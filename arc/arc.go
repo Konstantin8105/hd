@@ -198,7 +198,7 @@ func main() {
 	// fclose(fileID)
 }
 
-func Assembly_Matrix() {
+func assembly_Matrix() {
 	// function global_matrix=Assembly_Matrix(global_matrix,local_matrix,LM,e)
 	// %%% Assemble global_matrix
 	// nen=size(LM,2);
@@ -215,7 +215,7 @@ func Assembly_Matrix() {
 	// end
 }
 
-func Assembly_Vector() {
+func assembly_Vector() {
 	// function global_vector=Assembly_Vector(global_vector,local_vector,LM,e)
 	// %%% Assemble F_global
 	// nen=size(LM,2);
@@ -227,7 +227,7 @@ func Assembly_Vector() {
 	// end
 }
 
-func GeomExactBeam_2D() {
+func geomExactBeam_2D() {
 	// function [Klocal, Flocal]=GeomExactBeam_2D(elmDat, IEN, e, XX, soln, bf)
 	// %%% Shape Function Routine for a 1D Lagrange polynomials
 	// af = 1.0;
@@ -422,7 +422,7 @@ func GeomExactBeam_2D() {
 	//
 }
 
-func get_Gauss_points(nGP int) (gp, gw []float64) {
+func Get_Gauss_points(nGP int) (gp, gw []float64) {
 	// function [gp, gw] = get_Gauss_points(nGP)
 	switch nGP {
 	case 1: // if(nGP == 1)
@@ -633,7 +633,7 @@ func processfile() {
 	// end
 }
 
-func shape_functions_Lagrange_1D(NodeNums []int, XX [][]float64, p int, xi float64) (
+func Shape_functions_Lagrange_1D(NodeNums []int, XX [][]float64, p int, xi float64) (
 	N, dN_dx, d2N_dx2 []float64, J, x float64,
 ) {
 	// function [N,dN_dx,d2N_dx2,J,x]=shape_functions_Lagrange_1D(NodeNums, XX, p, xi)
@@ -748,48 +748,48 @@ func shape_functions_Lagrange_1D(NodeNums []int, XX [][]float64, p int, xi float
 	return
 }
 
-func solve_arclength() {
-	// function  [converged, du, dl] = solve_arclength(timeStep, neq, iter, \
-	//                 Kglobal, Fglobal, dof_force, Fext, assy4r, Du, Dl, ds)
-	//
-	//     if(timeStep > 1)
-	//         dummy = Du'*Du + Dl*Dl - ds*ds;
-	//         Fglobal(neq) = Fglobal(neq) - dummy;
-	//
-	//         Kglobal(:, neq)   = Kglobal(:, neq) - Fext;
-	//
-	//         Kglobal(neq, 1:neq-1) = Kglobal(neq, 1:neq-1) + 2.0*Du';
-	//
-	//         Kglobal(neq, neq)  = Kglobal(neq, neq)  + 2.0*Dl;
-	//     else
-	//         Fglobal(neq) = 0.0 ;
-	//         Kglobal(neq, neq) = 1.0;
-	//     endif
-	//
-	//     %%% Applying Boundary Conditions
-	//
-	//     K1 = Kglobal(assy4r,assy4r);
-	//     F1 = Fglobal(assy4r);
-	//
-	//     rNorm = norm(F1,2);
-	//
-	//     printf(' rNorm : %5d ...  %12.6E \n', iter, rNorm);
-	//     du = F1*0.0;
-	//     dl = 0.0;
-	//     converged = false;
-	//
-	//     if(rNorm < 1.0e-8)
-	//        converged = true;
-	//        return;
-	//     end
-	//
-	//     %% solve the matrix system
-	//     dutemp = K1\F1;
-	//
-	//     du = dutemp(1:end-1);
-	//     dl = dutemp(end);
-	// end
-}
+// func solve_arclength() {
+// function  [converged, du, dl] = solve_arclength(timeStep, neq, iter, \
+//                 Kglobal, Fglobal, dof_force, Fext, assy4r, Du, Dl, ds)
+//
+//     if(timeStep > 1)
+//         dummy = Du'*Du + Dl*Dl - ds*ds;
+//         Fglobal(neq) = Fglobal(neq) - dummy;
+//
+//         Kglobal(:, neq)   = Kglobal(:, neq) - Fext;
+//
+//         Kglobal(neq, 1:neq-1) = Kglobal(neq, 1:neq-1) + 2.0*Du';
+//
+//         Kglobal(neq, neq)  = Kglobal(neq, neq)  + 2.0*Dl;
+//     else
+//         Fglobal(neq) = 0.0 ;
+//         Kglobal(neq, neq) = 1.0;
+//     endif
+//
+//     %%% Applying Boundary Conditions
+//
+//     K1 = Kglobal(assy4r,assy4r);
+//     F1 = Fglobal(assy4r);
+//
+//     rNorm = norm(F1,2);
+//
+//     printf(' rNorm : %5d ...  %12.6E \n', iter, rNorm);
+//     du = F1*0.0;
+//     dl = 0.0;
+//     converged = false;
+//
+//     if(rNorm < 1.0e-8)
+//        converged = true;
+//        return;
+//     end
+//
+//     %% solve the matrix system
+//     dutemp = K1\F1;
+//
+//     du = dutemp(1:end-1);
+//     dl = dutemp(end);
+// end
+// }
 
 func solve_arclength_split() {
 	// function[converged, du, dl, du1] = solve_arclength_split(timeStep, neq, iter, Kglobal, Rglobal, dof_force, Fext, assy4r, Du, Dl, ds, du1)
@@ -1077,7 +1077,7 @@ func solve_arclength_split() {
 // end
 // }
 
-func Truss_2D_model1() {
+func truss_2D_model1() {
 	// function [Klocal, Flocal]=Truss_2D_model1(elmDat, IEN, e, XX, soln, bf)
 	//
 	// ndof = 2;
@@ -1145,7 +1145,7 @@ func Truss_2D_model1() {
 	// end
 }
 
-func Truss_2D_model2() {
+func truss_2D_model2() {
 	// function [Klocal, Flocal]=Truss_2D_model2(elmDat, IEN, e, XX, soln, bf)
 	//
 	// ndof = 2;
@@ -1213,7 +1213,7 @@ func Truss_2D_model2() {
 	//     Klocal = Klocal + ((N/L0)*H);
 }
 
-func Truss_3D_model2() {
+func truss_3D_model2() {
 	// function [Klocal, Flocal]=Truss_3D_model2(elmDat, IEN, e, XX, soln, bf)
 	//
 	// ndof = 3;
