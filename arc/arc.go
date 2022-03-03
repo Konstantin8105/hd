@@ -20,7 +20,8 @@ func main() {
 	// %fname = "input_Arch_semicircle-nelem50-unsym.txt";
 	// %fname = "input-beamEndMoment-nelem10.txt";
 	//
-	// [ndim, ndof, nnode, nelem, coords, elemConn, elemData, LM, neq, assy4r, dof_force, Fext, maxloadSteps, loadincr, outputlist] = processfile(fname)
+	// [ndim, ndof, nnode, nelem, coords, elemConn, elemData, LM, neq, assy4r, \
+	// dof_force, Fext, maxloadSteps, loadincr, outputlist] = processfile(fname)
 	//
 	// disp = zeros(neq,1);
 	//
