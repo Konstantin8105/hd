@@ -1,6 +1,9 @@
 package main
 
-import "math"
+import (
+	"fmt"
+	"math"
+)
 
 func main() {
 	// octave main_arclength.m
@@ -22,155 +25,196 @@ func main() {
 	//
 	// [ndim, ndof, nnode, nelem, coords, elemConn, elemData, LM, neq, assy4r, \
 	// dof_force, Fext, maxloadSteps, loadincr, outputlist] = processfile(fname)
+	ndim, ndof, nnode, nelem, coords, elemConn, elemData, LM, neq, assy4r,
+		dof_force, Fext, maxloadSteps, loadincr, outputlist := Processfile()
 	//
 	// disp = zeros(neq,1);
+	disp := make([]float64, neq)
 	//
-	// dispPrev  = disp;
-	// dispPrev2 = disp;
-	// dispPrev3 = disp;
-	// dispPrev4 = disp;
-	//
-	// Kglobal = zeros(neq,neq);
-	// Rglobal = zeros(neq,1);
+	dispPrev := make([]float64, neq)  // disp;
+	dispPrev2 := make([]float64, neq) // disp;
+	dispPrev3 := make([]float64, neq) // disp;
+	dispPrev4 := make([]float64, neq) // disp;
+	// 	//
+	// 	var Kglobal [][]float64 = make([][]float64, neq)
+	// 	for i := 0; i < neq; i++ {
+	// 		Kglobal[i] = make([]float64, neq)
+	// 	}
+	// 	// Kglobal = zeros(neq,neq);
+	// 	Rglobal := make([]float64, neq) // = zeros(neq,1);
 	//
 	// bf=[0.0 0.0];
+	var bf [2]float64
 	//
-	// Ds = loadincr;
-	// DsPrev = Ds;
-	// DsMax = Ds;
-	// DsMin = Ds;
-	//
-	// loadfactor      = loadincr;
-	// loadfactorPrev2 = 0.0;
-	// loadfactorPrev  = 0.0;
-	//
-	// converged = false;
-	// convergedPrev = false;
-	//
-	// loadStepConverged = 0;
+	var (
+		Ds     = loadincr
+		DsPrev = Ds
+		DsMax  = Ds
+		DsMin  = Ds
+
+		loadfactor      = loadincr
+		loadfactorPrev2 = 0.0
+		loadfactorPrev  = 0.0
+
+		converged     = false
+		convergedPrev = false
+
+		loadStepConverged = 0
+	)
 	// output = [disp(outputlist)];
 	// llist = [0.0];
 	//
 	// dispFull = [disp];
 	//
-	// for  loadStep=1:maxloadSteps
-	//     fprintf("load step = %d \n", loadStep);
-	//
-	//     if(loadStep > 1)
-	//       Ds
-	//       DsPrev
-	//       DsFactor1 = Ds/DsPrev
-	//       disp     = (1.0+DsFactor1)*dispPrev - DsFactor1*dispPrev2;
-	//       loadfactor = (1.0+DsFactor1)*loadfactorPrev - DsFactor1*loadfactorPrev2;
-	//     end
-	//
-	//     Du = disp - dispPrev;
-	//     Dl = loadfactor - loadfactorPrev;
-	//
-	//     convergedPrev = converged;
-	//     converged = false;
-	//
-	//     for iter = 1:10
-	//         Kglobal(1:end,1:end) = 0.0;
-	//         Rglobal(1:end) = 0.0;
-	//
-	//         if(ndim == 2)
-	//           if(ndof == 2) % Truss element
-	//             for e = 1:nelem
-	//                 [Klocal, Flocal] = Truss_2D_model1(elemData, elemConn, e, coords, disp, bf);
-	//                 Kglobal = Assembly_Matrix(Kglobal,Klocal,LM,e);
-	//                 Rglobal = Assembly_Vector(Rglobal,Flocal,LM,e);
-	//             end
-	//           else % Beam element
-	//             for e = 1:nelem
-	//                 [Klocal, Flocal] = GeomExactBeam_2D(elemData, elemConn, e, coords, disp, bf);
-	//                 Kglobal = Assembly_Matrix(Kglobal,Klocal,LM,e);
-	//                 Rglobal = Assembly_Vector(Rglobal,Flocal,LM,e);
-	//             end
-	//           end
-	//         else
-	//           if(ndof == 3) % Truss element
-	//             for e = 1:nelem
-	//                 [Klocal, Flocal] = Truss_3D_model2(elemData, elemConn, e, coords, disp, bf);
-	//                 Kglobal = Assembly_Matrix(Kglobal,Klocal,LM,e);
-	//                 Rglobal = Assembly_Vector(Rglobal,Flocal,LM,e);
-	//             end
-	//           end
-	//         end
-	//
-	//         Rglobal = Rglobal + loadfactor*Fext;
-	//
-	// %        [converged, du, dl] = solve_arclength(loadStep, neq, iter, Kglobal, Rglobal, dof_force, Fext, assy4r, Du, Dl, Ds);
-	//         [converged, du, dl] = solve_arclength_split(loadStep, neq, iter, Kglobal, Rglobal, dof_force, Fext, assy4r, Du, Dl, Ds);
-	//
-	//         if(converged)
-	//           break;
-	//         end
-	//
-	//         disp(assy4r) = disp(assy4r) + du;
-	//         loadfactor = loadfactor + dl;
-	//
-	//         Du(assy4r) = Du(assy4r) + du;
-	//         Dl = Dl + dl;
-	//     end
-	//
-	//     if (converged)
-	// %      disp
-	//       if(loadStep == 1)
-	//          Ds = math.Sqrt(Du'*Du + loadfactor*loadfactor*Fext'*Fext);
-	//          DsMax = Ds;
-	//          DsMin = Ds/1024.0;
-	//       end
-	//
-	//       loadfactorPrev2 = loadfactorPrev;
-	//       loadfactorPrev  = loadfactor;
-	//       dispPrev2 = dispPrev;
-	//       dispPrev  = disp;
-	//
-	//       DsPrev = Ds;
-	//       if(convergedPrev)
-	//         Ds = min(max(2.0*Ds, DsMin), DsMax);
-	//       end
-	//
-	//       dispFull = [dispFull; disp];
-	//       output = [output disp(outputlist)];
-	//       llist = [llist; loadfactor];
-	//
-	// %      plot(abs(output(1,:)), llist,'bx-');
-	// %      hold on
-	//       plot(abs(output(2,:)), llist,'bs-');
-	//       hold on
-	//
-	// %      linestr = strsplit(fname, ".");
-	// %      figname = strcat(linestr(1){:}, "_", num2str(loadStepConverged), ".pdf")
-	// %      plot_semicircular_arch(coords, disp, figname);
-	// %      plot(abs(output(1,:)), llist, 'bs-'); hold on;
-	// %      plot(abs(output(end,:)), llist,'bx-');
-	// %      plot(abs(dy)/R, (E*I/R/R)*llist.^(-1),'ko-')
-	// %      plot(coords(:,1)+disp(1:3:neq-1), coords(:,2)+disp(2:3:neq-1), 'ko-')
-	// %      axis([-150 150 -150 150])
-	// %      hold on
-	//
-	// %      for e=1:nelem
-	// %        n1 = elemConn(e,3);
-	// %        n2 = elemConn(e,4);
-	// %        xx = [coords(n1,1)+disp(ndof*(n1-1)+1) coords(n2,1)+disp(ndof*(n2-1)+1)];
-	// %        yy = [coords(n1,2)+disp(ndof*(n1-1)+2) coords(n2,2)+disp(ndof*(n2-1)+2)];
-	// %        plot(xx, yy, 'ko-')
-	// %        hold on
-	// %      endfor
-	// %      axis([-0.6 0.6 -3 3])
-	// %      hold off
-	//
-	//       loadStepConverged = loadStepConverged + 1;
-	//     else
-	//       if(convergedPrev)
-	//         Ds = max(Ds*0.5, DsMin);
-	//       else
-	//         Ds = max(Ds*0.25, DsMin);
-	//       end
-	//     end
-	//
+	for loadStep := 1; loadStep <= maxloadSteps; loadStep++ {
+		fmt.Printf("load step = %d\n", loadStep)
+
+		if loadStep > 1 {
+			//  Ds
+			//  DsPrev
+			DsFactor1 := Ds / DsPrev
+			for i := range disp {
+				disp[i] = (1.0+DsFactor1)*dispPrev[i] - DsFactor1*dispPrev2[i]
+			}
+			loadfactor = (1.0+DsFactor1)*loadfactorPrev - DsFactor1*loadfactorPrev2
+		}
+		//
+		Du := make([]float64, neq)
+		for i := range Du {
+			Du[i] = disp[i] - dispPrev[i]
+		}
+		Dl := loadfactor - loadfactorPrev
+
+		convergedPrev = converged
+		converged = false
+		//
+		//     for iter = 1:10
+		for iter := 1; iter <= 10; iter++ {
+			//
+			var Kglobal [][]float64 = make([][]float64, neq)
+			for i := 0; i < neq; i++ {
+				Kglobal[i] = make([]float64, neq)
+			}
+			// Kglobal = zeros(neq,neq);
+			Rglobal := make([]float64, neq) // = zeros(neq,1);
+			// Kglobal(1:end,1:end) = 0.0;
+			// Rglobal(1:end) = 0.0;
+			//
+			// if(ndim == 2)
+			//   if(ndof == 2) % Truss element
+			//     for e = 1:nelem
+			//         [Klocal, Flocal] = Truss_2D_model1(elemData, elemConn, e, coords, disp, bf);
+			//         Kglobal = Assembly_Matrix(Kglobal,Klocal,LM,e);
+			//         Rglobal = Assembly_Vector(Rglobal,Flocal,LM,e);
+			//     end
+			//   else % Beam element
+			for e := 0; e < nelem; e++ {
+				// for e = 1:nelem
+				Klocal, Flocal := GeomExactBeam_2D(elemData, elemConn, e, coords, disp, bf)
+				Kglobal = Assembly_Matrix(Kglobal, Klocal, LM, e)
+				Rglobal = Assembly_Vector(Rglobal, Flocal, LM, e)
+				// end
+			}
+			//   end
+			// else
+			//   if(ndof == 3) % Truss element
+			//     for e = 1:nelem
+			//         [Klocal, Flocal] = Truss_3D_model2(elemData, elemConn, e, coords, disp, bf);
+			//         Kglobal = Assembly_Matrix(Kglobal,Klocal,LM,e);
+			//         Rglobal = Assembly_Vector(Rglobal,Flocal,LM,e);
+			//     end
+			//   end
+			// end
+			//
+			for i := range Rglobal {
+				Rglobal[i] += loadfactor * Fext[i]
+			}
+			//
+			// %        [converged, du, dl] = solve_arclength(loadStep, neq, iter, Kglobal, Rglobal, dof_force, Fext, assy4r, Du, Dl, Ds);
+			converged, du, dl, _ := solve_arclength_split(
+				loadStep, neq, iter, Kglobal, Rglobal,
+				dof_force, Fext, assy4r, Du, Dl, Ds)
+			//
+			if converged {
+				break
+			}
+			//
+			disp[assy4r] = disp[assy4r] + du
+			loadfactor = loadfactor + dl
+			//
+			Du[assy4r] = Du[assy4r] + du
+			Dl = Dl + dl
+			//     end
+		}
+		if converged {
+			// %      disp
+			if loadStep == 1 {
+				{
+					// Ds = math.Sqrt(Du'*Du + loadfactor*loadfactor*Fext'*Fext);
+					var d float64
+					for i := range Du {
+						d += Du[i] * Du[i]
+					}
+					var f float64
+					for i := range Fext {
+						f += Fext[i] * Fext[i]
+					}
+					Ds = math.Sqrt(d*d + loadfactor*loadfactor*f*f)
+				}
+				DsMax = Ds
+				DsMin = Ds / 1024.0
+			} // end
+
+			loadfactorPrev2 = loadfactorPrev
+			loadfactorPrev = loadfactor
+			dispPrev2 = dispPrev
+			dispPrev = disp
+
+			DsPrev = Ds
+			if convergedPrev {
+				Ds = math.Min(math.Max(2.0*Ds, DsMin), DsMax)
+			} // end
+
+			// dispFull = [dispFull; disp];
+			// output = [output disp(outputlist)];
+			// llist = [llist; loadfactor];
+
+			// %      plot(abs(output(1,:)), llist,'bx-');
+			// %      hold on
+			//       plot(abs(output(2,:)), llist,'bs-');
+			//       hold on
+			//
+			// %      linestr = strsplit(fname, ".");
+			// %      figname = strcat(linestr(1){:}, "_", num2str(loadStepConverged), ".pdf")
+			// %      plot_semicircular_arch(coords, disp, figname);
+			// %      plot(abs(output(1,:)), llist, 'bs-'); hold on;
+			// %      plot(abs(output(end,:)), llist,'bx-');
+			// %      plot(abs(dy)/R, (E*I/R/R)*llist.^(-1),'ko-')
+			// %      plot(coords(:,1)+disp(1:3:neq-1), coords(:,2)+disp(2:3:neq-1), 'ko-')
+			// %      axis([-150 150 -150 150])
+			// %      hold on
+			//
+			// %      for e=1:nelem
+			// %        n1 = elemConn(e,3);
+			// %        n2 = elemConn(e,4);
+			// %        xx = [coords(n1,1)+disp(ndof*(n1-1)+1) coords(n2,1)+disp(ndof*(n2-1)+1)];
+			// %        yy = [coords(n1,2)+disp(ndof*(n1-1)+2) coords(n2,2)+disp(ndof*(n2-1)+2)];
+			// %        plot(xx, yy, 'ko-')
+			// %        hold on
+			// %      endfor
+			// %      axis([-0.6 0.6 -3 3])
+			// %      hold off
+			//
+			loadStepConverged = loadStepConverged + 1
+		} else {
+			if convergedPrev {
+				Ds = math.Max(Ds*0.5, DsMin)
+			} else {
+				Ds = math.Max(Ds*0.25, DsMin)
+			} // end
+		}
+		//     end
+	}
 	// %    waitforbuttonpress
 	// end
 	//
@@ -228,199 +272,228 @@ func assembly_Vector() {
 	// end
 }
 
-func geomExactBeam_2D() {
-	// function [Klocal, Flocal]=GeomExactBeam_2D(elmDat, IEN, e, XX, soln, bf)
+func GeomExactBeam_2D(elemData []float64, elemConn [][4]int, e int, coords [][2]float64, soln []float64, bf [2]float64) (Klocal [6][6]float64, Flocal [6]float64) {
+	// function [Klocal, Flocal]=GeomExactBeam_2D(elemData, elemConn, e, coords, soln, bf)
 	// %%% Shape Function Routine for a 1D Lagrange polynomials
-	// af = 1.0;
-	//
-	// p = 1;
-	// nlocal = 2;
-	// ndof   = 3;
-	// nsize  = 6;
-	//
-	// rho  = elmDat(2);
-	// A    = elmDat(3);
-	// I    = elmDat(4);
-	// E    = elmDat(5);
-	// nu   = elmDat(6);
-	// kappa= elmDat(7);
-	//
-	// G  = E/2.0/(1.0+nu);
-	// EA = E*A;
-	// EI = E*I;
-	// GA = G*A*kappa;
-	//
-	//
-	// Klocal=zeros(nsize,nsize); % Local stiffness matrix
-	// Flocal=zeros(nsize,1);   % Local load vector
-	//
-	// x0(1) = XX(IEN(e,3),1);
-	// y0(1) = XX(IEN(e,3),2);
-	// x0(2) = XX(IEN(e,4),1);
-	// y0(2) = XX(IEN(e,4),2);
-	//
-	// dx = x0(2) - x0(1);
-	// dy = y0(2) - y0(1);
-	// h0 = math.Sqrt(dx*dx+dy*dy);
-	//
-	// cth0 = dx/h0;
-	// sth0 = dy/h0;
-	//
-	// RotMat=zeros(6,6);
-	//
-	// RotMat(1,1) =  cth0; RotMat(1,2) = -sth0;
-	// RotMat(2,1) =  sth0; RotMat(2,2) =  cth0;
-	// RotMat(3,3) =  1.0;
-	// RotMat(4,4) =  cth0; RotMat(4,5) = -sth0;
-	// RotMat(5,4) =  sth0; RotMat(5,5) =  cth0;
-	// RotMat(6,6) =  1.0;
-	//
-	//
-	// uxn=[0.0,0.0];
-	// uzn=[0.0,0.0];
-	// btn=[0.0,0.0];
-	//
-	// res = zeros(3,1);
-	// B=zeros(3,6);
-	// D=zeros(3,3);
-	//
-	// uxn(1) = soln(ndof*(IEN(e,3)-1)+1);
-	// uzn(1) = soln(ndof*(IEN(e,3)-1)+2);
-	// btn(1) = soln(ndof*(IEN(e,3)-1)+3);
-	//
-	// uxn(2) = soln(ndof*(IEN(e,4)-1)+1);
-	// uzn(2) = soln(ndof*(IEN(e,4)-1)+2);
-	// btn(2) = soln(ndof*(IEN(e,4)-1)+3);
-	//
-	// dummy = RotMat'*[uxn(1); uzn(1); btn(1); uxn(2); uzn(2); btn(2)];
-	// uxn(1) = dummy(1);
-	// uzn(1) = dummy(2);
-	// btn(1) = dummy(3);
-	// uxn(2) = dummy(4);
-	// uzn(2) = dummy(5);
-	// btn(2) = dummy(6);
-	//
-	//
-	// nGP = 1;
-	// [gpvec, gwvec] = get_Gauss_points(nGP);
-	//
-	// for gp = 1:nGP
-	//     [N,dN_dx,d2N_dx2,J,xcoord]=shape_functions_Lagrange_1D(IEN(e,3:end), XX, p, gpvec(gp));
-	//
-	//     ux = 0.0;uz =0.0; bt = 0.0;
-	//     dux = 0.0;duz = 0.0; dbt = 0.0;
-	//
-	//     for ii=1:nlocal
-	//         ux  = ux  + uxn(ii) * N(ii);
-	//         uz  = uz  + uzn(ii) * N(ii);
-	//         bt  = bt  + btn(ii) * N(ii);
-	//         dux = dux + uxn(ii) * dN_dx(ii);
-	//         duz = duz + uzn(ii) * dN_dx(ii);
-	//         dbt = dbt + btn(ii) * dN_dx(ii);
-	//     end
-	//
-	//     sbt = sin(bt);
-	//     cbt = cos(bt);
-	//
-	//     %compute average normal strain, shear strain and curvature
-	//
-	//     fact = (1.0+dux)*cbt - duz*sbt;
-	//
-	//     E = dux + 0.5*(dux*dux + duz*duz);
-	//     G = (1.0+dux)*sbt + duz*cbt;
-	//     K = dbt * fact;
-	//
-	//     % compute material response (elastic)
-	//
-	//     NF = EA * E; % normal force
-	//     SF = GA * G; % shear force
-	//     BM = EI * K; % bending moment
-	//
-	//     % multiply with volume element
-	//
-	//     dvol  = J*gwvec(gp);
-	//     fact1 = dvol * af;
-	//     NF    = NF * dvol;
-	//     SF    = SF * dvol;
-	//     BM    = BM * dvol;
-	//     EAdv  = EA * fact1;
-	//     GAdv  = GA * fact1;
-	//     EIdv  = EI * fact1;
-	//
-	//     B(1,1) = (1.0+dux) * dN_dx(1);
-	//     B(1,2) = duz * dN_dx(1);
-	//     B(1,3) = 0.0;
-	//
-	//     B(2,1) = sbt * dN_dx(1);
-	//     B(2,2) = cbt * dN_dx(1);
-	//     B(2,3) = fact * N(1);
-	//
-	//     B(3,1) = dbt*cbt * dN_dx(1);
-	//     B(3,2) = - dbt*sbt * dN_dx(1);
-	//     B(3,3) = fact * dN_dx(1) - G*dbt * N(1);
-	//
-	//     B(1,4) = (1.0+dux) * dN_dx(2);
-	//     B(1,5) = duz * dN_dx(2);
-	//     B(1,6) = 0.0;
-	//
-	//     B(2,4) = sbt * dN_dx(2);
-	//     B(2,5) = cbt * dN_dx(2);
-	//     B(2,6) = fact * N(2);
-	//
-	//     B(3,4) = dbt*cbt * dN_dx(2);
-	//     B(3,5) = - dbt*sbt * dN_dx(2);
-	//     B(3,6) = fact * dN_dx(2) - G*dbt * N(2);
-	//
-	//     D(1,1) = EAdv;
-	//     D(2,2) = GAdv;
-	//     D(3,3) = EIdv;
-	//
-	//     res(1) = NF;
-	//     res(2) = SF;
-	//     res(3) = BM;
-	//
-	//     Klocal = Klocal + ( B'*D*B );
-	//     Flocal = Flocal - ( B'*res );
-	//
-	//     fact1 = (+ SF * cbt - BM * dbt * sbt) * af;
-	//     fact2 = (- SF * sbt - BM * dbt * cbt) * af;
-	//
-	//     for ii=1:nlocal
-	//         TI   =  3*(ii-1)+1;
-	//         TIp1 =  TI+1;
-	//         TIp2 =  TI+2;
-	//
-	//         for jj=1:nlocal
-	//             TJ   = 3*(jj-1)+1;
-	//             TJp1 = TJ+1;
-	//             TJp2 = TJ+2;
-	//
-	//             Klocal(TI,TJ)     =  Klocal(TI,TJ)     + dN_dx(ii)*NF*dN_dx(jj) * af;
-	//             Klocal(TIp1,TJp1) =  Klocal(TIp1,TJp1) + dN_dx(ii)*NF*dN_dx(jj) * af;
-	//
-	//             fact3 =  dN_dx(ii)*BM*cbt*dN_dx(jj) * af;
-	//             fact4 = -dN_dx(ii)*BM*sbt*dN_dx(jj) * af;
-	//
-	//             Klocal(TI,TJp2)   = Klocal(TI,TJp2)    + (fact3 + dN_dx(ii)*fact1*N(jj) );
-	//             Klocal(TIp1,TJp2) = Klocal(TIp1,TJp2)  + (fact4 + dN_dx(ii)*fact2*N(jj) );
-	//             Klocal(TIp2,TJ)   = Klocal(TIp2,TJ)    + (fact3 + N(ii)*fact1*dN_dx(jj) );
-	//             Klocal(TIp2,TJp1) = Klocal(TIp2,TJp1)  + (fact4 + N(ii)*fact2*dN_dx(jj) );
-	//             Klocal(TIp2,TJp2) = Klocal(TIp2,TJp2)  + (N(ii)*(-SF*G-BM*dbt*fact)*N(jj) - dN_dx(ii)*BM*G*N(jj) - N(ii)*BM*G*dN_dx(jj)) * af;
-	//         end
-	//     end
-	// end
-	//
-	// h = XX(IEN(e,4)) - XX(IEN(e,3));
-	//
-	// Flocal(1) = Flocal(1) + 0.5*h*bf(1);
-	// Flocal(4) = Flocal(4) + 0.5*h*bf(1);
-	//
-	// Flocal(2) = Flocal(2) + 0.5*h*bf(2);
-	// Flocal(5) = Flocal(5) + 0.5*h*bf(2);
-	//
-	// Flocal = RotMat*Flocal;
-	// Klocal = RotMat*Klocal*RotMat';
-	//
+	var (
+		af = 1.0
+
+		p      = 1
+		nlocal = 2
+		ndof   = 3
+		nsize  = 6
+
+		rho   = elemData[2]
+		A     = elemData[3]
+		I     = elemData[4]
+		E     = elemData[5]
+		nu    = elemData[6]
+		kappa = elemData[7]
+
+		G  = E / 2.0 / (1.0 + nu)
+		EA = E * A
+		EI = E * I
+		GA = G * A * kappa
+	)
+	// 	 Klocal=zeros(nsize,nsize); // % Local stiffness matrix
+	// 	 Flocal=zeros(nsize,1);   //% Local load vector
+
+	var x0, y0 [2]float64
+	x0[1-1] = coords[elemConn[e][3-1]][1-1]
+	y0[1-1] = coords[elemConn[e][3-1]][2-1]
+	x0[2-1] = coords[elemConn[e][4-1]][1-1]
+	y0[2-1] = coords[elemConn[e][4-1]][2-1]
+
+	var (
+		dx = x0[2-1] - x0[1-1]
+		dy = y0[2-1] - y0[1-1]
+		h0 = math.Sqrt(dx*dx + dy*dy)
+
+		cth0 = dx / h0
+		sth0 = dy / h0
+	)
+	var RotMat [6][6]float64 // =zeros(6,6);
+
+	RotMat[1-1][1-1] = cth0
+	RotMat[1-1][2-1] = -sth0
+	RotMat[2-1][1-1] = sth0
+	RotMat[2-1][2-1] = cth0
+	RotMat[3-1][3-1] = 1.0
+	RotMat[4-1][4-1] = cth0
+	RotMat[4-1][5-1] = -sth0
+	RotMat[5-1][4-1] = sth0
+	RotMat[5-1][5-1] = cth0
+	RotMat[6-1][6-1] = 1.0
+
+	var (
+		uxn [2]float64 // [0.0,0.0];
+		uzn [2]float64 // [0.0,0.0];
+		btn [2]float64 // [0.0,0.0];
+
+		res [3]float64    // zeros(3,1);
+		B   [3][6]float64 // =zeros(3,6);
+		D   [3][3]float64 // =zeros(3,3);
+	)
+	uxn[1-1] = soln[ndof*(elemConn[e][3-1]-1)+1]
+	uzn[1-1] = soln[ndof*(elemConn[e][3-1]-1)+2]
+	btn[1-1] = soln[ndof*(elemConn[e][3-1]-1)+3]
+
+	uxn[2-1] = soln[ndof*(elemConn[e][4-1]-1)+1]
+	uzn[2-1] = soln[ndof*(elemConn[e][4-1]-1)+2]
+	btn[2-1] = soln[ndof*(elemConn[e][4-1]-1)+3]
+
+	{
+		var dummy [6]float64
+		vector := [6]float64{uxn[0], uzn[0], btn[0], uxn[1], uzn[1], btn[1]}
+		for c := 0; c < 6; c++ {
+			for r := 0; r < 6; r++ {
+				dummy[r] = RotMat[r][c] * vector[c]
+			}
+		}
+		// dummy = RotMat'*[uxn(1); uzn(1); btn(1); uxn(2); uzn(2); btn(2)];
+		uxn[1-1] = dummy[1-1]
+		uzn[1-1] = dummy[2-1]
+		btn[1-1] = dummy[3-1]
+		uxn[2-1] = dummy[4-1]
+		uzn[2-1] = dummy[5-1]
+		btn[2-1] = dummy[6-1]
+	}
+
+	nGP := 1
+	gpvec, gwvec := Get_Gauss_points(nGP)
+
+	for gp := 0; gp < nGP; gp++ { // 1:nGP
+		// [N,dN_dx,d2N_dx2,J,xcoord]=shape_functions_Lagrange_1D(
+		//		elemConn(e,3:end), coords, p, gpvec(gp));
+		N, dN_dx, d2N_dx2, J, xcoord := Shape_functions_Lagrange_1D(
+			elemConn[e][3:], coords, p, gpvec[gp])
+
+		var (
+			ux  = 0.0
+			uz  = 0.0
+			bt  = 0.0
+			dux = 0.0
+			duz = 0.0
+			dbt = 0.0
+		)
+
+		for ii := 0; ii < nlocal; ii++ { //ii=1:nlocal
+			ux = ux + uxn[ii]*N[ii]
+			uz = uz + uzn[ii]*N[ii]
+			bt = bt + btn[ii]*N[ii]
+			dux = dux + uxn[ii]*dN_dx[ii]
+			duz = duz + uzn[ii]*dN_dx[ii]
+			dbt = dbt + btn[ii]*dN_dx[ii]
+		} // end
+
+		var (
+			sbt = math.Sin(bt)
+			cbt = math.Cos(bt)
+
+			// %compute average normal strain, shear strain and curvature
+
+			fact = (1.0+dux)*cbt - duz*sbt
+
+			E = dux + 0.5*(dux*dux+duz*duz)
+			G = (1.0+dux)*sbt + duz*cbt
+			K = dbt * fact
+
+			//  % compute material response (elastic)
+
+			NF = EA * E // % normal force
+			SF = GA * G // % shear force
+			BM = EI * K // % bending moment
+
+			// % multiply with volume element
+
+			dvol  = J * gwvec[gp]
+			fact1 = dvol * af
+		)
+
+		NF = NF * dvol
+		SF = SF * dvol
+		BM = BM * dvol
+		var (
+			EAdv = EA * fact1
+			GAdv = GA * fact1
+			EIdv = EI * fact1
+		)
+
+		B[1-1][1-1] = (1.0 + dux) * dN_dx[1-1]
+		B[1-1][2-1] = duz * dN_dx[1-1]
+		B[1-1][3-1] = 0.0
+
+		B[2-1][1-1] = sbt * dN_dx[1-1]
+		B[2-1][2-1] = cbt * dN_dx[1-1]
+		B[2-1][3-1] = fact * N[1-1]
+
+		B[3-1][1-1] = dbt * cbt * dN_dx[1-1]
+		B[3-1][2-1] = -dbt * sbt * dN_dx[1-1]
+		B[3-1][3-1] = fact*dN_dx[1-1] - G*dbt*N[1-1]
+
+		B[1-1][4-1] = (1.0 + dux) * dN_dx[2-1]
+		B[1-1][5-1] = duz * dN_dx[2-1]
+		B[1-1][6-1] = 0.0
+
+		B[2-1][4-1] = sbt * dN_dx[2-1]
+		B[2-1][5-1] = cbt * dN_dx[2-1]
+		B[2-1][6-1] = fact * N[2-1]
+
+		B[3-1][4-1] = dbt * cbt * dN_dx[2-1]
+		B[3-1][5-1] = -dbt * sbt * dN_dx[2-1]
+		B[3-1][6-1] = fact*dN_dx[2-1] - G*dbt*N[2-1]
+
+		D[1-1][1-1] = EAdv
+		D[2-1][2-1] = GAdv
+		D[3-1][3-1] = EIdv
+
+		res[1-1] = NF
+		res[2-1] = SF
+		res[3-1] = BM
+
+		// TODO: Klocal = Klocal + ( B'*D*B );
+		// TODO: Flocal = Flocal - ( B'*res );
+
+		fact1 = (+SF*cbt - BM*dbt*sbt) * af
+		fact2 := (-SF*sbt - BM*dbt*cbt) * af
+
+		for ii := 0; ii < nlocal; ii++ { // ii=1:nlocal
+			TI := 3*(ii-1) + 1
+			TIp1 := TI + 1
+			TIp2 := TI + 2
+
+			for jj := 0; jj < nlocal; jj++ { // jj=1:nlocal
+				TJ := 3*(jj-1) + 1
+				TJp1 := TJ + 1
+				TJp2 := TJ + 2
+
+				Klocal[TI][TJ] = Klocal[TI][TJ] + dN_dx[ii]*NF*dN_dx[jj]*af
+				Klocal[TIp1][TJp1] = Klocal[TIp1][TJp1] + dN_dx[ii]*NF*dN_dx[jj]*af
+
+				fact3 := +dN_dx[ii] * BM * cbt * dN_dx[jj] * af
+				fact4 := -dN_dx[ii] * BM * sbt * dN_dx[jj] * af
+
+				Klocal[TI][TJp2] = Klocal[TI][TJp2] + (fact3 + dN_dx[ii]*fact1*N[jj])
+				Klocal[TIp1][TJp2] = Klocal[TIp1][TJp2] + (fact4 + dN_dx[ii]*fact2*N[jj])
+				Klocal[TIp2][TJ] = Klocal[TIp2][TJ] + (fact3 + N[ii]*fact1*dN_dx[jj])
+				Klocal[TIp2][TJp1] = Klocal[TIp2][TJp1] + (fact4 + N[ii]*fact2*dN_dx[jj])
+				Klocal[TIp2][TJp2] = Klocal[TIp2][TJp2] + (N[ii]*(-SF*G-BM*dbt*fact)*N[jj]-dN_dx[ii]*BM*G*N[jj]-N[ii]*BM*G*dN_dx[jj])*af
+			} // end
+		} // end
+	} //  end
+
+	h := coords[elemConn[e][4-1]] - coords[elemConn[e][3-1]]
+
+	Flocal[1-1] = Flocal[1-1] + 0.5*h*bf[1-1]
+	Flocal[4-1] = Flocal[4-1] + 0.5*h*bf[1-1]
+
+	Flocal[2-1] = Flocal[2-1] + 0.5*h*bf[2-1]
+	Flocal[5-1] = Flocal[5-1] + 0.5*h*bf[2-1]
+
+	Flocal = RotMat * Flocal
+	// TODO : Klocal = RotMat*Klocal*RotMat';
+
+	return
 }
 
 func Get_Gauss_points(nGP int) (gp, gw []float64) {
@@ -467,8 +540,17 @@ func get_global_matrix_vector() {
 	// end
 }
 
-func processfile() {
-	// function [ndim, ndof, nnode, nelem, coords, elemConn, elemData, LM, neq, assy4r, dof_force, Fext, maxloadSteps, loadincr, outputlist] = processfile(fname)
+func Processfile() (
+	ndim, ndof, nnode, nelem int, coords [][2]float64, elemConn [][4]int,
+	elemData []float64,
+	LM, neq int,
+	assy4r, dof_force, Fext []float64, maxloadSteps int, loadincr float64,
+	outputlist []int,
+) {
+	// function [ndim, ndof, nnode, nelem, coords, elemConn, elemData, LM, neq,\
+	// assy4r, dof_force, Fext, maxloadSteps, loadincr, outputlist] =          \
+	// processfile(fname)
+	//
 	// clc
 	// % coords: global coordinates of the nodes, x, y, and z
 	// % elemConn: element connectivities
@@ -484,22 +566,25 @@ func processfile() {
 	// line=fgets(fid);
 	// linestr = strsplit(line, ",");
 	// ndim = int32(str2num(linestr{1,2}))
+	ndim = 2
 	//
 	// % ndof
 	//
 	// line=fgets(fid);
 	// linestr = strsplit(line, ",");
 	// ndof = int32(str2num(linestr{1,2}))
+	ndof = 3
 	//
 	// % nodes
 	//
 	// line=fgets(fid);
 	// linestr = strsplit(line, ",");
 	// nnode = int32(str2num(linestr{1,2}))
+	nnode = 21
 	//
-	// nperelem = 2;
-	// nsize = nperelem*ndof;
-	// neq = nnode*ndof;
+	// nperelem := 2
+	// nsize := nperelem * ndof
+	neq = nnode * ndof
 	// %if(arclen)
 	// %  neq = neq+1;
 	// %end
@@ -516,6 +601,29 @@ func processfile() {
 	//       coords(i,3) = double(str2num(linestr{1,4}));
 	//     end
 	// end
+	coords = [][2]float64{
+		{0, 0},
+		{0, 12},
+		{0, 24},
+		{0, 36},
+		{0, 48},
+		{0, 60},
+		{0, 72},
+		{0, 84},
+		{0, 96},
+		{0, 108},
+		{0, 120},
+		{12, 120},
+		{24, 120},
+		{36, 120},
+		{48, 120},
+		{60, 120},
+		{72, 120},
+		{84, 120},
+		{96, 120},
+		{108, 120},
+		{120, 120},
+	}
 	//
 	//
 	// % element data
@@ -523,6 +631,7 @@ func processfile() {
 	// line=fgets(fid);
 	// linestr = strsplit(line, ",");
 	// nelemData = int32(str2num(linestr{1,2}))
+	// nelemData := 1
 	// elemData = zeros(nelemData, 10);
 	// for i=1:nelemData
 	//     line = fgets(fid);
@@ -531,12 +640,14 @@ func processfile() {
 	//       elemData(i,j) = double(str2num(linestr{1,j+1}));
 	//     end
 	// end
+	elemData = []float64{1, 1, 0.0, 6.0, 2.0, 720.0, 0.3, 1.0, 0.0, 0.0, 0.0}
 	//
 	// % elements
 	//
 	// line=fgets(fid);
 	// linestr = strsplit(line, ",");
 	// nelem = int32(str2num(linestr{1,2}))
+	nelem = 20
 	//
 	// elemConn = zeros(nelem, 4, "int32");
 	// for i=1:nelem
@@ -547,15 +658,43 @@ func processfile() {
 	//     elemConn(i,3) = int32(str2num(linestr{1,4}));
 	//     elemConn(i,4) = int32(str2num(linestr{1,5}));
 	// end
+	elemConn = [][4]int{
+		{1, 1, 1, 2},
+		{1, 1, 2, 3},
+		{1, 1, 3, 4},
+		{1, 1, 4, 5},
+		{1, 1, 5, 6},
+		{1, 1, 6, 7},
+		{1, 1, 7, 8},
+		{1, 1, 8, 9},
+		{1, 1, 9, 10},
+		{1, 1, 10, 11},
+		{1, 1, 11, 12},
+		{1, 1, 12, 13},
+		{1, 1, 13, 14},
+		{1, 1, 14, 15},
+		{1, 1, 15, 16},
+		{1, 1, 16, 17},
+		{1, 1, 17, 18},
+		{1, 1, 18, 19},
+		{1, 1, 19, 20},
+		{1, 1, 20, 21},
+	}
 	//
 	// % Dirichlet boundary conditions
 	//
 	// line=fgets(fid);
 	// linestr = strsplit(line, ",");
 	// nDBC    = int32(str2num(linestr{1,2}))
+
+	nDBC := 4
+
 	//
 	// %dbclist = zeros(nDBC, 3);
 	// dbcnodes = zeros(nDBC, 1, "int32");
+
+	dbcnodes := make([]int, nDBC)
+
 	// for i=1:nDBC
 	//     line = fgets(fid);
 	//     linestr = strsplit(line, ",");
@@ -564,6 +703,12 @@ func processfile() {
 	// %    dbclist(i,3) = double(str2num(linestr{1,3}));
 	//     dbcnodes(i) = (n1-1)*ndof+n2;
 	// end
+
+	dbcnodes[0] = (1-1)*ndof + 1
+	dbcnodes[1] = (1-1)*ndof + 2
+	dbcnodes[2] = (21-1)*ndof + 1
+	dbcnodes[3] = (21-1)*ndof + 2
+
 	//
 	// assy4r = setdiff([1:neq], dbcnodes)';
 	//
@@ -572,9 +717,13 @@ func processfile() {
 	// line=fgets(fid);
 	// linestr = strsplit(line, ",");
 	// nFBC    = int32(str2num(linestr{1,2}))
+
+	// nFBC := 1
+
 	// fbclist = zeros(nFBC, 3);
 	// dof_force = zeros(nFBC, 1, "int32");
 	// Fext = zeros(neq, 1);
+	Fext = make([]float64, neq)
 	// for i=1:nFBC
 	//     line = fgets(fid);
 	//     linestr = strsplit(line, ",");
@@ -584,13 +733,19 @@ func processfile() {
 	//     dof_force(i) = ind;
 	//     Fext(ind) = double(str2num(linestr{1,3}));
 	// end
+	Fext[(13-1)*ndof+2] = -1.0
 	//
 	// % for output
 	//
 	// line=fgets(fid);
 	// linestr = strsplit(line, ",");
 	// nOutput = int32(str2num(linestr{1,2}))
+	// nOutput := 2
 	// outputlist = zeros(nOutput, 1, "int32");
+	outputlist = []int{
+		(13-1)*ndof + 1,
+		(13-1)*ndof + 2,
+	}
 	// for i=1:nOutput
 	//     line = fgets(fid);
 	//     linestr = strsplit(line, ",");
@@ -605,14 +760,17 @@ func processfile() {
 	// line=fgets(fid);
 	// linestr = strsplit(line, ",");
 	// arclen  = (int32(linestr{1,2}) == 1);
+	// arclen := true
 	//
 	// line=fgets(fid)
 	// linestr = strsplit(line, ",");
 	// maxloadSteps = int32(str2num(linestr{1,1}));
+	maxloadSteps = 50
 	//
 	// line=fgets(fid)
 	// linestr = strsplit(line, ",");
 	// loadincr = double(str2num(linestr{1,1}));
+	loadincr = 0.5
 	//
 	// fclose(fid);
 	//
@@ -632,12 +790,13 @@ func processfile() {
 	//     end
 	//     count = count - 1;
 	// end
+	return
 }
 
-func Shape_functions_Lagrange_1D(NodeNums []int, XX [][]float64, p int, xi float64) (
+func Shape_functions_Lagrange_1D(NodeNums []int, coords [][]float64, p int, xi float64) (
 	N, dN_dx, d2N_dx2 []float64, J, x float64,
 ) {
-	// function [N,dN_dx,d2N_dx2,J,x]=shape_functions_Lagrange_1D(NodeNums, XX, p, xi)
+	// function [N,dN_dx,d2N_dx2,J,x]=shape_functions_Lagrange_1D(NodeNums, coords, p, xi)
 	// %%% Shape Function Routine for a 1D Lagrange polynomials
 	// nen = p+1;
 	nen := p + 1
@@ -734,9 +893,9 @@ func Shape_functions_Lagrange_1D(NodeNums []int, XX [][]float64, p int, xi float
 	Jy := 0.0
 	x = 0.0
 	for kk := 0; kk < nen; kk++ { //1:nen
-		Jx = Jx + dN_dxi[kk]*XX[NodeNums[kk]][0] //1]
-		Jy = Jy + dN_dxi[kk]*XX[NodeNums[kk]][1] // 2]
-		x = x + N[kk]*XX[NodeNums[kk]][0]        // TODO not clear?
+		Jx = Jx + dN_dxi[kk]*coords[NodeNums[kk]][0] //1]
+		Jy = Jy + dN_dxi[kk]*coords[NodeNums[kk]][1] // 2]
+		x = x + N[kk]*coords[NodeNums[kk]][0]        // TODO not clear?
 	} // end
 	J = math.Sqrt(Jx*Jx + Jy*Jy)
 
@@ -792,7 +951,9 @@ func Shape_functions_Lagrange_1D(NodeNums []int, XX [][]float64, p int, xi float
 // end
 // }
 
-func solve_arclength_split() {
+func solve_arclength_split(timeStep, neq, iter int,
+	Kglobal [][]float64, Rglobal [][]float64,
+	dof_force, Fext, assy4r, Du, Dl, ds, du1 float64) (converged bool, du []float64, dl, du1 float64) {
 	// function[converged, du, dl, du1] = solve_arclength_split(timeStep, neq, iter, Kglobal, Rglobal, dof_force, Fext, assy4r, Du, Dl, ds, du1)
 	//
 	//     psi = 1.0;
@@ -840,6 +1001,7 @@ func solve_arclength_split() {
 	//
 	//     du = -du2 + dl*du1;
 	// end
+	return
 }
 
 // TODO : NO NEED FUNCTION
@@ -1079,28 +1241,28 @@ func solve_arclength_split() {
 // }
 
 func truss_2D_model1() {
-	// function [Klocal, Flocal]=Truss_2D_model1(elmDat, IEN, e, XX, soln, bf)
+	// function [Klocal, Flocal]=Truss_2D_model1(elemData, elemConn, e, coords, soln, bf)
 	//
 	// ndof = 2;
 	//
-	// finite = (int32(elmDat(IEN(e,1), 1)) == 1) ;
-	// rho0 = elmDat(IEN(e,1),2);
-	// A0   = elmDat(IEN(e,1),3);
-	// E    = elmDat(IEN(e,1),4);
+	// finite = (int32(elemData(elemConn(e,1), 1)) == 1) ;
+	// rho0 = elemData(elemConn(e,1),2);
+	// A0   = elemData(elemConn(e,1),3);
+	// E    = elemData(elemConn(e,1),4);
 	//
 	// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	//
 	// disp  = zeros(4,1);
 	//
-	// X1 = XX(IEN(e,3),1);
-	// Y1 = XX(IEN(e,3),2);
-	// X2 = XX(IEN(e,4),1);
-	// Y2 = XX(IEN(e,4),2);
+	// X1 = coords(elemConn(e,3),1);
+	// Y1 = coords(elemConn(e,3),2);
+	// X2 = coords(elemConn(e,4),1);
+	// Y2 = coords(elemConn(e,4),2);
 	//
-	// disp(1) = soln(ndof*(IEN(e,3)-1)+1);
-	// disp(2) = soln(ndof*(IEN(e,3)-1)+2);
-	// disp(3) = soln(ndof*(IEN(e,4)-1)+1);
-	// disp(4) = soln(ndof*(IEN(e,4)-1)+2);
+	// disp(1) = soln(ndof*(elemConn(e,3)-1)+1);
+	// disp(2) = soln(ndof*(elemConn(e,3)-1)+2);
+	// disp(3) = soln(ndof*(elemConn(e,4)-1)+1);
+	// disp(4) = soln(ndof*(elemConn(e,4)-1)+2);
 	//
 	//
 	// % compute the orientation of the element
@@ -1147,29 +1309,29 @@ func truss_2D_model1() {
 }
 
 // func truss_2D_model2() {
-// function [Klocal, Flocal]=Truss_2D_model2(elmDat, IEN, e, XX, soln, bf)
+// function [Klocal, Flocal]=Truss_2D_model2(elemData, elemConn, e, coords, soln, bf)
 //
 // ndof = 2;
 //
-// finite = (int32(elmDat(IEN(e,1), 1)) == 1) ;
-// rho0 = elmDat(IEN(e,1),2);
-// A0   = elmDat(IEN(e,1),3);
-// E    = elmDat(IEN(e,1),4);
+// finite = (int32(elemData(elemConn(e,1), 1)) == 1) ;
+// rho0 = elemData(elemConn(e,1),2);
+// A0   = elemData(elemConn(e,1),3);
+// E    = elemData(elemConn(e,1),4);
 //
 //
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //
 // disp  = zeros(4,1);
 //
-// X1 = XX(IEN(e,3),1);
-// Y1 = XX(IEN(e,3),2);
-// X2 = XX(IEN(e,4),1);
-// Y2 = XX(IEN(e,4),2);
+// X1 = coords(elemConn(e,3),1);
+// Y1 = coords(elemConn(e,3),2);
+// X2 = coords(elemConn(e,4),1);
+// Y2 = coords(elemConn(e,4),2);
 //
-// disp(1) = soln(ndof*(IEN(e,3)-1)+1);
-// disp(2) = soln(ndof*(IEN(e,3)-1)+2);
-// disp(3) = soln(ndof*(IEN(e,4)-1)+1);
-// disp(4) = soln(ndof*(IEN(e,4)-1)+2);
+// disp(1) = soln(ndof*(elemConn(e,3)-1)+1);
+// disp(2) = soln(ndof*(elemConn(e,3)-1)+2);
+// disp(3) = soln(ndof*(elemConn(e,4)-1)+1);
+// disp(4) = soln(ndof*(elemConn(e,4)-1)+2);
 //
 // % compute the orientation of the element
 //
@@ -1215,14 +1377,14 @@ func truss_2D_model1() {
 // }
 
 // func truss_3D_model2() {
-// function [Klocal, Flocal]=Truss_3D_model2(elmDat, IEN, e, XX, soln, bf)
+// function [Klocal, Flocal]=Truss_3D_model2(elemData, elemConn, e, coords, soln, bf)
 //
 // ndof = 3;
 //
-// finite = (int32(elmDat(1)) == 1) ;
-// rho0 = elmDat(2);
-// A0   = elmDat(3);
-// E    = elmDat(4);
+// finite = (int32(elemData(1)) == 1) ;
+// rho0 = elemData(2);
+// A0   = elemData(3);
+// E    = elemData(4);
 //
 // %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 //
@@ -1230,19 +1392,19 @@ func truss_2D_model1() {
 //
 // % rotate nodal displacements and compute nodal positions on element axis
 //
-// X1 = XX(IEN(e,3),1);
-// Y1 = XX(IEN(e,3),2);
-// Z1 = XX(IEN(e,3),3);
-// X2 = XX(IEN(e,4),1);
-// Y2 = XX(IEN(e,4),2);
-// Z2 = XX(IEN(e,4),3);
+// X1 = coords(elemConn(e,3),1);
+// Y1 = coords(elemConn(e,3),2);
+// Z1 = coords(elemConn(e,3),3);
+// X2 = coords(elemConn(e,4),1);
+// Y2 = coords(elemConn(e,4),2);
+// Z2 = coords(elemConn(e,4),3);
 //
-// disp(1) = soln(ndof*(IEN(e,3)-1)+1);
-// disp(2) = soln(ndof*(IEN(e,3)-1)+2);
-// disp(3) = soln(ndof*(IEN(e,3)-1)+3);
-// disp(4) = soln(ndof*(IEN(e,4)-1)+1);
-// disp(5) = soln(ndof*(IEN(e,4)-1)+2);
-// disp(6) = soln(ndof*(IEN(e,4)-1)+3);
+// disp(1) = soln(ndof*(elemConn(e,3)-1)+1);
+// disp(2) = soln(ndof*(elemConn(e,3)-1)+2);
+// disp(3) = soln(ndof*(elemConn(e,3)-1)+3);
+// disp(4) = soln(ndof*(elemConn(e,4)-1)+1);
+// disp(5) = soln(ndof*(elemConn(e,4)-1)+2);
+// disp(6) = soln(ndof*(elemConn(e,4)-1)+3);
 //
 // % compute the orientation of the element
 //
