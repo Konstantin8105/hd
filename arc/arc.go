@@ -110,9 +110,9 @@ func main() {
 			//   else % Beam element
 			for e := 0; e < nelem; e++ {
 				// for e = 1:nelem
-				Klocal, Flocal := GeomExactBeam_2D(elemData, elemConn, e, coords, disp, bf)
-				Kglobal = Assembly_Matrix(Kglobal, Klocal, LM, e)
-				Rglobal = Assembly_Vector(Rglobal, Flocal, LM, e)
+				// TODO : Klocal, Flocal := GeomExactBeam_2D(elemData, elemConn, e, coords, disp, bf)
+				// TODO : Kglobal = Assembly_Matrix(Kglobal, Klocal, LM, e)
+				// TODO : Rglobal = Assembly_Vector(Rglobal, Flocal, LM, e)
 				// end
 			}
 			//   end
@@ -793,7 +793,7 @@ func Processfile() (
 	return
 }
 
-func Shape_functions_Lagrange_1D(NodeNums []int, coords [][]float64, p int, xi float64) (
+func Shape_functions_Lagrange_1D(NodeNums []int, coords [][2]float64, p int, xi float64) (
 	N, dN_dx, d2N_dx2 []float64, J, x float64,
 ) {
 	// function [N,dN_dx,d2N_dx2,J,x]=shape_functions_Lagrange_1D(NodeNums, coords, p, xi)
@@ -951,58 +951,69 @@ func Shape_functions_Lagrange_1D(NodeNums []int, coords [][]float64, p int, xi f
 // end
 // }
 
+/*
 func solve_arclength_split(timeStep, neq, iter int,
-	Kglobal [][]float64, Rglobal [][]float64,
-	dof_force, Fext, assy4r, Du, Dl, ds, du1 float64) (converged bool, du []float64, dl, du1 float64) {
+	Kglobal [][]float64, Rglobal []float64,
+	dof_force, Fext, assy4r []float64, Du []float64, Dl float64, ds, du1 []float64) (
+	converged bool, du float64, dl, du1 float64,
+) {
 	// function[converged, du, dl, du1] = solve_arclength_split(timeStep, neq, iter, Kglobal, Rglobal, dof_force, Fext, assy4r, Du, Dl, ds, du1)
 	//
-	//     psi = 1.0;
-	//
-	//     FextReduced = Fext(assy4r);
-	//     FtF = Fext'*Fext;
-	//     if(timeStep > 1)
-	//         A = Du'*Du + psi*Dl*Dl*FtF - ds*ds;
-	//         a = 2.0*Du(assy4r)';
-	//         b = 2.0*psi*Dl*FtF;
-	//     else
-	//         A = 0.0;
-	//         a = 0.0*Du(assy4r)';
-	//         b = 1.0;
-	//     end
-	//
+	psi := 1.0
+
+	FextReduced := Fext[assy4r]
+
+	// FtF = Fext'*Fext;
+	var FtF float64
+	for i := range Fext {
+		FtF += Fext[i]
+	}
+
+	var A, a, b float64
+	if timeStep > 1 {
+		//TODO: A = Du'*Du + psi*Dl*Dl*FtF - ds*ds;
+		// TODO: a = 2.0*Du(assy4r)';
+		b = 2.0 * psi * Dl * FtF
+	} else {
+		A = 0.0
+		//TODO: a = 0.0*Du(assy4r)';
+		b = 1.0
+	} // end
+
 	//     %%% Applying Boundary Conditions
-	//
-	//     R = Rglobal(assy4r);
-	//
-	//     rNorm = norm(R,2);
-	//     rNorm = math.Sqrt(rNorm*rNorm + A*A);
-	//
-	//     fprintf(' rNorm : %5d ...  %12.6E \n', iter, rNorm);
-	//     du = R*0.0;
-	//     dl = 0.0;
-	//     converged = false;
-	//
-	//     if(rNorm < 1.0e-6)
-	//        converged = true;
-	//        return;
-	//     end
-	//
-	//     K1 = Kglobal(assy4r,assy4r);
-	//     [L, U, P] = lu(sparse(K1));
-	//
+
+	R := Rglobal[assy4r]
+
+	rNorm := norm(R, 2)
+	rNorm = math.Sqrt(rNorm*rNorm + A*A)
+
+	fmt.Printf(" rNorm : %5d ...  %12.6E\n", iter, rNorm)
+	du = R * 0.0
+	dl = 0.0
+	converged = false
+
+	if rNorm < 1.0e-6 {
+		converged = true
+		return
+	} // end
+
+	// TODO: K1 := Kglobal[assy4r][assy4r]
+	// TODO : L, U, P := lu(sparse(K1))
+
 	//     %% solve the matrix system
-	//     duu = L\(P*FextReduced);
-	//     du1 = U\duu;
-	//     duu = L\(P*R);
-	//     du2 = U\duu;
-	//     du2 = -du2; % this is because the Residual is added to the RHS
-	//
-	//     dl = (a*du2 - A)/(b+a*du1);
-	//
-	//     du = -du2 + dl*du1;
-	// end
+	// TODO: duu = L\(P*FextReduced);
+	// TODO: du1 = U\duu;
+	// TODO: duu = L\(P*R);
+	// TODO: du2 = U\duu;
+	// TODO: du2 = -du2; // % this is because the Residual is added to the RHS
+
+	dl = (a*du2 - A) / (b + a*du1)
+
+	du = -du2 + dl*du1
+	//  end
 	return
 }
+*/
 
 // TODO : NO NEED FUNCTION
 // func timeSteppingParameters_Solid() {
