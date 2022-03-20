@@ -272,8 +272,8 @@ func assembly_Vector() {
 	// end
 }
 
-func GeomExactBeam_2D(elemData []float64, elemConn [][4]int, e int, coords [][2]float64, soln []float64, bf [2]float64) (Klocal [6][6]float64, Flocal [6]float64) {
-	// function [Klocal, Flocal]=GeomExactBeam_2D(elemData, elemConn, e, coords, soln, bf)
+func GeomExactBeam_2D(elemData []float64, elemConn [][4]int, e int, coords [][2]float64, disp []float64, bf [2]float64) (Klocal [6][6]float64, Flocal [6]float64) {
+	// function [Klocal, Flocal]=GeomExactBeam_2D(elemData, elemConn, e, coords, disp, bf)
 	// %%% Shape Function Routine for a 1D Lagrange polynomials
 	var (
 		af = 1.0
@@ -334,13 +334,13 @@ func GeomExactBeam_2D(elemData []float64, elemConn [][4]int, e int, coords [][2]
 		B   [3][6]float64 // =zeros(3,6);
 		D   [3][3]float64 // =zeros(3,3);
 	)
-	uxn[1-1] = soln[ndof*(elemConn[e][3-1]-1)+1]
-	uzn[1-1] = soln[ndof*(elemConn[e][3-1]-1)+2]
-	btn[1-1] = soln[ndof*(elemConn[e][3-1]-1)+3]
+	uxn[1-1] = disp[ndof*(elemConn[e][3-1]-1)+1]
+	uzn[1-1] = disp[ndof*(elemConn[e][3-1]-1)+2]
+	btn[1-1] = disp[ndof*(elemConn[e][3-1]-1)+3]
 
-	uxn[2-1] = soln[ndof*(elemConn[e][4-1]-1)+1]
-	uzn[2-1] = soln[ndof*(elemConn[e][4-1]-1)+2]
-	btn[2-1] = soln[ndof*(elemConn[e][4-1]-1)+3]
+	uxn[2-1] = disp[ndof*(elemConn[e][4-1]-1)+1]
+	uzn[2-1] = disp[ndof*(elemConn[e][4-1]-1)+2]
+	btn[2-1] = disp[ndof*(elemConn[e][4-1]-1)+3]
 
 	{
 		var dummy [6]float64
@@ -1252,7 +1252,7 @@ func solve_arclength_split(timeStep, neq, iter int,
 // }
 
 func truss_2D_model1() {
-	// function [Klocal, Flocal]=Truss_2D_model1(elemData, elemConn, e, coords, soln, bf)
+	// function [Klocal, Flocal]=Truss_2D_model1(elemData, elemConn, e, coords, disp, bf)
 	//
 	// ndof = 2;
 	//
@@ -1270,10 +1270,10 @@ func truss_2D_model1() {
 	// X2 = coords(elemConn(e,4),1);
 	// Y2 = coords(elemConn(e,4),2);
 	//
-	// disp(1) = soln(ndof*(elemConn(e,3)-1)+1);
-	// disp(2) = soln(ndof*(elemConn(e,3)-1)+2);
-	// disp(3) = soln(ndof*(elemConn(e,4)-1)+1);
-	// disp(4) = soln(ndof*(elemConn(e,4)-1)+2);
+	// disp(1) = disp(ndof*(elemConn(e,3)-1)+1);
+	// disp(2) = disp(ndof*(elemConn(e,3)-1)+2);
+	// disp(3) = disp(ndof*(elemConn(e,4)-1)+1);
+	// disp(4) = disp(ndof*(elemConn(e,4)-1)+2);
 	//
 	//
 	// % compute the orientation of the element
@@ -1320,7 +1320,7 @@ func truss_2D_model1() {
 }
 
 // func truss_2D_model2() {
-// function [Klocal, Flocal]=Truss_2D_model2(elemData, elemConn, e, coords, soln, bf)
+// function [Klocal, Flocal]=Truss_2D_model2(elemData, elemConn, e, coords, disp, bf)
 //
 // ndof = 2;
 //
@@ -1339,10 +1339,10 @@ func truss_2D_model1() {
 // X2 = coords(elemConn(e,4),1);
 // Y2 = coords(elemConn(e,4),2);
 //
-// disp(1) = soln(ndof*(elemConn(e,3)-1)+1);
-// disp(2) = soln(ndof*(elemConn(e,3)-1)+2);
-// disp(3) = soln(ndof*(elemConn(e,4)-1)+1);
-// disp(4) = soln(ndof*(elemConn(e,4)-1)+2);
+// disp(1) = disp(ndof*(elemConn(e,3)-1)+1);
+// disp(2) = disp(ndof*(elemConn(e,3)-1)+2);
+// disp(3) = disp(ndof*(elemConn(e,4)-1)+1);
+// disp(4) = disp(ndof*(elemConn(e,4)-1)+2);
 //
 // % compute the orientation of the element
 //
@@ -1388,7 +1388,7 @@ func truss_2D_model1() {
 // }
 
 // func truss_3D_model2() {
-// function [Klocal, Flocal]=Truss_3D_model2(elemData, elemConn, e, coords, soln, bf)
+// function [Klocal, Flocal]=Truss_3D_model2(elemData, elemConn, e, coords, disp, bf)
 //
 // ndof = 3;
 //
@@ -1410,12 +1410,12 @@ func truss_2D_model1() {
 // Y2 = coords(elemConn(e,4),2);
 // Z2 = coords(elemConn(e,4),3);
 //
-// disp(1) = soln(ndof*(elemConn(e,3)-1)+1);
-// disp(2) = soln(ndof*(elemConn(e,3)-1)+2);
-// disp(3) = soln(ndof*(elemConn(e,3)-1)+3);
-// disp(4) = soln(ndof*(elemConn(e,4)-1)+1);
-// disp(5) = soln(ndof*(elemConn(e,4)-1)+2);
-// disp(6) = soln(ndof*(elemConn(e,4)-1)+3);
+// disp(1) = disp(ndof*(elemConn(e,3)-1)+1);
+// disp(2) = disp(ndof*(elemConn(e,3)-1)+2);
+// disp(3) = disp(ndof*(elemConn(e,3)-1)+3);
+// disp(4) = disp(ndof*(elemConn(e,4)-1)+1);
+// disp(5) = disp(ndof*(elemConn(e,4)-1)+2);
+// disp(6) = disp(ndof*(elemConn(e,4)-1)+3);
 //
 // % compute the orientation of the element
 //
