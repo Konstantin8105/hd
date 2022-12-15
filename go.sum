@@ -2,17 +2,13 @@ github.com/Konstantin8105/binaryexpr v0.1.0 h1:2+mmmCRpZ6BDHyaLRAePjGiVp/Hgt7T7z
 github.com/Konstantin8105/binaryexpr v0.1.0/go.mod h1:prPPFcv/zGCwhx78QW299JwMKP4xSkldgOwhZNr99GQ=
 github.com/Konstantin8105/cs v0.0.0-20190517091010-c069cc1cee1b h1:IZkvBy8TJTxpPHjOW1R5KqIgVF2lVk8isx9iQBHnOnw=
 github.com/Konstantin8105/cs v0.0.0-20190517091010-c069cc1cee1b/go.mod h1:NquwK4RWQZiMO4cVCacCuMklZ+bPxxHSR8h8Qc51EPk=
-github.com/Konstantin8105/errors v0.0.0-20190517083224-0667bfd7a9ac h1:syUV8/Mgzpj/lYevIbCnoIUawY6EoxTm+D07nPzZdr4=
 github.com/Konstantin8105/errors v0.0.0-20190517083224-0667bfd7a9ac/go.mod h1:7wvBaOU91dxvleBlg9MPy3B1DFY/JKnWeLTzPQKkRwE=
 github.com/Konstantin8105/errors v0.1.0 h1:YlF98T37IPvBGzxbj6AhXrY4VdoFfW60KEibUOtOpkg=
 github.com/Konstantin8105/errors v0.1.0/go.mod h1:cKK/HtcfxJFe1RvnGzhWl8jcZpnTqZjKwvMBUrLsis4=
 github.com/Konstantin8105/pow v0.1.0 h1:1FBuKD4UEXKRsP0snDUGqbok5LcwYPUbq5ClVOW++cE=
 github.com/Konstantin8105/pow v0.1.0/go.mod h1:4Xe+OUZ7jwe74BFzgLepZw57cSFWba1/o6gTk53RBdI=
-github.com/Konstantin8105/sm v0.0.0-20210506211022-8f702dda0d1d h1:F3cKt8VuG0dezbn7ibaaNTXJwfZNuxO7wvUauSIrUJw=
-github.com/Konstantin8105/sm v0.0.0-20210506211022-8f702dda0d1d/go.mod h1:vJkLicVpARgQQHhhSDDY4P7iDNabo3DpOJcCW3UfO14=
 github.com/Konstantin8105/sparse v0.0.0-20191107120105-a9e1047966f7 h1:vQfiilMw0Yq24tfULCJWYA+MdBhcOKLeJUXx/T+RzQM=
 github.com/Konstantin8105/sparse v0.0.0-20191107120105-a9e1047966f7/go.mod h1:gJJA3pvQ4Y0lkpui6Ev5bwKzwGPECm/VET6GoOk61Qc=
-github.com/Konstantin8105/tree v0.0.0-20190515202740-8a8e3df34a3b h1:FjXnLahgYDqBm8FeELONQ6+AoL/VYUQJOcexWqeAPM8=
 github.com/Konstantin8105/tree v0.0.0-20190515202740-8a8e3df34a3b/go.mod h1:iuUpRQi7E+GDKbY/a5HBliYk4j+cW1Nmv1hXoCSwuVU=
 github.com/Konstantin8105/tree v0.1.0 h1:4zHm0vfnQCNlXqv4I00R5LoXz8HEeWk7BwvNgjnl6Sg=
 github.com/Konstantin8105/tree v0.1.0/go.mod h1:/KrCn6rMgf1uoXUY2HjVvML1LeLUULD1BDiHWJhJwII=
@@ -30,7 +26,6 @@ golang.org/x/image v0.0.0-20180708004352-c73c2afc3b81/go.mod h1:ux5Hcp/YLpHSI86h
 golang.org/x/tools v0.0.0-20180525024113-a5b4c53f6e8b/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 golang.org/x/tools v0.0.0-20190206041539-40960b6deb8e/go.mod h1:n7NCudcB/nEzxVGmLbDWY5pfWTLqBcC2KZ6jyYvM4mQ=
 gonum.org/v1/gonum v0.0.0-20180816165407-929014505bf4/go.mod h1:Y+Yx5eoAFn32cQvJDxZx5Dpnq+c3wtXuadVZAcxbbBo=
-gonum.org/v1/gonum v0.0.0-20190923210107-40fa6a493b3d h1:76YcjS4MnGnP2WCvowHdydyWXEXQ/EsZkHjTUpB2ht8=
 gonum.org/v1/gonum v0.0.0-20190923210107-40fa6a493b3d/go.mod h1:9mxDZsDKxgMAuccQkewq682L+0eCu4dCN2yonUJTCLU=
 gonum.org/v1/gonum v0.8.1 h1:wGtP3yGpc5mCLOLeTeBdjeui9oZSz5De0eOjMLC/QuQ=
 gonum.org/v1/gonum v0.8.1/go.mod h1:oe/vMfY3deqTw+1EZJhuvEW2iwGF1bW9wwu7XCu0+v0=
