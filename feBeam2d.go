@@ -18,7 +18,7 @@ func (m Model) distance(st, en int) (res float64) {
 		m.Points[st][1]-m.Points[en][1])
 }
 
-// matrix of stiffiner for beam 2d
+// matrix of stiffener for beam 2d
 func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 	data := make([]float64, 36)
 	kr := mat.NewDense(6, 6, data)
@@ -69,7 +69,7 @@ func (m Model) getStiffBeam2d(pos int) *mat.Dense {
 		// [ 0   , 0   ]
 		// [ 0   , KS  ]
 		//
-		// where KAA is stiffiner coefficient with free DoF
+		// where KAA is stiffener coefficient with free DoF
 		//
 		// KS = [ KBB ] - [ KBA ] * [ KAA ]^(-1) * [ KAB ]
 		dataKBB := make([]float64, 5*5)
@@ -171,7 +171,7 @@ func (m Model) getCoordTransStiffBeam2d(pos int) *mat.Dense {
 	return tr
 }
 
-// matrix of geometric stiffner for beam 2d
+// matrix of geometric stiffener for beam 2d
 func (m Model) getGeometricBeam2d(pos int, lc *LoadCase) *mat.Dense {
 	data := make([]float64, 36)
 	kr := mat.NewDense(6, 6, data)

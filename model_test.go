@@ -99,7 +99,7 @@ func TestModelFail(t *testing.T) {
 				{}, // Modal mass is empty
 			},
 		},
-		// error of inpossible solving - all points are free. No fix supports
+		// error of impossible solving - all points are free. No fix supports
 		{
 			m: hd.Model{
 				Points: [][2]float64{

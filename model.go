@@ -138,7 +138,7 @@ func (lc LoadCase) String() (out string) {
 			ln.N, ln.Forces[0], ln.Forces[1], ln.Forces[2])
 	}
 	if len(lc.PointDisplacementGlobal) > 0 {
-		out += fmt.Sprintf("Point displacament in global system coordinate:\n")
+		out += fmt.Sprintf("Point displacement in global system coordinate:\n")
 		out += fmt.Sprintf("%5s %15s %15s %15s\n", "Point", "DX, m", "DY, m", "Angle, rad.")
 		for i := 0; i < len(lc.PointDisplacementGlobal); i++ {
 			out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
@@ -259,7 +259,7 @@ type ModalResult struct {
 	// Natural frequency
 	Hz float64
 
-	// Modal displacament in global system coordinate
+	// Modal displacement in global system coordinate
 	//
 	// first index is point index
 	//
@@ -314,9 +314,9 @@ type LoadNode struct {
 	Forces [3]float64
 }
 
-// getK return stiffiner matrix, LU decomposition, ignore list
+// getK return stiffener matrix, LU decomposition, ignore list
 func getK(m *Model) (k *sparse.Matrix, lu sparse.LU, ignore []int, err error) {
-	// assembly matrix of stiffiner
+	// assembly matrix of stiffener
 	k, ignore, err = m.assemblyK(m.getStiffBeam2d)
 	if err != nil {
 		return
@@ -334,7 +334,7 @@ func getK(m *Model) (k *sparse.Matrix, lu sparse.LU, ignore []int, err error) {
 
 // prepare input Model
 func prepare(in io.Writer, m *Model) (out io.Writer, err error) {
-	// by default output in standart stdio
+	// by default output in standard stdio
 	out = in
 	if out == nil {
 		out = os.Stdout
@@ -398,15 +398,15 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 		}
 	}
 
-	// calculate node displacament
+	// calculate node displacement
 	dof := 3 * len(m.Points)
 	d := make([]float64, dof)
 
-	// templorary data for displacement in global system coordinate
+	// temporary data for displacement in global system coordinate
 	data := make([]float64, 6)
 	Zo := mat.NewDense(6, 1, data)
 
-	// generate stiffiner matrix and ignore list
+	// generate stiffener matrix and ignore list
 	k, lu, ignore, err := getK(m)
 	if err != nil {
 		return fmt.Errorf("Assembly node load: %v", err)
@@ -490,7 +490,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 
 		// TODO : split to specific function
 		if lc.AmountLinearBuckling > 0 {
-			// assembly matrix of stiffiner
+			// assembly matrix of stiffener
 			g, _, err := m.assemblyK(func(pos int) *mat.Dense {
 				return m.getGeometricBeam2d(pos, lc)
 			})
@@ -501,7 +501,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 			// memory initialization
 			dof := 3 * len(m.Points)
 
-			// templorary data for mass preparing
+			// temporary data for mass preparing
 			MS := make([]float64, dof)
 
 			dataM := make([]float64, dof*dof)
@@ -574,7 +574,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 				// store the result
 				var lbr BucklingResult
 				if val := math.Abs(real(v[i])); val != 0.0 {
-					// use only possitive value
+					// use only positive value
 					lbr.Factor = 1. / val
 				} else {
 					// ignore that value
@@ -754,7 +754,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		}
 	}
 
-	// get LU decomposition of stiffiner matrix
+	// get LU decomposition of stiffener matrix
 	_, lu, _, err := getK(m)
 	if err != nil {
 		return fmt.Errorf("Assembly node load: %v", err)
@@ -766,7 +766,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	dataH := make([]float64, dof*dof)
 	h := mat.NewDense(dof, dof, dataH)
 
-	// templorary data for mass preparing
+	// temporary data for mass preparing
 	mass := make([]float64, dof)
 
 	for col := 0; col < dof; col++ {
@@ -788,7 +788,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 			}
 		}
 
-		// no need to calcualate with empty mass
+		// no need to calculate with empty mass
 		if isZero {
 			continue
 		}
@@ -804,7 +804,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		}
 	}
 
-	// eigen calcualation
+	// eigen calculation
 	var e mat.Eigen
 	if ok := e.Factorize(h, mat.EigenBoth); !ok {
 		return fmt.Errorf("Eigen factorization is not ok")
@@ -826,7 +826,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 		var mr ModalResult
 
 		if val := math.Abs(real(v[i])); val != 0.0 {
-			// use only possitive value
+			// use only positive value
 			mr.Hz = 1. / (math.Sqrt(val) * 2.0 * math.Pi)
 		} else {
 			// ignore that value

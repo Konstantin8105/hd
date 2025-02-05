@@ -48,7 +48,7 @@ func (m *Model) graphCheck() (err error) {
 	if len(m.Beams) == 0 {
 		return
 	}
-	// all pointrs mark are false
+	// all points mark are false
 	mark := make([]bool, len(m.Points))
 	beamMark := make([]bool, len(m.Beams))
 
@@ -109,7 +109,7 @@ func (m *Model) graphCheck() (err error) {
 }
 
 // ErrorAmountModel error if calculation model is not single.
-// Calculate calculation models separetaly.
+// Calculate calculation models separately.
 var ErrorAmountModel = goerrors.New("Model isn`t single calculation model")
 
 // ErrorLoad error in load data
