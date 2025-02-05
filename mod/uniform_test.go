@@ -84,9 +84,9 @@ func TestLoadUniform(t *testing.T) {
 								{false, true, false},
 							},
 						}
-						lcs := []hd.LoadCase{
-							{LoadNodes: []hd.LoadNode{{N: 1, Forces: [3]float64{100.0, 0.0, 0.0}}}},
-						}
+						// lcs := []hd.LoadCase{
+						// 	{LoadNodes: []hd.LoadNode{{N: 1, Forces: [3]float64{100.0, 0.0, 0.0}}}},
+						// }
 
 						if mirror {
 							m.Points[0][0] = 2.0
@@ -101,7 +101,7 @@ func TestLoadUniform(t *testing.T) {
 						}
 
 						// reset and allocate memory
-						lcs = make([]hd.LoadCase, 1)
+						lcs := make([]hd.LoadCase, 1)
 						// loads
 						ux := -10.0
 						uy := -25.0

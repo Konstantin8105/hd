@@ -81,7 +81,7 @@ func TestSplit(t *testing.T) {
 					h := mcsLocal[0].Result[0].Hz
 					diff := math.Abs((hz - h) / h)
 					if diff > eps {
-						t.Logf("Narural frequency: %15.5e != %15.5e", hz, h)
+						t.Logf("Natural frequency: %15.5e != %15.5e", hz, h)
 						t.Errorf("Diff in natural frequency is not ok : %15.5e", diff)
 					}
 				})
