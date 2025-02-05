@@ -10,10 +10,10 @@ import (
 	"runtime/debug"
 	"testing"
 
+	"github.com/Konstantin8105/compare"
 	"github.com/Konstantin8105/cs"
 	"github.com/Konstantin8105/hd"
 	"github.com/Konstantin8105/hd/example"
-	"github.com/pmezard/go-difflib/difflib"
 )
 
 func TestWrongLoad(t *testing.T) {
@@ -506,8 +506,7 @@ func TestRotateBeamModal(t *testing.T) {
 	}
 }
 
-func Example() {
-
+func Test(t *testing.T) {
 	m := hd.Model{
 		Points: [][2]float64{
 			{0.0, 0.0},
@@ -545,37 +544,10 @@ func Example() {
 			ModalMasses: []hd.ModalMass{{N: 1, Mass: 10000}},
 		},
 	}
-
 	var b bytes.Buffer
 	if err := hd.Run(&b, &m, lcs, mcs); err != nil {
 		fmt.Fprintf(os.Stdout, "Cannot calculate : %v", err)
 		return
 	}
-
-	expect, err := ioutil.ReadFile("./example/testdata/model.String")
-	if err != nil {
-		panic(fmt.Errorf("Cannot read file : %v", err))
-	}
-
-	if bytes.Equal(expect, b.Bytes()) {
-		fmt.Fprintf(os.Stdout, "same")
-	} else {
-		fmt.Fprintln(os.Stdout, b.String())
-
-		// show a diff between files
-		diff := difflib.UnifiedDiff{
-			A:        difflib.SplitLines(string(expect)),
-			B:        difflib.SplitLines(string(b.Bytes())),
-			FromFile: "Original",
-			ToFile:   "Current",
-			Context:  30000,
-		}
-		text, _ := difflib.GetUnifiedDiffString(diff)
-		fmt.Fprintf(os.Stdout, text)
-
-		fmt.Fprintf(os.Stdout, "not same")
-	}
-
-	// Output:
-	// same
+	compare.Test(t, "./example/testdata/model.String", b.Bytes())
 }
