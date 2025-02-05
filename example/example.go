@@ -11,7 +11,6 @@ import (
 //	||                   🡱
 //	||==================== 🡲
 //	||
-//
 func ConsoleBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	m = hd.Model{
 		Points: [][2]float64{
@@ -54,7 +53,6 @@ func ConsoleBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 //	||
 //	||====================  ⟽
 //	||
-//
 func BucklingBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	m = hd.Model{
 		Points: [][2]float64{
@@ -94,7 +92,6 @@ func BucklingBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 //
 //	            🡱🡲
 //	0===========.============0
-//
 func GBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	m = hd.Model{
 		Points: [][2]float64{
@@ -138,7 +135,6 @@ func GBeam() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 //	|/ | \
 //	0--0--0
 //	-  -  -
-//
 func Truss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 	m = hd.Model{
 		Points: [][2]float64{
@@ -183,7 +179,7 @@ func Truss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 		},
 	}
 	lc = []hd.LoadCase{
-		hd.LoadCase{
+		{
 			LoadNodes: []hd.LoadNode{
 				{
 					N:      1,
@@ -196,7 +192,7 @@ func Truss() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 		},
 	}
 	mc = []hd.ModalCase{
-		hd.ModalCase{
+		{
 			ModalMasses: []hd.ModalMass{
 				{
 					N:    1,
@@ -236,13 +232,13 @@ func TrussWithBuckling() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 		},
 	}
 	lc = []hd.LoadCase{
-		hd.LoadCase{
+		{
 			LoadNodes: []hd.LoadNode{
 				{N: 3, Forces: [3]float64{+70000, 0, 0}},
 			},
 			AmountLinearBuckling: 2,
 		},
-		hd.LoadCase{
+		{
 			LoadNodes: []hd.LoadNode{
 				{N: 3, Forces: [3]float64{-70000, 0, 0}},
 			},
@@ -464,7 +460,6 @@ func ModalBeam3mass() (m hd.Model, lc []hd.LoadCase, mc []hd.ModalCase) {
 //	        |         |
 //	        V         V
 //	0-------0----0----0------0
-//
 func BeamDc() (m1, m2 hd.Model, lc1, lc2 []hd.LoadCase) {
 	m1 = hd.Model{
 		Points: [][2]float64{
