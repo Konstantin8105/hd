@@ -130,7 +130,7 @@ type LoadCase struct {
 }
 
 func (lc LoadCase) String() (out string) {
-	out += fmt.Sprintf("\nLoad case:\n")
+	out += "\nLoad case:\n"
 	out += fmt.Sprintf("%5s %15s %15s %15s\n",
 		"Point", "Fx, N", "Fy, N", "M, N*m")
 	for _, ln := range lc.LoadNodes {
@@ -138,7 +138,7 @@ func (lc LoadCase) String() (out string) {
 			ln.N, ln.Forces[0], ln.Forces[1], ln.Forces[2])
 	}
 	if len(lc.PointDisplacementGlobal) > 0 {
-		out += fmt.Sprintf("Point displacement in global system coordinate:\n")
+		out += "Point displacement in global system coordinate:\n"
 		out += fmt.Sprintf("%5s %15s %15s %15s\n", "Point", "DX, m", "DY, m", "Angle, rad.")
 		for i := 0; i < len(lc.PointDisplacementGlobal); i++ {
 			out += fmt.Sprintf("%5d %15.5e %15.5e %15.5e\n",
@@ -151,7 +151,7 @@ func (lc LoadCase) String() (out string) {
 	}
 	// results
 	if len(lc.BeamForces) > 0 {
-		out += fmt.Sprintf("Local force in beam:\n")
+		out += "Local force in beam:\n"
 		out += fmt.Sprintf("%5s %45s %45s\n",
 			"", "START OF BEAM     ", "END OF BEAM       ")
 		out += fmt.Sprintf("%5s %45s %45s\n",
@@ -168,11 +168,11 @@ func (lc LoadCase) String() (out string) {
 					out += " "
 				}
 			}
-			out += fmt.Sprintf("\n")
+			out += "\n"
 		}
 	}
 	if len(lc.Reactions) > 0 {
-		out += fmt.Sprintf("Reaction on support:\n")
+		out += "Reaction on support:\n"
 		out += fmt.Sprintf("%5s %15s %15s %15s\n",
 			"Index", "Fx, N", "Fy, N", "M, N*m")
 		for i := 0; i < len(lc.Reactions); i++ {
@@ -188,7 +188,7 @@ func (lc LoadCase) String() (out string) {
 
 	// output linear buckling data
 	if len(lc.LinearBucklingResult) > 0 {
-		out += fmt.Sprintf("\nLinear buckling result:\n")
+		out += "\nLinear buckling result:\n"
 		for _, lbr := range lc.LinearBucklingResult {
 			out += fmt.Sprintf("Linear buckling factor: %15.5f\n", lbr.Factor)
 			out += fmt.Sprintf("%5s %15s %15s %15s\n",
@@ -202,9 +202,9 @@ func (lc LoadCase) String() (out string) {
 			}
 		}
 	} else if lc.AmountLinearBuckling == 0 {
-		out += fmt.Sprintf("\nLinear buckling result: is not calculated\n")
+		out += "\nLinear buckling result: is not calculated\n"
 	} else {
-		out += fmt.Sprintf("\nLinear buckling result: haven`t valid data. Probably all beams are tension\n")
+		out += "\nLinear buckling result: haven`t valid data. Probably all beams are tension\n"
 	}
 
 	return
@@ -233,7 +233,7 @@ func (mc *ModalCase) reset() {
 }
 
 func (m ModalCase) String() (out string) {
-	out += fmt.Sprintf("\nModal case:\n")
+	out += "\nModal case:\n"
 	out += fmt.Sprintf("%5s %15s\n",
 		"Point", "Mass, N")
 	for _, mn := range m.ModalMasses {
@@ -372,7 +372,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 	defer func() {
 		if err != nil {
 			et := errors.New(name)
-			et.Add(err)
+			_ = et.Add(err)
 			err = et
 		}
 	}()
@@ -388,9 +388,9 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 	{
 		et := errors.New("")
 		out, err = prepare(out, m)
-		et.Add(err)
+		_ = et.Add(err)
 		for i := range lcs {
-			et.Add(lcs[i].checkInputData(m))
+			_ = et.Add(lcs[i].checkInputData(m))
 		}
 		if et.IsError() {
 			et.Name = "Prepared input data"
@@ -427,7 +427,7 @@ func LinearStatic(out io.Writer, m *Model, lcs ...*LoadCase) (err error) {
 			var et errors.Tree
 			for _, i := range ignore {
 				if p[i] != 0.0 {
-					et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
+					_ = et.Add(fmt.Errorf("on direction %d load is not zero : %f", i, p[i]))
 				}
 			}
 			if et.IsError() {
@@ -712,7 +712,7 @@ func (m *Model) addSupport() (ignore []int) {
 // Gravity is Earth gravity constant, m/sq.sec.
 const Gravity float64 = 9.80665
 
-// Modal function calcualate all modal frequency with all
+// Modal function calculate all modal frequency with all
 // modal shape.
 //
 // Selfweigth are ignored.
@@ -731,7 +731,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	defer func() {
 		if err != nil {
 			et := errors.New(name)
-			et.Add(err)
+			_ = et.Add(err)
 			err = et
 		}
 	}()
@@ -747,8 +747,8 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 	{
 		et := errors.New("")
 		out, err = prepare(out, m)
-		et.Add(err)
-		et.Add(mc.checkInputData(m))
+		_ = et.Add(err)
+		_ = et.Add(mc.checkInputData(m))
 		if et.IsError() {
 			return et
 		}
@@ -853,7 +853,7 @@ func Modal(out io.Writer, m *Model, mc *ModalCase) (err error) {
 func (m Model) String() (out string) {
 	out += "\n"
 	// points and supports
-	out += fmt.Sprintf("Point coordinates:\n")
+	out += "Point coordinates:\n"
 	out += fmt.Sprintf("%37s %17s\n", "", "   SUPPORT DIRECTION")
 	out += fmt.Sprintf("%5s %15s %15s ", "Index", "X, m", "Y, m")
 	out += fmt.Sprintf("%5s %5s %5s (0 - free, 1 - fixed)\n", "SX", "SY", "SM")
@@ -872,10 +872,10 @@ func (m Model) String() (out string) {
 				out += " "
 			}
 		}
-		out += fmt.Sprintf("\n")
+		out += "\n"
 	}
 	// beams
-	out += fmt.Sprintf("Beam property:\n")
+	out += "Beam property:\n"
 	out += fmt.Sprintf("%5s %15s %15s ", "Index", "Start point", "End point")
 	out += fmt.Sprintf("%15s %15s %15s\n",
 		"Area,sq.m", "Moment inertia,m4", "Elasticity,Pa")
@@ -898,7 +898,7 @@ func (m Model) String() (out string) {
 			continue
 		}
 		if !pinHeader {
-			out += fmt.Sprintf("Pins of beam in local system coordinate:\n")
+			out += "Pins of beam in local system coordinate:\n"
 			out += fmt.Sprintf("%5s %23s %23s\n",
 				"", "START OF BEAM     ", "END OF BEAM       ")
 			out += fmt.Sprintf("%5s %23s %23s\n",
@@ -915,10 +915,10 @@ func (m Model) String() (out string) {
 				out += " "
 			}
 		}
-		out += fmt.Sprintf("\n")
+		out += "\n"
 	}
 	if !pinHeader {
-		out += fmt.Sprintf("All beams haven`t pins\n")
+		out += "All beams haven`t pins\n"
 	}
 	return
 }
@@ -935,7 +935,7 @@ func Run(out io.Writer, m *Model, lcs []LoadCase, mcs []ModalCase) (err error) {
 			arr[i] = &lcs[i]
 		}
 		if err = LinearStatic(out, m, arr...); err != nil {
-			et.Add(err)
+			_ = et.Add(err)
 		}
 		if out != nil {
 			fmt.Fprintf(out, "\n\n")
@@ -949,7 +949,7 @@ func Run(out io.Writer, m *Model, lcs []LoadCase, mcs []ModalCase) (err error) {
 	}
 	for i := range mcs {
 		if err = Modal(out, m, &(mcs[i])); err != nil {
-			et.Add(err)
+			_ = et.Add(err)
 			continue
 		}
 		if out != nil {

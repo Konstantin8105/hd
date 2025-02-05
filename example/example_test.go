@@ -2,13 +2,11 @@ package example_test
 
 import (
 	"bytes"
-	"io/ioutil"
-	"os"
 	"testing"
 
+	"github.com/Konstantin8105/compare"
 	"github.com/Konstantin8105/hd"
 	"github.com/Konstantin8105/hd/example"
-	"github.com/pmezard/go-difflib/difflib"
 )
 
 func TestModelString(t *testing.T) {
@@ -72,36 +70,8 @@ func TestModelString(t *testing.T) {
 			if err := hd.Run(&b, &model, lcs, mcs); err != nil {
 				t.Errorf("Cannot calculate : %v", err)
 			}
-
-			// compare files
-			actual := []byte(b.String())
-			b.Reset()
-
-			if os.Getenv("UPDATE") != "" {
-				err := ioutil.WriteFile("./testdata/"+m.filename, actual, 0644)
-				if err != nil {
-					t.Fatalf("Cannot Update: %v", err)
-				}
-			}
-
-			expect, err := ioutil.ReadFile("./testdata/" + m.filename)
-			if err != nil {
-				t.Fatalf("Cannot read file : %v", err)
-			}
-
-			if !bytes.Equal(expect, actual) {
-				// show a diff between files
-				diff := difflib.UnifiedDiff{
-					A:        difflib.SplitLines(string(expect)),
-					B:        difflib.SplitLines(string(actual)),
-					FromFile: "Original",
-					ToFile:   "Current",
-					Context:  30000,
-				}
-				text, _ := difflib.GetUnifiedDiffString(diff)
-				t.Log(text)
-				t.Errorf("result is not same")
-			}
+			name := "./testdata/" + m.filename
+			compare.Test(t, name, b.Bytes())
 		})
 	}
 }

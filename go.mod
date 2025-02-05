@@ -1,8 +1,6 @@
 module github.com/Konstantin8105/hd
 
-go 1.22
-
-toolchain go1.23.5
+go 1.23.5
 
 require (
 	github.com/Konstantin8105/cs v0.0.0-20190517091010-c069cc1cee1b

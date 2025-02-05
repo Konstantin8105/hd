@@ -21,7 +21,7 @@ Load case:
 Point           Fx, N           Fy, N          M, N*m
     1         0.00000        10.00000         0.00000
     2         0.00000        10.00000         0.00000
-Point displacament in global system coordinate:
+Point displacement in global system coordinate:
 Point           DX, m           DY, m     Angle, rad.
     0     0.00000e+00     0.00000e+00     0.00000e+00
     1     0.00000e+00     6.94444e-08     6.94444e-08

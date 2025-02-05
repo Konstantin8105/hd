@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 	"runtime/debug"
@@ -332,7 +331,7 @@ func TestWriter(t *testing.T) {
 	m, lcs, mcs := example.Truss()
 	var tf *os.File
 	var err error
-	if tf, err = ioutil.TempFile("", "testWriter"); err != nil {
+	if tf, err = os.CreateTemp("", "testWriter"); err != nil {
 		t.Fatalf("Cannot create temp file: %v", err)
 	}
 	if err = hd.Run(tf, &m, lcs, mcs); err != nil {
@@ -341,7 +340,7 @@ func TestWriter(t *testing.T) {
 	if err = tf.Close(); err != nil {
 		t.Fatalf("Cannot close file : %v", err)
 	}
-	b, err := ioutil.ReadFile(tf.Name())
+	b, err := os.ReadFile(tf.Name())
 	if err != nil {
 		t.Fatalf("Cannot read file : %v", err)
 	}
@@ -408,8 +407,8 @@ func TestDirectionLoadNode(t *testing.T) {
 func TestRotateBeamLinear(t *testing.T) {
 	for angle := 0.0; angle <= 360.0; angle += 5 {
 		const (
-			F float64 = 100.0
-			L         = 2.200
+			F = 100.0
+			L = 2.200
 		)
 		var (
 			Fx = F * math.Cos(math.Pi/180.0*angle)
