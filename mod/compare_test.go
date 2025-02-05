@@ -34,22 +34,22 @@ func TestCompare(t *testing.T) {
 		},
 		{
 			exp: []hd.LoadCase{
-				hd.LoadCase{
+				{
 					PointDisplacementGlobal: [][3]float64{
-						[3]float64{0, 0, 0},
+						{0, 0, 0},
 					},
 					Reactions: [][3]float64{
-						[3]float64{0, 0, 0},
+						{0, 0, 0},
 					},
 				},
 			},
 			act: []hd.LoadCase{
-				hd.LoadCase{
+				{
 					PointDisplacementGlobal: [][3]float64{
-						[3]float64{1, 0, 0},
+						{1, 0, 0},
 					},
 					Reactions: [][3]float64{
-						[3]float64{1, 0, 0},
+						{1, 0, 0},
 					},
 				},
 			},
@@ -58,22 +58,22 @@ func TestCompare(t *testing.T) {
 		},
 		{
 			exp: []hd.LoadCase{
-				hd.LoadCase{
+				{
 					PointDisplacementGlobal: [][3]float64{
-						[3]float64{1, 0, 0},
+						{1, 0, 0},
 					},
 					Reactions: [][3]float64{
-						[3]float64{1, 0, 0},
+						{1, 0, 0},
 					},
 				},
 			},
 			act: []hd.LoadCase{
-				hd.LoadCase{
+				{
 					PointDisplacementGlobal: [][3]float64{
-						[3]float64{2, 0, 0},
+						{2, 0, 0},
 					},
 					Reactions: [][3]float64{
-						[3]float64{2, 0, 0},
+						{2, 0, 0},
 					},
 				},
 			},
@@ -82,11 +82,11 @@ func TestCompare(t *testing.T) {
 		},
 		{
 			exp: []hd.LoadCase{
-				hd.LoadCase{},
-				hd.LoadCase{},
+				{},
+				{},
 			},
 			act: []hd.LoadCase{
-				hd.LoadCase{},
+				{},
 			},
 			eps:     0.001,
 			isError: true,
