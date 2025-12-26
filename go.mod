@@ -12,6 +12,7 @@ require (
 )
 
 require (
+	github.com/Konstantin8105/sm v0.0.0-20231014145735-1ea3a0744718 // indirect
 	github.com/Konstantin8105/tree v0.1.1 // indirect
 	github.com/olegfedoseev/image-diff v0.0.0-20171116094004-897a4e73dfd6 // indirect
 )
