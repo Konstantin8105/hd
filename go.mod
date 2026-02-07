@@ -8,7 +8,7 @@ require (
 	github.com/Konstantin8105/errors v0.1.0
 	github.com/Konstantin8105/pow v0.1.0
 	github.com/Konstantin8105/sparse v0.0.0-20240530141733-b591fd4a631c
-	gonum.org/v1/gonum v0.16.0
+	gonum.org/v1/gonum v0.17.0
 )
 
 require (
