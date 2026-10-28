@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 package main
@@ -5,35 +6,60 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/Konstantin8105/sm"
 )
 
-func cal(name, str string, view ...bool) string {
-	hide := false
-	if 0 < len(view) {
-		hide = !view[0]
-	}
-	if !hide {
+func cal(name, str string, show bool) string {
+	if show {
 		fmt.Fprintf(os.Stdout, "\nName    : %s\n", name)
 		fmt.Fprintf(os.Stdout, "\nFormula : %s\n", str)
 	}
-	var val string
-	var err error
-	val, err = sm.Sexpr(
+	val, err := sm.Sexpr(
 		// os.Stdout,
 		nil,
 		str)
 	if err != nil {
 		panic(err)
 	}
-	if !hide {
+	if show {
 		fmt.Fprintf(os.Stdout, "Value   : %s\n", val)
-		if m, ok := sm.ParseMatrix(val); ok {
-			fmt.Fprintf(os.Stdout, "%s\n", m)
-		}
 	}
 	return val
+}
+
+// vector returns the `sm` expression of a 4x1 unit vector with one
+// at the position `f`.
+func vector(f int) string {
+	var b strings.Builder
+	b.WriteString("matrix(")
+	for i := 0; i < 4; i++ {
+		if 0 < i {
+			b.WriteString(", ")
+		}
+		if i == f {
+			b.WriteString("1")
+		} else {
+			b.WriteString("0")
+		}
+	}
+	b.WriteString(", 4, 1)")
+	return b.String()
+}
+
+// value returns the single element of a 1x1 matrix expression.
+// `sm` prints such a matrix as: matrix(<element>, 1.00000, 1.00000)
+func value(m string) string {
+	m = strings.TrimSpace(m)
+	const prefix = "matrix("
+	if !strings.HasPrefix(m, prefix) || !strings.HasSuffix(m, ")") {
+		panic("not a matrix: " + m)
+	}
+	body := m[len(prefix) : len(m)-1]
+	i := strings.LastIndex(body, ",")
+	j := strings.LastIndex(body[:i], ",")
+	return strings.TrimSpace(body[:j])
 }
 
 func main() {
@@ -77,11 +103,7 @@ func main() {
 		{"Geometric matrix stiffness", Kg},
 	} {
 		fmt.Fprintln(os.Stdout, "|***************************************************|")
-		mK, ok := sm.ParseMatrix(s.K)
-		if !ok {
-			panic("not valid matrix")
-		}
-		fmt.Fprintf(os.Stdout, "%s without free:\n%s\n", s.name, mK)
+		fmt.Fprintf(os.Stdout, "%s without free:\n%s\n", s.name, s.K)
 
 		// степень свободы
 		for _, freeIndex := range [][]int{
@@ -98,62 +120,26 @@ func main() {
 			K := s.K
 
 			for _, f := range freeIndex {
-				// wbend  = cal("displ", "matrix(v1, O1, v2, O2, 4,1)")
-				// MVbend = cal("MV load", Kbend+" * "+wbend)
-
 				// create vector with free dof
-				free := sm.CreateMatrix(4, 1)
-				free.Args[free.Position(f, 0)] = sm.CreateFloat(1.0)
+				free := vector(f)
 				fmt.Fprintf(os.Stdout, "free:\n%s\n", free)
 
-				gfactor := cal("gfactor", "( "+K+" * "+sm.AstToStr(free.Ast())+"); variable(x);constant(l)", show)
+				// column and row of the freedom `f`
+				col := cal("column", "("+K+") * "+free, show)
+				row := cal("row", "transpose("+free+") * ("+K+")", show)
+				kff := value(cal("kff", "transpose("+free+") * ("+K+") * "+free, show))
 
-				mG, ok := sm.ParseMatrix(gfactor)
-				if !ok {
-					panic("not valid matrix")
-				}
-				if show {
-					fmt.Fprintf(os.Stdout, "Matrix gfactor:\n%s\n", mG)
-				}
-				minGfactor := sm.AstToStr(mG.Args[mG.Position(f, 0)])
-				if show {
-					fmt.Fprintln(os.Stdout, "minGfactor = ", minGfactor)
-				}
-				gfactor = cal("gfactor minimal", gfactor+"/(-1*("+minGfactor+")) ; variable(x);constant(l)", show)
+				// release of the freedom `f`:
+				//   Knew = K - K[:,f] * K[f,:] / K[f,f]
+				K = cal("KwithFree", "("+K+") - ("+col+") * ("+row+") / ("+kff+")", show)
 
-				mG, ok = sm.ParseMatrix(gfactor)
-				if !ok {
-					panic("not valid matrix")
-				}
-				if show {
-					fmt.Fprintf(os.Stdout, "Matrix gfactor:\n%s\n", mG)
-				}
-
-				G := sm.CreateMatrix(4, 4)
-				for i := 0; i < 4; i++ {
-					G.Args[G.Position(i, i)] = sm.CreateFloat(1.0)
-				}
-				for i := 0; i < 4; i++ {
-					G.Args[G.Position(f, i)] = mG.Args[mG.Position(i, 0)]
-				}
-				G.Args[G.Position(f, f)] = sm.CreateFloat(0.0)
-				if show {
-					fmt.Fprintf(os.Stdout, "Matrix G:\n%s\n", G)
-				}
-
-				KwithFree := cal("KwithFree", "transpose("+sm.AstToStr(G.Ast())+") * "+K+
-					" * "+sm.AstToStr(G.Ast())+"; variable(x);constant(l)", show)
-
-				K = KwithFree
-
-				mKF, ok := sm.ParseMatrix(KwithFree)
-				if !ok {
-					panic("not valid matrix")
-				}
+				// for the stiffness matrix the released diagonal term
+				// is printed as 1
+				out := K
 				if matrixIndex == 0 {
-					mKF.Args[mKF.Position(f, f)] = sm.CreateFloat(1.0)
+					out = cal("KwithFree diagonal", "("+K+") + ("+free+") * transpose("+free+")", show)
 				}
-				fmt.Fprintf(os.Stdout, "K with free\n%s\n", mKF)
+				fmt.Fprintf(os.Stdout, "K with free\n%s\n", out)
 			}
 		}
 		fmt.Fprintln(os.Stdout, "||||||==========================================||||||")
