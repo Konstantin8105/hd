@@ -1,6 +1,3 @@
-//go:build ignore
-// +build ignore
-
 package main
 
 import (
@@ -11,8 +8,7 @@ import (
 )
 
 // run :
-//	go run axisym.go
-//	go run -mod=mod axisym.go
+//	go run ./theory/axisymBeam2d
 
 func cal(name, str string) string {
 	fmt.Fprintf(os.Stdout, "\nName    : %s\n", name)

@@ -1,6 +1,3 @@
-//go:build ignore
-// +build ignore
-
 package main
 
 import (
@@ -10,6 +7,9 @@ import (
 
 	"github.com/Konstantin8105/sm"
 )
+
+// run :
+//	go run ./theory/beam2d
 
 func cal(name, str string, show bool) string {
 	if show {
