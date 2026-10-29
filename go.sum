@@ -11,6 +11,8 @@ github.com/Konstantin8105/pow v0.1.0 h1:1FBuKD4UEXKRsP0snDUGqbok5LcwYPUbq5ClVOW+
 github.com/Konstantin8105/pow v0.1.0/go.mod h1:4Xe+OUZ7jwe74BFzgLepZw57cSFWba1/o6gTk53RBdI=
 github.com/Konstantin8105/sm v0.0.0-20261028111618-3bc50674f635 h1:K15czY5IGRB/QmIfJKKZIh50j0TAlpGSoPfCYXRwb9E=
 github.com/Konstantin8105/sm v0.0.0-20261028111618-3bc50674f635/go.mod h1:U7CCpJjdvJzZ1Y3SmXzWrHTMIJChYXpkxz0apxEQYEo=
+github.com/Konstantin8105/sm v0.0.0-20261028132212-f0f7be5f8c66 h1:BAbk9AmSu2xgQLrYvtwQGflcemu8aokJjkOdyp1plr4=
+github.com/Konstantin8105/sm v0.0.0-20261028132212-f0f7be5f8c66/go.mod h1:U7CCpJjdvJzZ1Y3SmXzWrHTMIJChYXpkxz0apxEQYEo=
 github.com/Konstantin8105/sparse v0.0.0-20240530141733-b591fd4a631c h1:fI2NzhH3oq/A2z3Sd8dsMm9Mt7LHKF2rKyZv+uzHRTE=
 github.com/Konstantin8105/sparse v0.0.0-20240530141733-b591fd4a631c/go.mod h1:+gdmOB30Q+3eCpwsc7lxz2PY7ei5ruzlG+0gZ6kOZtk=
 github.com/Konstantin8105/tree v0.0.0-20190515202740-8a8e3df34a3b/go.mod h1:iuUpRQi7E+GDKbY/a5HBliYk4j+cW1Nmv1hXoCSwuVU=
