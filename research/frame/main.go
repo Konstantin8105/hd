@@ -1,22 +1,20 @@
-// +build ignore
-
 package main
 
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/Konstantin8105/hd"
 )
 
 // frame design:
+//
 //	0--0--0--0--0--0--0--0--0
 //	|\ |\ |\ |\ |\ |\ |\ |\ |
 //	| \| \| \| \| \| \| \| \|
 //	0--0--0--0--0--0--0--0--0
-func baseFrame(size int) hd.Model {
+func baseFrame(size int) (hd.Model, []hd.LoadCase) {
 	// even size points
 	size = size + size%2
 
@@ -56,7 +54,7 @@ func baseFrame(size int) hd.Model {
 		m.Supports = append(m.Supports, [3]bool{false, false, false})
 	}
 
-	m.LoadCases = []hd.LoadCase{
+	lc := []hd.LoadCase{
 		{
 			LoadNodes: []hd.LoadNode{
 				{N: size - 1, Forces: [3]float64{100.0, 250.0, 0}},
@@ -64,7 +62,7 @@ func baseFrame(size int) hd.Model {
 		},
 	}
 
-	return m
+	return m, lc
 }
 
 type result struct {
@@ -88,7 +86,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		err = ioutil.WriteFile(resultFile, bo, 0644)
+		err = os.WriteFile(resultFile, bo, 0644)
 		if err != nil {
 			panic(err)
 		}
@@ -96,7 +94,7 @@ func main() {
 
 next:
 	// get file with results in json format
-	b, err := ioutil.ReadFile(resultFile)
+	b, err := os.ReadFile(resultFile)
 	if err != nil {
 		panic(err)
 	}
@@ -121,16 +119,16 @@ next:
 		}
 	}
 	fmt.Fprintf(os.Stdout, "Calculate with %d intermediant points\n", a)
-	m := baseFrame(a)
+	m, lc := baseFrame(a)
 
 	// run model calculation
-	err = m.Run(nil)
+	err = hd.Run(nil, &m, lc, nil)
 	if err != nil {
 		panic(err)
 	}
 
 	// write result
-	pdg := m.LoadCases[0].PointDisplacementGlobal
+	pdg := lc[0].PointDisplacementGlobal
 	rs = append(rs, result{
 		AmountIntermediantPoints: a,
 		Displacement:             fmt.Sprintf("%20.19e", pdg[len(pdg)-1][1]),
@@ -140,7 +138,7 @@ next:
 	if err != nil {
 		panic(err)
 	}
-	err = ioutil.WriteFile(resultFile, bo, 0644)
+	err = os.WriteFile(resultFile, bo, 0644)
 	if err != nil {
 		panic(err)
 	}

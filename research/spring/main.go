@@ -1,18 +1,15 @@
-// +build ignore
-
 package main
 
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"os"
 
 	"github.com/Konstantin8105/hd"
 )
 
-func baseSpring(size int) hd.Model {
+func baseSpring(size int) (hd.Model, []hd.LoadCase) {
 	var m hd.Model
 
 	for i := 0; i < size; i++ {
@@ -54,7 +51,7 @@ func baseSpring(size int) hd.Model {
 		m.Supports = append(m.Supports, [3]bool{false, false, false})
 	}
 
-	m.LoadCases = []hd.LoadCase{
+	lc := []hd.LoadCase{
 		{
 			LoadNodes: []hd.LoadNode{
 				{N: size - 1, Forces: [3]float64{0, 2.3, 0}},
@@ -62,7 +59,7 @@ func baseSpring(size int) hd.Model {
 		},
 	}
 
-	return m
+	return m, lc
 }
 
 type result struct {
@@ -86,7 +83,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		err = ioutil.WriteFile(resultFile, bo, 0644)
+		err = os.WriteFile(resultFile, bo, 0644)
 		if err != nil {
 			panic(err)
 		}
@@ -94,7 +91,7 @@ func main() {
 
 next:
 	// get file with results in json format
-	b, err := ioutil.ReadFile(resultFile)
+	b, err := os.ReadFile(resultFile)
 	if err != nil {
 		panic(err)
 	}
@@ -119,10 +116,10 @@ next:
 		}
 	}
 	fmt.Fprintf(os.Stdout, "Calculate with %d intermediant points\n", a)
-	m := baseSpring(a)
+	m, lc := baseSpring(a)
 
 	// run model calculation
-	err = m.Run(nil)
+	err = hd.Run(nil, &m, lc, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -131,14 +128,14 @@ next:
 	rs = append(rs, result{
 		AmountIntermediantPoints: a,
 		Displacement: fmt.Sprintf("%20.19e",
-			m.LoadCases[0].PointDisplacementGlobal[1][1]),
+			lc[0].PointDisplacementGlobal[1][1]),
 	})
 
 	bo, err := json.Marshal(rs)
 	if err != nil {
 		panic(err)
 	}
-	err = ioutil.WriteFile(resultFile, bo, 0644)
+	err = os.WriteFile(resultFile, bo, 0644)
 	if err != nil {
 		panic(err)
 	}

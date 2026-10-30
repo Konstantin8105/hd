@@ -1,18 +1,16 @@
-// +build ignore
-
 package main
 
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/Konstantin8105/hd"
+	"github.com/Konstantin8105/hd/mod"
 )
 
-func baseBeam() hd.Model {
-	return hd.Model{
+func baseBeam() (hd.Model, []hd.LoadCase) {
+	m := hd.Model{
 		Points: [][2]float64{
 			{0.0, 0.0},
 			{1.0, 0.0},
@@ -29,14 +27,15 @@ func baseBeam() hd.Model {
 			{true, true, true},
 			{false, false, false},
 		},
-		LoadCases: []hd.LoadCase{
-			{
-				LoadNodes: []hd.LoadNode{
-					{N: 1, Forces: [3]float64{0, 2.3, 0}},
-				},
+	}
+	lc := []hd.LoadCase{
+		{
+			LoadNodes: []hd.LoadNode{
+				{N: 1, Forces: [3]float64{0, 2.3, 0}},
 			},
 		},
 	}
+	return m, lc
 }
 
 type result struct {
@@ -60,7 +59,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		err = ioutil.WriteFile(resultFile, bo, 0644)
+		err = os.WriteFile(resultFile, bo, 0644)
 		if err != nil {
 			panic(err)
 		}
@@ -68,7 +67,7 @@ func main() {
 
 next:
 	// get file with results in json format
-	b, err := ioutil.ReadFile(resultFile)
+	b, err := os.ReadFile(resultFile)
 	if err != nil {
 		panic(err)
 	}
@@ -93,14 +92,14 @@ next:
 		}
 	}
 	fmt.Fprintf(os.Stdout, "Calculate with %d intermediant points\n", a)
-	m := baseBeam()
-	err = m.SplitBeam(0, a)
+	m, lc := baseBeam()
+	err = mod.SplitBeam(&m, 0, a)
 	if err != nil {
 		panic(err)
 	}
 
 	// run model calculation
-	err = m.Run(nil)
+	err = hd.Run(nil, &m, lc, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -109,14 +108,14 @@ next:
 	rs = append(rs, result{
 		AmountIntermediantPoints: a,
 		Displacement: fmt.Sprintf("%20.19e",
-			m.LoadCases[0].PointDisplacementGlobal[1][1]),
+			lc[0].PointDisplacementGlobal[1][1]),
 	})
 
 	bo, err := json.Marshal(rs)
 	if err != nil {
 		panic(err)
 	}
-	err = ioutil.WriteFile(resultFile, bo, 0644)
+	err = os.WriteFile(resultFile, bo, 0644)
 	if err != nil {
 		panic(err)
 	}
